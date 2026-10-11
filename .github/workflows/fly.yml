@@ -19,7 +19,9 @@ jobs:
       - name: Ensure the leaderboard volume exists (created once, never recreated)
         run: |
           APP=$(grep '^app' fly.toml | cut -d'"' -f2)
-          if flyctl volumes list --app "$APP" --json | jq -e '.[] | select(.name == "pb_data")' >/dev/null; then
+          # Listing must succeed on its own: a failed list must stop here, not create a second volume.
+          VOLS=$(flyctl volumes list --app "$APP" --json)
+          if echo "$VOLS" | jq -e '.[] | select(.name == "pb_data")' >/dev/null; then
             echo "pb_data volume already exists"
           else
             flyctl volumes create pb_data --app "$APP" --region arn --size 1 --yes

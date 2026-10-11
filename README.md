@@ -17,5 +17,9 @@ What survives what:
   It survives restarts and deploys. The workflow creates the volume if it is missing.
 - **Rooms and games in progress** live in memory, so a restart or Fly stopping an idle machine wipes them.
 
+One-time migration: Fly can only attach a volume when a machine is created. If a deploy fails
+because an existing machine has no volume mounted, destroy that machine once
+(`fly machines list`, then `fly machine destroy <id> --force`) and re-run the workflow.
+
 The volume belongs to the single machine and is not replicated. Don't scale beyond one machine:
 rooms would split across machines and each machine would need its own volume.
