@@ -16,5 +16,13 @@ jobs:
         run: |
           APP=$(grep '^app' fly.toml | cut -d'"' -f2)
           flyctl status --app "$APP" >/dev/null 2>&1 || flyctl apps create "$APP"
-      - name: Deploy (one machine, game state is in memory)
+      - name: Ensure the leaderboard volume exists (created once, never recreated)
+        run: |
+          APP=$(grep '^app' fly.toml | cut -d'"' -f2)
+          if flyctl volumes list --app "$APP" --json | jq -e '.[] | select(.name == "pb_data")' >/dev/null; then
+            echo "pb_data volume already exists"
+          else
+            flyctl volumes create pb_data --app "$APP" --region arn --size 1 --yes
+          fi
+      - name: Deploy (one machine; rooms in memory, leaderboard on the volume)
         run: flyctl deploy --remote-only --ha=false

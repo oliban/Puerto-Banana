@@ -18,6 +18,11 @@ primary_region = "arn"
   path = "/healthz"
   timeout = "5s"
 
+# Leaderboard lives here. One volume, one machine: volumes are not replicated.
+[[mounts]]
+  source = "pb_data"
+  destination = "/data"
+
 [[vm]]
   memory = "256mb"
   cpu_kind = "shared"

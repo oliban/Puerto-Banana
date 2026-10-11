@@ -1,3 +1,6 @@
 node_modules
 test.js
+*.test.js
 README.md
+docs
+.superpowers
