@@ -1,0 +1,596 @@
+#!/bin/sh
+# Run from the root of the Puerto-Banana repo. Writes all project files.
+set -e
+mkdir -p .github/workflows
+cat > '.dockerignore' <<'__PB_EOF__'
+node_modules
+test.js
+README.md
+__PB_EOF__
+cat > '.github/workflows/fly.yml' <<'__PB_EOF__'
+name: Deploy to Fly
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    concurrency: deploy
+    env:
+      FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+      - name: Create app on first run
+        run: |
+          APP=$(grep '^app' fly.toml | cut -d'"' -f2)
+          flyctl status --app "$APP" >/dev/null 2>&1 || flyctl apps create "$APP"
+      - name: Deploy (one machine, game state is in memory)
+        run: flyctl deploy --remote-only --ha=false
+__PB_EOF__
+cat > 'README.md' <<'__PB_EOF__'
+# Puerto Banana
+
+Online bluff-and-auction game for 2-6 players, each on their own phone. Zero dependencies, Node 20+.
+
+## Run locally
+    node server.js      # http://localhost:8080
+    node test.js        # rules engine tests
+
+Same Wi-Fi: friends open http://<your-LAN-IP>:8080
+Anywhere:   npx cloudflared tunnel --url http://localhost:8080   (or: ngrok http 8080)
+
+## Deploy to Fly
+    fly launch --no-deploy   # keep fly.toml, pick a unique app name
+    fly deploy --ha=false    # ONE machine: game state lives in memory
+
+Rooms live in memory, so a restart or Fly stopping an idle machine wipes them.
+__PB_EOF__
+cat > 'Dockerfile' <<'__PB_EOF__'
+FROM node:22-alpine
+WORKDIR /app
+COPY package.json engine.js server.js index.html ./
+ENV NODE_ENV=production PORT=8080
+EXPOSE 8080
+CMD ["node", "server.js"]
+__PB_EOF__
+cat > 'fly.toml' <<'__PB_EOF__'
+# Change "app" to a unique name, or let `fly launch` pick one.
+app = "puerto-banana-fredrik"
+primary_region = "arn"
+
+[build]
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0
+
+[[http_service.checks]]
+  grace_period = "5s"
+  interval = "30s"
+  method = "GET"
+  path = "/healthz"
+  timeout = "5s"
+
+[[vm]]
+  memory = "256mb"
+  cpu_kind = "shared"
+  cpus = 1
+__PB_EOF__
+cat > 'package.json' <<'__PB_EOF__'
+{
+  "name": "puerto-banana",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": { "start": "node server.js", "test": "node test.js" },
+  "engines": { "node": ">=20" }
+}
+__PB_EOF__
+cat > 'engine.js' <<'__PB_EOF__'
+// Pure auction resolver. inv: {id: n}, bids: {id: n}, pot: n, order: [ids]
+function resolveAuction(inv, bids, pot, order) {
+  const out = { ...inv };
+  const steps = [];
+  const twoPlayer = order.length === 2;
+  let cands = order.filter(id => id in bids);
+  while (true) {
+    if (cands.length === 0) { steps.push({ t: 'nobody' }); break; }
+    if (cands.length === 1) {
+      const w = cands[0];
+      out[w] += pot;
+      steps.push({ t: 'last', id: w, gain: pot });
+      break;
+    }
+    const top = Math.max(...cands.map(id => bids[id]));
+    const tops = cands.filter(id => bids[id] === top);
+    if (tops.length > 1) {
+      const share = Math.floor(pot / tops.length);
+      tops.forEach(id => { out[id] += share; });
+      steps.push({ t: 'tie', ids: tops, bid: top, share });
+      break;
+    }
+    const w = tops[0];
+    const rest = cands.filter(id => id !== w);
+    const second = Math.max(...rest.map(id => bids[id]));
+    const seconds = rest.filter(id => bids[id] === second);
+    const premium = top - second;
+    if (out[w] + pot < premium) {
+      const lost = twoPlayer ? 0 : out[w];
+      if (!twoPlayer) out[w] = 0;
+      steps.push({ t: 'bust', id: w, bid: top, premium, lost, keeps: twoPlayer });
+      cands = rest;
+      continue;
+    }
+    out[w] += pot - premium;
+    const share = Math.floor(premium / seconds.length);
+    seconds.forEach(id => { out[id] += share; });
+    steps.push({ t: 'win', id: w, bid: top, gain: pot, premium, to: seconds, second, share });
+    break;
+  }
+  return { inv: out, steps };
+}
+if (typeof module !== 'undefined') module.exports = { resolveAuction };
+__PB_EOF__
+cat > 'test.js' <<'__PB_EOF__'
+const { resolveAuction: r } = require('./engine');
+const a = require('assert');
+// Rulebook ex 1: A21 B18, others lower, pot 10, all 10
+let x = r({A:10,B:10,C:10,D:10,E:10},{A:21,B:18,C:16,D:16,E:10},10,['A','B','C','D','E']);
+a.deepStrictEqual(x.inv,{A:17,B:13,C:10,D:10,E:10});
+// Ex 2: 3p A60 B30 C8 pot 10 -> A,B bust to 0, C gets 10
+x = r({A:10,B:10,C:10},{A:60,B:30,C:8},10,['A','B','C']);
+a.deepStrictEqual(x.inv,{A:0,B:0,C:20});
+// Ex 3: tie at top 35, pot 21 -> +10 each
+x = r({A:10,B:10,C:10,D:10},{A:35,B:35,C:20,D:28},21,['A','B','C','D']);
+a.deepStrictEqual(x.inv,{A:20,B:20,C:10,D:10});
+// 2p bust keeps inventory, other takes pot
+x = r({A:10,B:10},{A:50,B:5},10,['A','B']);
+a.deepStrictEqual(x.inv,{A:10,B:20});
+// tie for second splits premium
+x = r({A:10,B:10,C:10},{A:15,B:10,C:10},10,['A','B','C']);
+a.deepStrictEqual(x.inv,{A:15,B:12,C:12});
+console.log('all pass');
+__PB_EOF__
+cat > 'server.js' <<'__PB_EOF__'
+// Puerto Banana — tiny zero-dependency game server (SSE + JSON POST, in-memory state).
+const http = require('http');
+const fs = require('fs');
+const path = require('path');
+const crypto = require('crypto');
+const { resolveAuction } = require('./engine');
+
+const PORT = process.env.PORT || 8080;
+const GOAL = 200, START = 10, MAX_PLAYERS = 6;
+const rooms = new Map();          // code -> room
+const streams = new Map();        // code -> Set<{res, token}>
+const INDEX = fs.readFileSync(path.join(__dirname, 'index.html'));
+
+const rid = n => crypto.randomBytes(n).toString('hex');
+function newCode() {
+  const L = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+  let c; do { c = Array.from(crypto.randomBytes(4), b => L[b % L.length]).join(''); } while (rooms.has(c));
+  return c;
+}
+
+// What one player is allowed to see.
+function view(room, token) {
+  const me = room.players[token];
+  const order = room.order.map(t => room.players[t].id);
+  const inventories = {};
+  room.order.forEach(t => { inventories[room.players[t].id] = room.inventories[t]; });
+  return {
+    code: room.code, status: room.status, round: room.round, pot: room.pot,
+    me: me ? me.id : null, isHost: room.hostToken === token,
+    players: Object.values(room.players).sort((a, b) => a.joinedAt - b.joinedAt)
+      .map(p => ({ id: p.id, nick: p.nick, locked: room.bids[p.token] !== undefined })),
+    order, inventories,
+    myBid: room.bids[token] ?? null,
+    lastResult: room.lastResult, history: room.history, winners: room.winners,
+  };
+}
+
+function broadcast(room) {
+  room.touched = Date.now();
+  for (const s of streams.get(room.code) || []) {
+    s.res.write(`data: ${JSON.stringify(view(room, s.token))}\n\n`);
+  }
+}
+
+function resolveRound(room) {
+  const ids = t => room.players[t].id;
+  const bids = {}; room.order.forEach(t => { bids[t] = room.bids[t] ?? 0; });
+  const { inv, steps } = resolveAuction(room.inventories, bids, room.pot, room.order);
+  const byId = o => Object.fromEntries(Object.entries(o).map(([t, v]) => [ids(t), v]));
+  const mapStep = s => ({ ...s, id: s.id && ids(s.id), ids: s.ids && s.ids.map(ids), to: s.to && s.to.map(ids) });
+  room.lastResult = { round: room.round, pot: room.pot, bids: byId(bids), before: byId(room.inventories), after: byId(inv), steps: steps.map(mapStep) };
+  room.history = room.history.concat([{ round: room.round, pot: room.pot, bids: byId(bids) }]).slice(-40);
+  room.inventories = inv;
+  room.bids = {};
+  room.round += 1;
+  const top = Math.max(...room.order.map(t => inv[t]));
+  room.pot = top;
+  if (room.order.some(t => inv[t] >= GOAL)) {
+    room.status = 'over';
+    room.winners = room.order.filter(t => inv[t] === top).map(ids);
+  }
+}
+
+const actions = {
+  create(b, token) {
+    const code = newCode();
+    rooms.set(code, { code, hostToken: token, status: 'lobby', players: {}, order: [], inventories: {}, bids: {}, round: 0, pot: 0, lastResult: null, history: [], winners: [], touched: Date.now() });
+    return actions.join({ ...b, code }, token);
+  },
+  join(b, token) {
+    const room = rooms.get(String(b.code || '').toUpperCase());
+    if (!room) throw new Error('No room with that code.');
+    const nick = String(b.nick || '').trim().slice(0, 20) || 'Player';
+    if (!room.players[token]) room.players[token] = { token, id: rid(4), nick, joinedAt: Date.now() };
+    else room.players[token].nick = nick;
+    broadcast(room); return { code: room.code };
+  },
+  start(b, token, room) {
+    if (room.status !== 'lobby') throw new Error('Game already running.');
+    const ts = Object.values(room.players).sort((a, b) => a.joinedAt - b.joinedAt).map(p => p.token).slice(0, MAX_PLAYERS);
+    if (ts.length < 2) throw new Error('Need at least 2 players.');
+    Object.assign(room, { status: 'playing', order: ts, inventories: Object.fromEntries(ts.map(t => [t, START])), bids: {}, round: 1, pot: START, lastResult: null, history: [], winners: [] });
+    broadcast(room);
+  },
+  bid(b, token, room) {
+    if (room.status !== 'playing' || !room.order.includes(token)) throw new Error('You are not in this game.');
+    if (room.bids[token] !== undefined) throw new Error('Bid already locked.');
+    const bid = Number(b.bid);
+    if (!Number.isInteger(bid) || bid < 0 || bid > 1e9) throw new Error('Bid a whole number, 0 or more.');
+    room.bids[token] = bid;
+    if (room.order.every(t => room.bids[t] !== undefined)) resolveRound(room);
+    broadcast(room);
+  },
+  skip(b, token, room) {
+    if (room.hostToken !== token) throw new Error('Only the host can do that.');
+    if (room.status !== 'playing') return;
+    room.order.forEach(t => { if (room.bids[t] === undefined) room.bids[t] = 0; });
+    resolveRound(room); broadcast(room);
+  },
+  lobby(b, token, room) {
+    Object.assign(room, { status: 'lobby', order: [], bids: {}, round: 0, lastResult: null, history: [], winners: [] });
+    broadcast(room);
+  },
+  leave(b, token, room) {
+    if (room.status === 'lobby') { delete room.players[token]; if (room.hostToken === token) { const next = Object.keys(room.players)[0]; if (next) room.hostToken = next; } broadcast(room); }
+  },
+};
+
+function readBody(req) {
+  return new Promise((ok, fail) => {
+    let d = ''; req.on('data', c => { d += c; if (d.length > 1e4) req.destroy(); });
+    req.on('end', () => { try { ok(JSON.parse(d || '{}')); } catch (e) { fail(e); } }); req.on('error', fail);
+  });
+}
+const json = (res, code, obj) => { res.writeHead(code, { 'content-type': 'application/json' }); res.end(JSON.stringify(obj)); };
+
+http.createServer(async (req, res) => {
+  const url = new URL(req.url, 'http://x');
+  if (req.method === 'GET' && url.pathname === '/') { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' }); return res.end(INDEX); }
+  if (req.method === 'GET' && url.pathname === '/healthz') return json(res, 200, { ok: true, rooms: rooms.size });
+  if (req.method === 'GET' && url.pathname === '/events') {
+    const room = rooms.get(String(url.searchParams.get('room') || '').toUpperCase());
+    const token = String(url.searchParams.get('token') || '');
+    if (!room || !room.players[token]) { res.writeHead(404); return res.end(); }
+    res.writeHead(200, { 'content-type': 'text/event-stream', 'cache-control': 'no-cache', connection: 'keep-alive', 'x-accel-buffering': 'no' });
+    const s = { res, token };
+    if (!streams.has(room.code)) streams.set(room.code, new Set());
+    streams.get(room.code).add(s);
+    res.write(`data: ${JSON.stringify(view(room, token))}\n\n`);
+    const ping = setInterval(() => res.write(': ping\n\n'), 20000);
+    req.on('close', () => { clearInterval(ping); streams.get(room.code)?.delete(s); });
+    return;
+  }
+  if (req.method === 'POST' && url.pathname === '/api') {
+    try {
+      const b = await readBody(req);
+      const token = String(b.token || '');
+      if (!/^[a-f0-9]{32}$/.test(token)) throw new Error('Bad session.');
+      const fn = actions[b.action]; if (!fn) throw new Error('Unknown action.');
+      let room = null;
+      if (!['create', 'join'].includes(b.action)) {
+        room = rooms.get(String(b.code || '').toUpperCase());
+        if (!room || !room.players[token]) throw new Error('Room not found.');
+      }
+      return json(res, 200, fn(b, token, room) || { ok: true });
+    } catch (e) { return json(res, 400, { error: e.message }); }
+  }
+  res.writeHead(404); res.end();
+}).listen(PORT, '0.0.0.0', () => console.log('Puerto Banana on :' + PORT));
+
+// Forget rooms idle for 12 hours.
+setInterval(() => { const cut = Date.now() - 12 * 3600e3; for (const [c, r] of rooms) if (r.touched < cut) rooms.delete(c); }, 3600e3);
+__PB_EOF__
+cat > 'index.html' <<'__PB_EOF__'
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Puerto Banana</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bungee&family=Figtree:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#E6F1EE; --surface:#FFFFFF; --ink:#12343B; --muted:#4F6E73; --line:#C9DDD8;
+  --banana:#FFD23F; --banana-ink:#3A2F00; --rust:#D9512C; --rust-ink:#FFFFFF; --ok:#1F8A5B;
+  --container:#D9512C; --container-2:#B8401F;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0E2226; --surface:#163338; --ink:#E6F1EE; --muted:#9BB8B5; --line:#24484E;
+    --banana:#FFD23F; --banana-ink:#2A2200; --rust:#F06A42; --ok:#4CC38A;
+    --container:#B8401F; --container-2:#8F3015;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0E2226; --surface:#163338; --ink:#E6F1EE; --muted:#9BB8B5; --line:#24484E;
+  --banana:#FFD23F; --banana-ink:#2A2200; --rust:#F06A42; --ok:#4CC38A;
+  --container:#B8401F; --container-2:#8F3015;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--ink);font:400 17px/1.45 Figtree,system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}
+#app{max-width:460px;margin:0 auto;padding:20px 18px 40px}
+h1,h2,.num{font-family:Bungee,Impact,"Arial Black",sans-serif;font-weight:400;letter-spacing:.01em}
+h1{font-size:2.3rem;line-height:1;margin:8px 0 6px}
+h2{font-size:1.25rem;margin:0 0 10px}
+p{margin:0 0 12px}
+.muted{color:var(--muted)}
+.small{font-size:.88rem}
+button,input{font:inherit;color:inherit}
+button{cursor:pointer;border:0;border-radius:12px;padding:14px 18px;font-weight:800;background:var(--surface);color:var(--ink);box-shadow:inset 0 0 0 2px var(--line)}
+button.primary{background:var(--banana);color:var(--banana-ink);box-shadow:0 3px 0 #C99E00}
+button.primary:active{transform:translateY(2px);box-shadow:0 1px 0 #C99E00}
+button:disabled{opacity:.45;cursor:default}
+button.link{background:none;box-shadow:none;padding:8px 0;color:var(--muted);font-weight:600;text-decoration:underline}
+:focus-visible{outline:3px solid var(--rust);outline-offset:2px}
+input.text{width:100%;padding:13px 14px;border-radius:12px;border:2px solid var(--line);background:var(--surface)}
+input.code{text-transform:uppercase;font-family:Bungee,sans-serif;letter-spacing:.2em}
+label{display:block;font-weight:600;margin:0 0 6px}
+.stack>*+*{margin-top:12px}
+.row{display:flex;gap:10px;align-items:center}
+.row>.grow{flex:1}
+.card{background:var(--surface);border-radius:16px;padding:16px}
+.divider{height:1px;background:var(--line);margin:22px 0}
+.err{color:var(--rust);font-weight:600}
+.topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.topbar .code{font-family:Bungee,sans-serif;letter-spacing:.15em}
+/* The container: corrugated steel plate carrying the pot */
+.container{position:relative;border-radius:6px;color:#fff;padding:18px 18px 16px;
+  background:repeating-linear-gradient(90deg,var(--container) 0 14px,var(--container-2) 14px 18px);
+  box-shadow:inset 0 0 0 4px rgba(0,0,0,.18)}
+.container .plate{display:inline-block;background:rgba(255,255,255,.92);color:#12343B;border-radius:4px;padding:2px 8px;font-weight:800;font-size:.85rem}
+.container .num{font-size:4.2rem;line-height:1;margin-top:8px;text-shadow:0 3px 0 rgba(0,0,0,.25)}
+.container .sub{font-weight:600;opacity:.95}
+.players{list-style:none;margin:0;padding:0}
+.players li{display:grid;grid-template-columns:1fr auto;gap:2px 12px;padding:12px 0;border-bottom:1px solid var(--line)}
+.players li:last-child{border-bottom:0}
+.players .name{font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.players .inv{font-family:Bungee,sans-serif;font-size:1.15rem;text-align:right}
+.players .status{font-size:.88rem;color:var(--muted)}
+.players .status.ok{color:var(--ok);font-weight:600}
+.bar{grid-column:1/-1;height:6px;border-radius:3px;background:var(--line);overflow:hidden}
+.bar>i{display:block;height:100%;background:var(--banana)}
+.bidbox{display:grid;grid-template-columns:64px 1fr 64px;gap:10px;align-items:stretch}
+.bidbox button{font-size:1.6rem;padding:0}
+.bidbox input{width:100%;text-align:center;font-family:Bungee,sans-serif;font-size:2.4rem;border-radius:12px;border:2px solid var(--line);background:var(--surface);padding:8px 0}
+.locked{text-align:center;padding:22px 16px}
+.locked .num{font-size:2.6rem}
+.sheet-bg{position:fixed;inset:0;background:rgba(6,20,23,.55);display:flex;align-items:flex-end;justify-content:center;z-index:10}
+.sheet{background:var(--bg);width:100%;max-width:460px;max-height:88%;overflow:auto;border-radius:20px 20px 0 0;padding:20px 18px calc(20px + env(safe-area-inset-bottom,0px))}
+.reveal{list-style:none;padding:0;margin:0 0 14px}
+.reveal li{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-radius:12px;background:var(--surface);margin-bottom:8px;animation:flip .45s both}
+.reveal li .num{font-size:1.5rem}
+.reveal li.top{box-shadow:inset 0 0 0 3px var(--banana)}
+.delta{font-weight:800}
+.delta.up{color:var(--ok)} .delta.down{color:var(--rust)}
+.steps{margin:0 0 16px;padding-left:20px}
+.steps li{margin-bottom:6px}
+@keyframes flip{from{transform:rotateX(90deg);opacity:0}to{transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){.reveal li{animation:none}}
+.winner{text-align:center;padding:10px 0 4px}
+.winner .num{font-size:2.6rem;color:var(--rust)}
+details{margin-top:18px}
+summary{cursor:pointer;font-weight:600;color:var(--muted)}
+.hist{font-size:.92rem}
+.hist div{padding:6px 0;border-bottom:1px solid var(--line)}
+</style>
+</head>
+<body>
+<div id="app"><p class="muted">Loading the docks…</p></div>
+<script>
+const GOAL = 200, MAX_PLAYERS = 6;
+const S = { code: null, room: null, es: null, nick: '', joinCode: '', bidDraft: '', error: '', busy: false, sheetFor: null, seen: 0 };
+const app = document.getElementById('app');
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const ls = { get(k){try{return localStorage.getItem(k)}catch(e){return null}}, set(k,v){try{localStorage.setItem(k,v)}catch(e){}}, del(k){try{localStorage.removeItem(k)}catch(e){}} };
+function token() {
+  let t = ls.get('pb_token');
+  if (!t || !/^[a-f0-9]{32}$/.test(t)) { const a = new Uint8Array(16); crypto.getRandomValues(a); t = [...a].map(b => b.toString(16).padStart(2, '0')).join(''); ls.set('pb_token', t); }
+  return t;
+}
+async function api(action, extra = {}) {
+  const r = await fetch('/api', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action, token: token(), code: S.code, ...extra }) });
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(d.error || 'Something went wrong. Try again.');
+  return d;
+}
+async function act(fn) { S.busy = true; S.error = ''; render(); try { await fn(); } catch (e) { S.error = e.message; } S.busy = false; render(); }
+
+// ---------- rooms ----------
+function createRoom() {
+  if (!S.nick.trim()) { S.error = 'Pick a name first.'; return render(); }
+  act(async () => { const { code } = await api('create', { nick: S.nick }); connect(code); });
+}
+function enterRoom(code, silent) {
+  code = String(code || '').trim().toUpperCase();
+  if (!/^[A-Z]{4}$/.test(code)) { if (!silent) { S.error = 'Room codes are 4 letters.'; render(); } return; }
+  if (!silent && !S.nick.trim()) { S.error = 'Pick a name first.'; return render(); }
+  act(async () => {
+    try { await api('join', { code, nick: S.nick }); connect(code); }
+    catch (e) { ls.del('pb_code'); if (!silent) throw e; }
+  });
+}
+function connect(code) {
+  if (S.es) S.es.close();
+  S.code = code; ls.set('pb_code', code); ls.set('pb_nick', S.nick);
+  S.es = new EventSource('/events?room=' + code + '&token=' + token());
+  S.es.onmessage = ev => { S.room = JSON.parse(ev.data); onChange(); };
+  S.es.onerror = () => { if (S.es && S.es.readyState === EventSource.CLOSED) { dropRoom(); S.error = 'That room is gone (the server may have restarted). Create a new one.'; render(); } };
+}
+function dropRoom() { if (S.es) S.es.close(); S.es = null; ls.del('pb_code'); S.code = null; S.room = null; S.sheetFor = null; S.bidDraft = ''; }
+function leaveRoom() { api('leave').catch(() => {}); dropRoom(); render(); }
+const startGame = () => act(() => api('start'));
+const backToLobby = () => act(() => api('lobby'));
+const skipMissing = () => act(() => api('skip'));
+function lockBid() {
+  const bid = parseInt(S.bidDraft, 10);
+  if (!Number.isFinite(bid) || bid < 0) { S.error = 'Bid a whole number, 0 or more.'; return render(); }
+  act(() => api('bid', { bid }));
+}
+
+function onChange() {
+  const r = S.room;
+  if (r.status === 'lobby' || (r.status === 'playing' && !r.lastResult)) S.seen = 0;
+  if (r.lastResult && r.lastResult.round > S.seen && S.sheetFor == null) S.sheetFor = r.lastResult.round;
+  render();
+}
+function closeSheet() { S.seen = S.sheetFor; S.sheetFor = null; S.bidDraft = ''; render(); }
+
+// ---------- helpers ----------
+const nickOf = id => ((S.room.players.find(p => p.id === id)) || {}).nick || 'Someone';
+const pl = id => S.room.players.find(p => p.id === id) || {};
+const inGame = () => S.room.order.includes(S.room.me);
+
+// ---------- rendering ----------
+function render() {
+  const active = document.activeElement && document.activeElement.id;
+  const caret = active && document.activeElement.selectionStart;
+  app.innerHTML = view();
+  if (active) { const el = document.getElementById(active); if (el) { el.focus(); try { el.setSelectionRange(caret, caret); } catch (e) {} } }
+}
+function view() {
+  if (!S.code || !S.room) return homeView();
+  const body = S.room.status === 'lobby' ? lobbyView() : S.room.status === 'over' ? overView() : gameView();
+  return `<div class="topbar"><span class="muted small">Room <span class="code">${esc(S.code)}</span></span><button class="link" onclick="leaveRoom()">Leave</button></div>`
+    + body + (S.error ? `<p class="err">${esc(S.error)}</p>` : '') + sheetView();
+}
+function homeView() {
+  return `<h1>Puerto Banana</h1>
+  <p class="muted">Bid blind for the banana container. Win it and you pay the runner-up the gap. First to ${GOAL} bananas wins.</p>
+  <div class="stack" style="margin-top:22px">
+    <div><label for="nick">Your name</label><input id="nick" class="text" maxlength="20" value="${esc(S.nick)}" oninput="S.nick=this.value" autocomplete="nickname"></div>
+    <button class="primary" style="width:100%" onclick="createRoom()" ${S.busy?'disabled':''}>Create a room</button>
+  </div>
+  <div class="divider"></div>
+  <label for="join">Join with a code</label>
+  <div class="row"><input id="join" class="text code grow" maxlength="4" value="${esc(S.joinCode)}" oninput="S.joinCode=this.value" placeholder="ABCD" autocapitalize="characters">
+  <button onclick="enterRoom(S.joinCode)" ${S.busy?'disabled':''}>Join</button></div>
+  ${S.error ? `<p class="err" style="margin-top:12px">${esc(S.error)}</p>` : ''}
+  <details><summary>How a round works</summary><div class="small" style="margin-top:8px">
+  <p>The container holds as many bananas as the richest player. Everyone secretly bids any number, even more than they own.</p>
+  <p>Highest bid takes the container, then pays the second-highest the difference between their bids. Tied for highest? They split the container and pay nothing.</p>
+  <p>Can't afford the payment? With 3+ players you lose your whole stock and the next-highest bidder wins instead. With 2 players you just drop out of that auction.</p></div></details>`;
+}
+function lobbyView() {
+  const ps = S.room.players, n = ps.length;
+  return `<h2>Waiting at the dock</h2>
+  <p class="muted">Tell friends to join with code <b class="code">${esc(S.code)}</b>.</p>
+  <div class="card"><ul class="players">${ps.map((p, i) => `<li><span class="name">${esc(p.nick)}${p.id===S.room.me?' (you)':''}</span><span class="status">${i>=MAX_PLAYERS?'watching':'ready'}</span></li>`).join('')}</ul></div>
+  <div style="margin-top:16px"><button class="primary" style="width:100%" onclick="startGame()" ${n<2||S.busy?'disabled':''}>${n<2?'Need at least 2 players':'Start game with '+Math.min(n,MAX_PLAYERS)}</button></div>`;
+}
+function playersList(withStatus) {
+  const r = S.room;
+  const ids = r.order.slice().sort((a, b) => r.inventories[b] - r.inventories[a]);
+  return `<ul class="players">${ids.map(id => {
+    const inv = r.inventories[id];
+    const st = withStatus ? (pl(id).locked ? `<span class="status ok">Bid locked</span>` : `<span class="status">Thinking…</span>`) : '';
+    return `<li><span class="name">${esc(nickOf(id))}${id===r.me?' (you)':''}</span><span class="inv">${inv}</span>${st}<span></span>
+      <span class="bar"><i style="width:${Math.min(100, inv/GOAL*100)}%"></i></span></li>`;
+  }).join('')}</ul>`;
+}
+function gameView() {
+  const r = S.room;
+  const waiting = r.order.filter(id => !pl(id).locked).length;
+  let action;
+  if (!inGame()) action = `<p class="muted">You're watching this game.</p>`;
+  else if (r.myBid !== null) action = `<div class="card locked"><div class="muted small">Your bid is sealed</div><div class="num">${r.myBid}</div>
+    <div class="muted small">Waiting for ${waiting} more</div></div>`;
+  else action = `<label for="bid">Your secret bid</label>
+    <div class="bidbox"><button aria-label="Lower bid" onclick="nudge(-1)">−</button>
+    <input id="bid" inputmode="numeric" pattern="[0-9]*" value="${esc(S.bidDraft)}" placeholder="0" oninput="S.bidDraft=this.value.replace(/\\D/g,'')">
+    <button aria-label="Raise bid" onclick="nudge(1)">+</button></div>
+    <button class="primary" style="width:100%;margin-top:12px" onclick="lockBid()" ${S.busy?'disabled':''}>Lock in bid</button>`;
+  const skip = r.isHost && waiting > 0 && waiting < r.order.length
+    ? `<button class="link" onclick="skipMissing()">Someone gone? Count missing bids as 0</button>` : '';
+  return `<div class="container"><span class="plate">Round ${r.round}</span>
+    <div class="num">${r.pot} 🍌</div><div class="sub">up for auction</div></div>
+    ${inGame() ? `<p style="margin:14px 0 4px">You have <b>${r.inventories[r.me]}</b> bananas.</p>` : ''}
+    <div style="margin:12px 0 18px">${action}</div>
+    <div class="card">${playersList(true)}</div>${skip}
+    ${historyView()}`;
+}
+function nudge(d) { S.bidDraft = String(Math.max(0, (parseInt(S.bidDraft, 10) || 0) + d)); render(); }
+function overView() {
+  const r = S.room, w = r.winners || [];
+  return `<div class="card winner"><div class="muted">King of the bananas</div>
+    <div class="num">${w.map(id => esc(nickOf(id))).join(' & ')}</div>
+    <div class="muted">${r.inventories[w[0]]} bananas after ${r.round - 1} rounds</div></div>
+    <div class="card" style="margin-top:14px">${playersList(false)}</div>
+    <button class="primary" style="width:100%;margin-top:16px" onclick="backToLobby()">Back to the lobby</button>
+    ${historyView()}`;
+}
+function historyView() {
+  const h = (S.room.history || []).slice().reverse();
+  if (!h.length) return '';
+  return `<details><summary>Earlier rounds</summary><div class="hist">${h.map(x =>
+    `<div><b>Round ${x.round}</b>, ${x.pot} 🍌: ${S.room.order.map(id => esc(nickOf(id)) + ' ' + x.bids[id]).join(', ')}</div>`).join('')}</div></details>`;
+}
+function stepText(s) {
+  const n = id => `<b>${esc(nickOf(id))}</b>`;
+  switch (s.t) {
+    case 'win': return `${n(s.id)} bid highest (${s.bid}) and takes the ${s.gain} bananas.` +
+      (s.premium ? ` Pays ${s.premium} (${s.bid} − ${s.second}) to ${s.to.map(n).join(' and ')}${s.to.length > 1 ? `, ${s.share} each` : ''}.` : '');
+    case 'tie': return `${s.ids.map(n).join(' and ')} tied at ${s.bid} and split the container, ${s.share} each.`;
+    case 'bust': return s.keeps ? `${n(s.id)} bid ${s.bid} but couldn't pay ${s.premium}. Out of this auction.`
+      : `${n(s.id)} bid ${s.bid} but couldn't pay ${s.premium}. Loses all ${s.lost} bananas.`;
+    case 'last': return `${n(s.id)} is the last bidder standing and takes all ${s.gain}.`;
+    default: return 'Nobody took the container.';
+  }
+}
+function sheetView() {
+  const r = S.room.lastResult;
+  if (S.sheetFor == null || !r || r.round !== S.sheetFor) return '';
+  const ids = S.room.order.slice().sort((a, b) => r.bids[b] - r.bids[a]);
+  const top = r.bids[ids[0]];
+  return `<div class="sheet-bg" onclick="if(event.target===this)closeSheet()"><div class="sheet" role="dialog" aria-label="Round results">
+    <h2>Round ${r.round} bids</h2>
+    <ul class="reveal">${ids.map((id, i) => { const d = r.after[id] - r.before[id];
+      return `<li class="${r.bids[id]===top?'top':''}" style="animation-delay:${i*0.12}s"><span><b>${esc(nickOf(id))}</b><br><span class="delta ${d>0?'up':d<0?'down':''}">${d>0?'+':''}${d} → ${r.after[id]}</span></span><span class="num">${r.bids[id]}</span></li>`; }).join('')}</ul>
+    <ul class="steps">${r.steps.map(s => `<li>${stepText(s)}</li>`).join('')}</ul>
+    <button class="primary" style="width:100%" onclick="closeSheet()">${S.room.status==='over'?'See the winner':'Next round'}</button></div></div>`;
+}
+document.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.id === 'bid') lockBid(); if (e.key === 'Escape' && S.sheetFor != null) closeSheet(); });
+
+S.nick = ls.get('pb_nick') || '';
+render();
+const saved = ls.get('pb_code'); if (saved) enterRoom(saved, true);
+</script>
+</body>
+</html>
+__PB_EOF__
+echo "Files written."
+

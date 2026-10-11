@@ -1,0 +1,20 @@
+name: Deploy to Fly
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    concurrency: deploy
+    env:
+      FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+      - name: Create app on first run
+        run: |
+          APP=$(grep '^app' fly.toml | cut -d'"' -f2)
+          flyctl status --app "$APP" >/dev/null 2>&1 || flyctl apps create "$APP"
+      - name: Deploy (one machine, game state is in memory)
+        run: flyctl deploy --remote-only --ha=false
