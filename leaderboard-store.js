@@ -18,7 +18,7 @@ function createLeaderboardStore({ dataDir = process.env.DATA_DIR || '/data', log
   const file = path.join(dataDir, FILE);
   let entries = [];
   let chain = Promise.resolve();
-  const store = { available: true };
+  const store = { available: true, logger };
 
   const accept = (rows, source) => {
     const good = [];
