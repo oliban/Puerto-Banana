@@ -57,7 +57,7 @@ CMD ["node", "server.js"]
 __PB_EOF__
 cat > 'fly.toml' <<'__PB_EOF__'
 # Change "app" to a unique name, or let `fly launch` pick one.
-app = "puerto-banana-fredrik"
+app = "puerto-banana"
 primary_region = "arn"
 
 [build]
