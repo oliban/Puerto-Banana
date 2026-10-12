@@ -66,7 +66,7 @@ function view(room, token) {
   room.order.forEach(t => { inventories[room.players[t].id] = room.inventories[t]; });
   return {
     code: room.code, status: room.status, round: room.round, pot: room.pot,
-    me: me ? me.id : null, isHost: room.hostToken === token,
+    me: me ? me.id : null, isHost: room.hostToken === token, hostId: room.players[room.hostToken]?.id ?? null,
     players: Object.values(room.players).sort((a, b) => a.joinedAt - b.joinedAt)
       .map(p => ({ id: p.id, nick: p.nick, hull: p.hull, cabin: p.cabin, flag: p.flag, locked: room.bids[p.token] !== undefined })),
     order, inventories,
@@ -136,6 +136,7 @@ const actions = {
     broadcast(room); return { code: room.code };
   },
   start(b, token, room) {
+    if (room.hostToken !== token) throw new Error('Only the host can start the game.');
     if (room.status !== 'lobby') throw new Error('Game already running.');
     const ts = Object.values(room.players).sort((a, b) => a.joinedAt - b.joinedAt).map(p => p.token).slice(0, MAX_PLAYERS);
     if (ts.length < 2) throw new Error('Need at least 2 players.');

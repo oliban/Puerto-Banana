@@ -57,6 +57,21 @@ async function twoPlayerGame(port, hostNick, mateNick) {
 }
 
 const tests = {
+  async 'only the host can start the game, and everyone can see who the host is'() {
+    await withServer(null, async port => {
+      const host = tok(), mate = tok();
+      const { body: { code } } = await api(port, { action: 'create', token: host, nick: 'Cap' });
+      await api(port, { action: 'join', token: mate, code, nick: 'Mate' });
+      const r = await api(port, { action: 'start', token: mate, code });
+      a.equal(r.status, 400);
+      a.match(r.body.error, /host/i);
+      const v = await view(port, code, mate);
+      a.equal(v.status, 'lobby');
+      a.equal(v.hostId, v.players.find(p => p.nick === 'Cap').id);
+      a.equal((await api(port, { action: 'start', token: host, code })).status, 200);
+      a.equal((await view(port, code, mate)).status, 'playing');
+    });
+  },
   async 'the home page carries a social preview with absolute links; invite links name the room'() {
     await withServer(null, async port => {
       const page = (p, headers = {}) => new Promise((ok, fail) => http.get({ port, path: p, headers }, res => { let d = ''; res.on('data', c => { d += c; }); res.on('end', () => ok(d)); }).on('error', fail));

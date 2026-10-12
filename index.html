@@ -107,6 +107,9 @@ body.og .puff{display:none} /* smoke would drift over the tagline */
 .invite-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .invite .share{background:var(--surface);color:var(--ink);box-shadow:0 3px 0 rgba(0,0,0,.15);padding:10px 8px}
 .invite .copied{margin:10px 0 0;font-weight:700}
+.waiting{text-align:center;font-weight:700;color:var(--muted);padding:12px 0;margin:0}
+.dots i{font-style:normal;animation:dot 1.4s infinite}.dots i:nth-child(2){animation-delay:.2s}.dots i:nth-child(3){animation-delay:.4s}
+@keyframes dot{0%,60%,100%{opacity:.2}30%{opacity:1}}
 .or{display:flex;align-items:center;gap:10px;margin:16px 0 12px;color:var(--muted);font-size:.88rem;font-weight:600}
 .or::before,.or::after{content:"";flex:1;height:1px;background:var(--line)}
 .topbar{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:12px}
@@ -199,9 +202,20 @@ body.og .puff{display:none} /* smoke would drift over the tagline */
 .players .status.ok{color:var(--ok);font-weight:600}
 .players .status.taunt{color:var(--coral);font-style:italic;font-weight:600}
 /* Your own taunt, big, with the flag that earned it */
-.taunt-me{margin-top:14px;display:flex;gap:14px;align-items:center;box-shadow:inset 0 0 0 3px var(--coral)}
-.taunt-me svg{flex:0 0 56px;width:56px;height:42px;border-radius:4px}
-.taunt-me p{margin:0;font-weight:800;font-size:1.05rem;line-height:1.35}
+.taunt-me{margin-top:14px}
+.taunt-me .bongo-says .bubble{box-shadow:inset 0 0 0 3px var(--coral),0 3px 0 var(--line)}
+.taunt-me .bubble>svg{width:30px;height:22px;vertical-align:-5px;margin-right:6px;border-radius:2px}
+/* Captain Bongo and his speech bubble */
+.bongo-says{display:flex;align-items:flex-end;gap:6px;margin:4px 0 14px}
+.bongo-says .bubble{position:relative;flex:1;min-width:0;background:var(--surface);border-radius:18px;padding:12px 14px;font-size:.95rem;line-height:1.45;box-shadow:0 3px 0 var(--line);margin-bottom:46px}
+.bongo-says .bubble:after{content:"";position:absolute;right:-10px;bottom:20px;border:10px solid transparent;border-left-color:var(--surface);border-right:0}
+.bongo-says .bubble p{margin:0 0 8px}.bongo-says .bubble p:last-child{margin:0}
+.bubble-title{font-family:Bungee,Impact,sans-serif;font-size:1rem}
+.bongo{flex:0 0 92px;width:92px;height:auto}
+.bongo-bob{animation:bongobob 2.4s ease-in-out infinite;transform-origin:50% 100%;transform-box:fill-box}
+@keyframes bongobob{50%{transform:translateY(-3px) rotate(-2deg)}}
+.bongo-talk{transform-box:fill-box;transform-origin:center;animation:bongotalk .32s ease-in-out 10 alternate}
+@keyframes bongotalk{to{transform:scaleY(.35)}}
 .bidbox{display:grid;grid-template-columns:56px minmax(0,1fr) 56px;gap:8px;align-items:stretch}
 .bidbox button{font-size:1.6rem;padding:0}
 .bidbox input{width:100%;min-width:0;text-align:center;font-family:Bungee,sans-serif;font-size:2.2rem;border-radius:14px;border:2px solid var(--line);background:var(--surface);padding:6px 0}
@@ -219,9 +233,6 @@ body.og .puff{display:none} /* smoke would drift over the tagline */
 .reveal li.top{box-shadow:inset 0 0 0 3px var(--banana)}
 .delta{font-weight:800}
 .delta.up{color:var(--ok)} .delta.down{color:var(--coral)}
-.story{list-style:none;margin:0 0 14px;padding:10px 14px;border-radius:14px;background:var(--surface);border-left:6px solid var(--banana)}
-.story li{padding:5px 0}
-.story li+li{border-top:1px solid var(--line)}
 .reveal li .who{display:flex;flex-direction:column}
 .reveal li .bid{display:flex;flex-direction:column;align-items:flex-end;line-height:1.1}
 @keyframes flip{from{transform:rotateX(90deg);opacity:0}to{transform:none;opacity:1}}
@@ -282,7 +293,7 @@ summary{cursor:pointer;font-weight:600;color:var(--muted);min-height:44px;displa
 @keyframes surface{from{transform:translateY(14px);opacity:0}to{transform:none;opacity:1}}
 .party-banner{position:absolute;left:50%;top:16px;transform:translateX(-50%);width:min(92vw,420px);background:var(--surface);color:var(--ink);
   border-radius:16px;padding:12px 16px;font-weight:800;text-align:center;box-shadow:0 6px 24px rgba(0,0,0,.25)}
-@media (prefers-reduced-motion:reduce){.reveal li,.sh-bob,.sh-wave,.sh-float,.sh-wave-flag,.wiggle,.hs-sway,.hs-crown,.hs-birdfly,.hs-glow,.hs-star{animation:none}.hs-heat{display:none}.puff{display:none}}
+@media (prefers-reduced-motion:reduce){.reveal li,.sh-bob,.sh-wave,.sh-float,.sh-wave-flag,.wiggle,.hs-sway,.hs-crown,.hs-birdfly,.hs-glow,.hs-star,.bongo-bob,.bongo-talk{animation:none}.hs-heat{display:none}.puff{display:none}}
 </style>
 </head>
 <body>
@@ -429,11 +440,11 @@ function flagArt(flag, w, h) {
 // The flag at the masthead, in ship coordinates; '' is the default pink pennant.
 function mastFlag(flag) {
   flag = flagOf(flag);
-  if (!flag) return `<path class="sh-flag" d="M209 20 198 24 209 28Z"/>`;
+  if (!flag) return `<path class="sh-flag" d="M203 4 192 8 203 12Z"/>`;
   // The ship sails right, so its wind streams flags aft (left) and we see their reverse side: mirrored.
   // Drawn at 0,0 in a group pinned to the masthead, so the wave (skew/scale about the hoist) stays on the pole.
   const art = flagArt(flag, 11.5, 8.6);
-  return `<g transform="translate(208.5 19) scale(-1 1)"><g class="sh-wave-flag">${art}</g></g>`;
+  return `<g transform="translate(202.5 3.5) scale(-1 1)"><g class="sh-wave-flag">${art}</g></g>`;
 }
 function shipBody(f, key = '', look = {}, mine = false) {
   const n = f > 0 ? Math.max(1, Math.round(Math.min(f, 1) * SLOTS)) : 0, over = overflow(f);
@@ -460,8 +471,9 @@ function shipBody(f, key = '', look = {}, mine = false) {
     <rect class="sh-win" x="21" y="28" width="30" height="6" rx="2"/><rect class="sh-win" x="21" y="39" width="30" height="5" rx="2"/>
     <path class="sh-funnel" d="M25 22 27 2H43L45 22Z"/><rect class="sh-band" x="26.5" y="7" width="17" height="5"/>${smoke}
     ${cargo}
+    <path class="sh-mast" d="M203 54V3"/>${mastFlag(look.flag)}
     <path class="sh-hull" d="M6 52 212 45 200 82H22Z"/><path class="sh-keel" d="M22 82H200L192 100H30Z"/><path class="sh-stripe" d="M22 82H200"/>${ports}
-    <path class="sh-mast" d="M209 49V19"/>${mastFlag(look.flag)}${mine ? '<rect class="flag-hit" x="184" y="0" width="36" height="40" onclick="openFlags(event)"/>' : ''}</g></g>`;
+    ${mine ? '<rect class="flag-hit" x="182" y="-12" width="38" height="36" onclick="openFlags(event)"/>' : ''}</g></g>`;
   // Overfull ships shed a random handful of bananas into the sea around them
   const rnd = rng(key + '|' + Math.round(f * GOAL));
   const floats = over ? 1 + Math.floor(rnd() * (2 + over / 2)) : 0;
@@ -618,10 +630,10 @@ function homeView() {
   <p class="or">or start your own</p>
   <button class="primary wide" onclick="createRoom()" ${S.busy?'disabled':''}>Create a room</button>
   ${S.error ? `<p class="err" style="margin-top:12px">${esc(S.error)}</p>` : ''}
-  <details><summary>How a round works</summary><div class="small" style="margin-top:8px">
-  <p>The container holds as many bananas as the richest player. Everyone secretly bids any number, even more than they own.</p>
-  <p>Highest bid takes the container, then pays the second-highest the difference between their bids. Tied for highest? They split the container and pay nothing.</p>
-  <p>Can't afford the payment? With 3+ players you lose your whole stock and the next-highest bidder wins instead. With 2 players you just drop out of that auction.</p></div></details>
+  <div class="divider"></div>
+  ${bongoSays(`<p>Every round a <b>banana cargo</b> is up for auction, as big as the richest captain's stash. Everyone bids <b>in secret</b>, even more than they own.</p>
+  <p>The highest bid takes the cargo, then pays the runner-up the <b>gap</b> between their bids. A tie for highest? They split it and pay nothing.</p>
+  <p>Can't pay? With 3+ captains you lose your whole stash and the next bidder wins; with 2 you just sit that auction out. First to <b>${GOAL} bananas</b> wins!</p>`, 'happy', 'Ahoy, captain! Here is how it works')}
   <div class="divider"></div>
   ${rivalsView()}
   <div class="divider"></div>
@@ -690,8 +702,10 @@ function lobbyView() {
     <div class="invite-actions"><button class="share" onclick="shareInvite()">${navigator.share ? 'Share invite' : 'Copy invite link'}</button>
     <button class="share" onclick="copyText(S.code, 'Code copied')">Copy code</button></div>
     ${S.copied ? `<p class="small copied" role="status">${esc(S.copied)}</p>` : ''}</div>
-  <div class="card"><ul class="players">${ps.map((p, i) => `<li>${tile(0, true, p.id, look(p))}<span class="name">${esc(p.nick)}${p.id===S.room.me?' (you)':''}</span><span class="status">${i>=MAX_PLAYERS?'watching':'ready'}</span></li>`).join('')}</ul></div>
-  <div style="margin-top:16px"><button class="primary wide" onclick="startGame()" ${n<2||S.busy?'disabled':''}>${n<2?'Need at least 2 players':'Start game with '+Math.min(n,MAX_PLAYERS)}</button></div>`;
+  <div class="card"><ul class="players">${ps.map((p, i) => `<li>${tile(0, true, p.id, look(p))}<span class="name">${esc(p.nick)}${p.id===S.room.me?' (you)':''}</span><span class="status">${i>=MAX_PLAYERS?'watching':p.id===S.room.hostId?'host · ready':'ready'}</span></li>`).join('')}</ul></div>
+  <div style="margin-top:16px">${S.room.isHost
+    ? `<button class="primary wide" onclick="startGame()" ${n<2||S.busy?'disabled':''}>${n<2?'Need at least 2 players':'Start game with '+Math.min(n,MAX_PLAYERS)}</button>`
+    : `<p class="waiting" role="status">Waiting for ${esc(nickOf(S.room.hostId))} to start the game<span class="dots"><i>.</i><i>.</i><i>.</i></span></p>`}</div>`;
 }
 function playersList(withStatus) {
   const r = S.room;
@@ -733,11 +747,39 @@ function overView() {
   return `<div class="card winner">${tile(Math.max(1.6, r.inventories[w[0]] / GOAL), false, w[0], lookOfId(w[0]))}<div class="muted">King of the bananas</div>
     <div class="num">${w.map(id => esc(nickOf(id))).join(' & ')}</div>
     <div class="muted">${r.inventories[w[0]]} bananas after ${r.round - 1} rounds</div></div>
-    ${tauntFor(r.me) ? `<div class="card taunt-me" role="status">${flagThumb(flagOf(pl(r.me).flag))}<p>${esc(tauntFor(r.me))}</p></div>` : ''}
+    ${tauntFor(r.me) ? `<div class="taunt-me" role="status">${bongoSays(`${flagThumb(flagOf(pl(r.me).flag))}<b>${esc(nickOf(r.me))}</b>, ${r.inventories[r.me]} ${r.inventories[r.me] === 1 ? 'banana' : 'bananas'}. ${esc(tauntFor(r.me))}`, 'smug', 'Ha ha ha!')}</div>` : ''}
     <div class="card" style="margin-top:14px">${playersList(false)}</div>
     <button class="primary wide" style="margin-top:16px" onclick="backToLobby()">Back to the lobby</button>
     ${historyView()}`;
 }
+// ---------- Captain Bongo, the mascot ----------
+// A sailor monkey who explains the rules, calls each round and delivers taunts. mood: 'happy' | 'wide' | 'smug'.
+const BONGO_EYES = {
+  happy: '<path d="M45 52q5-6 10 0M65 52q5-6 10 0" stroke="#2B1A0C" stroke-width="3" fill="none" stroke-linecap="round"/>',
+  wide: '<circle cx="49" cy="52" r="5" fill="#fff"/><circle cx="71" cy="52" r="5" fill="#fff"/><circle cx="50" cy="53" r="2.6" fill="#2B1A0C"/><circle cx="72" cy="53" r="2.6" fill="#2B1A0C"/>',
+  smug: '<path d="M43 50h12M65 50h12" stroke="#2B1A0C" stroke-width="3" stroke-linecap="round"/><circle cx="51" cy="54" r="2.4" fill="#2B1A0C"/><circle cx="73" cy="54" r="2.4" fill="#2B1A0C"/>',
+};
+function bongo(mood = 'happy') {
+  const mouth = mood === 'smug' ? '<path d="M46 72q14 14 28 0Z" fill="#7A2E1F"/><path d="M48 73h24" stroke="#fff" stroke-width="2.5"/>'
+    : '<ellipse class="bongo-talk" cx="60" cy="75" rx="7" ry="5" fill="#7A2E1F"/>';
+  const banana = mood === 'smug' ? '' : `<path d="M28 112c-10-6-14-18-8-26" stroke="#8B5A2B" stroke-width="8" fill="none" stroke-linecap="round"/>
+    <path d="M8 74c2 10 12 14 22 8 1-2 0-3-2-3-6 3-13 1-16-6-1-1-3-1-4 1Z" fill="#FFD60A" stroke="#C98E00" stroke-width="1.2"/>`;
+  return `<svg class="bongo" viewBox="0 0 120 150" aria-hidden="true"><g class="bongo-bob">
+    <path d="M60 148c-26 0-36-14-34-34 2-18 14-26 34-26s32 8 34 26c2 20-8 34-34 34Z" fill="#8B5A2B"/>
+    <path d="M60 140c-14 0-20-8-19-20 1-10 8-15 19-15s18 5 19 15c1 12-5 20-19 20Z" fill="#F2D2A9"/>
+    <path d="M90 118c10-2 18 4 20 14" stroke="#8B5A2B" stroke-width="7" fill="none" stroke-linecap="round"/>${banana}
+    <circle cx="24" cy="58" r="13" fill="#8B5A2B"/><circle cx="24" cy="58" r="7" fill="#F2D2A9"/>
+    <circle cx="96" cy="58" r="13" fill="#8B5A2B"/><circle cx="96" cy="58" r="7" fill="#F2D2A9"/>
+    <circle cx="60" cy="56" r="34" fill="#8B5A2B"/>
+    <path d="M60 86c-18 0-27-9-27-22 0-9 6-14 13-14 6 0 9 4 14 4s8-4 14-4c7 0 13 5 13 14 0 13-9 22-27 22Z" fill="#F2D2A9"/>
+    ${BONGO_EYES[mood] || BONGO_EYES.happy}<ellipse cx="60" cy="66" rx="4" ry="2.6" fill="#5B3A1A"/>${mouth}
+    <path d="M28 34c4-16 60-16 64 0Z" fill="#fff" stroke="#D3ECEA" stroke-width="1.5"/>
+    <rect x="27" y="30" width="66" height="8" rx="3" fill="#0582B8"/><circle cx="60" cy="16" r="4" fill="#FF3E8A"/>
+    <path d="M44 34h8M66 34h8" stroke="#FFD60A" stroke-width="2"/></g></svg>`;
+}
+// Bongo with a speech bubble; html is already escaped by the caller.
+const bongoSays = (html, mood, title) => `<div class="bongo-says"><div class="bubble">${title ? `<p class="bubble-title">${title}</p>` : ''}${html}</div>${bongo(mood)}</div>`;
+
 // ---------- loser taunts ----------
 // The server picks a number for each loser who ended with 10 bananas or fewer; it indexes that
 // player's flag's taunts in assets/taunts.json (loaded only when a game ends), so every screen agrees.
@@ -863,7 +905,7 @@ function sheetView() {
   const top = r.bids[ids[0]];
   return `<div class="sheet-bg" onclick="if(event.target===this)closeSheet()"><div class="sheet" role="dialog" aria-label="Round results">
     <h2>Round ${r.round} results</h2>
-    <ul class="story">${r.steps.flatMap(stepLines).map(l => `<li>${l}</li>`).join('')}</ul>
+    ${bongoSays(r.steps.flatMap(stepLines).map(l => `<p>${l}</p>`).join(''), 'wide')}
     <ul class="reveal">${ids.map((id, i) => { const b = r.before[id], a = r.after[id], d = a - b;
       return `<li class="${r.bids[id]===top?'top':''}" style="animation-delay:${i*0.12}s">${tile(a / GOAL, true, id, lookOfId(id))}
         <span class="who"><b>${esc(nickOf(id))}${id===S.room.me?' (you)':''}</b>
