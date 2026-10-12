@@ -371,8 +371,17 @@ const wob = i => (i * 37 % 13) - 6; // stable per-bunch tilt so piles look stack
 const overflow = f => f > 1.03 ? Math.min(15, Math.max(2, Math.round((f - 1) * SLOTS))) : 0;
 const cargoWord = f => f <= 0 ? 'Empty' : f < 0.1 ? 'A few bananas' : f < 0.25 ? 'Light load' : f < 0.4 ? 'Filling up' : f < 0.6 ? 'Half full'
   : f < 0.8 ? 'Well stocked' : f < 0.95 ? 'Nearly full' : overflow(f) ? (f < 1.3 ? 'Overfull' : 'Sinking with bananas') : 'Full';
-const bunch = (x, y, i) => `<use href="#bunch" x="${x}" y="${y}" width="${HOLD.w}" height="${HOLD.bh}" transform="rotate(${wob(i)} ${x + HOLD.w / 2} ${y + 7})"/>`;
-const slotX = i => HOLD.x + (i % HOLD.cols) * HOLD.w, slotY = i => HOLD.deck - HOLD.bh - Math.floor(i / HOLD.cols) * HOLD.h;
+// Each bunch is drawn bigger than its slot (same bottom edge), so neighbours and rows overlap into a packed pile.
+const PACK = { w: 25, h: 17 };
+const bunch = (x, y, i) => {
+  const bx = x - (PACK.w - HOLD.w) / 2, by = y + HOLD.bh - PACK.h;
+  return `<use href="#bunch" x="${bx.toFixed(1)}" y="${by.toFixed(1)}" width="${PACK.w}" height="${PACK.h}" transform="rotate(${wob(i)} ${(x + HOLD.w / 2).toFixed(1)} ${(y + HOLD.bh / 2).toFixed(1)})"/>`;
+};
+// The deck slopes up toward the bow (hull top runs from (6,52) to (212,45)). Each column is tucked the same
+// depth (SINK) into the hull where it stands: loaded in the hold, yet the first row shows along the whole deck.
+const deckAt = x => 52 - 7 * (x - 6) / 206, SINK = 3.5;
+const slotX = i => HOLD.x + (i % HOLD.cols) * HOLD.w;
+const slotY = i => deckAt(slotX(i) + HOLD.w / 2) + SINK - HOLD.bh - Math.floor(i / HOLD.cols) * HOLD.h;
 function waves(y, width, bottom, cls) {
   let d = `M0 ${y}`;
   for (let x = 0; x < width + 30; x += 30) d += 'q7.5 -4 15 0t15 0';
@@ -453,7 +462,7 @@ function shipBody(f, key = '', look = {}, mine = false) {
   // Overfull: a pyramid of 6, 5, 4 bunches above the rails
   for (let t = 0, left = over, k = HOLD.cols - 1; left > 0; t++, k--) {
     const m = Math.min(k, left), x0 = HOLD.x + (HOLD.cols - k) * HOLD.w / 2;
-    for (let c = 0; c < m; c++) cargo += bunch(x0 + c * HOLD.w, HOLD.deck - HOLD.bh - (HOLD.rows + t) * HOLD.h, 50 + t * 7 + c);
+    for (let c = 0; c < m; c++) cargo += bunch(x0 + c * HOLD.w, deckAt(x0 + c * HOLD.w + HOLD.w / 2) + SINK - HOLD.bh - (HOLD.rows + t) * HOLD.h, 50 + t * 7 + c);
     left -= m;
   }
   // Funnel smoke, individual per ship: heavier loads puff more, bigger and darker
