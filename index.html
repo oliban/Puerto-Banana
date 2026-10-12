@@ -99,6 +99,24 @@ body.og .puff{display:none} /* smoke would drift over the tagline */
 .og-text{position:absolute;left:56px;top:48px;z-index:1;color:#0B3954}
 .og-text h1{margin:0;font-size:104px;line-height:.95;text-shadow:5px 5px 0 #FFD60A,9px 9px 0 #FF9F1C}
 .og-text p{margin:22px 0 0;max-width:300px;font-size:30px;font-weight:800;line-height:1.25}
+/* Shop */
+.switch{display:flex;align-items:center;gap:10px;min-height:44px;font-weight:700}
+.switch input{width:22px;height:22px;accent-color:var(--sea-deep)}
+.walletrow{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:10px 0 0}
+.coins{font-family:Bungee,sans-serif;font-size:1.2rem}
+.shopbtn{background:var(--banana);color:var(--banana-ink);box-shadow:0 3px 0 var(--banana-edge)}
+.shoptabs{display:flex;gap:6px;overflow-x:auto;margin:10px 0}
+.shoptabs button{flex:0 0 auto;padding:8px 12px;min-height:44px;font-size:.9rem}
+.shoptabs button[aria-selected="true"]{box-shadow:inset 0 0 0 3px var(--ink)}
+.shopgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.shopgrid>p{grid-column:1/-1}
+.shopitem{display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 8px;min-height:96px;font-size:.85rem;text-align:center}
+.shopitem .icon{font-size:1.9rem;line-height:1}
+.shopitem.poor{opacity:.45}
+.aimbar{position:sticky;top:0;z-index:5;margin:0 0 10px;padding:10px 12px;border-radius:12px;background:var(--hibiscus);color:#fff;font-weight:800;display:flex;justify-content:space-between;align-items:center}
+.aimbar .link{color:#fff}
+.players li.aim{cursor:pointer;border-radius:12px;padding-left:8px;padding-right:8px;box-shadow:inset 0 0 0 3px var(--hibiscus);animation:aimpulse 1s ease-in-out infinite}
+@keyframes aimpulse{50%{box-shadow:inset 0 0 0 3px transparent}}
 /* Lobby invite: the code is the thing to share, so it reads like a boarding ticket */
 .invite{margin:4px 0 16px;padding:16px;border-radius:18px;text-align:center;background:var(--banana);color:var(--banana-ink);box-shadow:0 4px 0 var(--banana-edge)}
 .invite-label{display:block;font-weight:800;font-size:.85rem;text-transform:uppercase;letter-spacing:.08em}
@@ -170,7 +188,7 @@ body.og .puff{display:none} /* smoke would drift over the tagline */
 .flagbtn span{overflow:hidden;text-overflow:ellipsis;max-width:100%;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
 .flagbtn[aria-pressed="true"]{box-shadow:inset 0 0 0 3px var(--ink)}
 .flaggrid>p{grid-column:1/-1}
-.toast{position:fixed;left:50%;top:calc(14px + env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:30;margin:0;padding:10px 16px;border-radius:14px;background:var(--banana);color:var(--banana-ink);font-weight:800;box-shadow:0 6px 18px rgba(0,0,0,.2);animation:pop .3s ease-out both;white-space:nowrap}
+.toast{max-width:calc(100vw - 32px);width:max-content;text-align:center;position:fixed;left:50%;top:calc(14px + env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:30;margin:0;padding:10px 16px;border-radius:14px;background:var(--banana);color:var(--banana-ink);font-weight:800;box-shadow:0 6px 18px rgba(0,0,0,.2);animation:pop .3s ease-out both}
 .flagfound{grid-column:1/-1;margin:4px 0 0;padding:8px 12px;border-radius:12px;background:var(--banana);color:var(--banana-ink);font-weight:800;text-align:center;animation:pop .3s ease-out both}
 .flaghead{margin:8px 0 0;font-weight:800;font-size:.85rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
 .credits{margin-top:14px}.credits ul{padding-left:18px;margin:6px 0 0}.credits a{color:inherit}
@@ -323,7 +341,7 @@ summary{cursor:pointer;font-weight:600;color:var(--muted);min-height:44px;displa
 .battle.focus p{background:#4A5566}
 .party-banner{position:absolute;left:50%;top:16px;transform:translateX(-50%);width:min(92vw,420px);background:var(--surface);color:var(--ink);
   border-radius:16px;padding:12px 16px;font-weight:800;text-align:center;box-shadow:0 6px 24px rgba(0,0,0,.25)}
-@media (prefers-reduced-motion:reduce){.reveal li,.sh-bob,.sh-wave,.sh-float,.sh-wave-flag,.wiggle,.hs-sway,.hs-crown,.hs-birdfly,.hs-glow,.hs-star,.bongo-bob,.bongo-talk{animation:none}.hs-heat{display:none}.puff{display:none}}
+@media (prefers-reduced-motion:reduce){.reveal li,.sh-bob,.sh-wave,.sh-float,.sh-wave-flag,.wiggle,.hs-sway,.hs-crown,.hs-birdfly,.hs-glow,.hs-star,.bongo-bob,.bongo-talk,.players li.aim{animation:none}.hs-heat{display:none}.puff{display:none}}
 </style>
 </head>
 <body>
@@ -350,7 +368,7 @@ summary{cursor:pointer;font-weight:600;color:var(--muted);min-height:44px;displa
 <script src="/digits.js"></script>
 <script>
 const GOAL = 200, MAX_PLAYERS = 6;
-const S = { strokes: [], drawing: false, pendingRender: false, read: null, tauntBook: null, hull: 'navy', cabin: 'white', flag: '', flagSheet: false, flagQuery: '', countries: null, code: null, room: null, es: null, nick: '', joinCode: '', bidDraft: '', error: '', busy: false, sheetFor: null, seen: 0, scores: null, rivals: null, rivalHi: null };
+const S = { shopOn: true, shopSheet: null, shopTab: 'sabotage', targeting: null, catalog: null, seenFx: new Set(), strokes: [], drawing: false, pendingRender: false, read: null, tauntBook: null, hull: 'navy', cabin: 'white', flag: '', flagSheet: false, flagQuery: '', countries: null, code: null, room: null, es: null, nick: '', joinCode: '', bidDraft: '', error: '', busy: false, sheetFor: null, seen: 0, scores: null, rivals: null, rivalHi: null };
 const app = document.getElementById('app');
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const ls = { get(k){try{return localStorage.getItem(k)}catch(e){return null}}, set(k,v){try{localStorage.setItem(k,v)}catch(e){}}, del(k){try{localStorage.removeItem(k)}catch(e){}} };
@@ -594,7 +612,7 @@ function heroScene(fill = 0.75, key = 'hero', look = {}, mine) {
 // ---------- rooms ----------
 function createRoom() {
   if (!S.nick.trim()) { S.error = 'Pick a name first.'; return render(); }
-  act(async () => { const { code } = await api('create', { nick: S.nick, ...myLook() }); connect(code); });
+  act(async () => { const { code } = await api('create', { nick: S.nick, ...myLook(), shop: S.shopOn }); connect(code); });
 }
 function enterRoom(code, silent) {
   code = String(code || '').trim().toUpperCase();
@@ -660,6 +678,10 @@ function onChange() {
   if (r.lastResult && r.lastResult.round > S.seen && S.sheetFor == null) S.sheetFor = r.lastResult.round;
   // Rounds can resolve while a results sheet is still open (e.g. the host skips missing bids): show the latest one.
   if (r.lastResult && S.sheetFor != null && r.lastResult.round > S.sheetFor) S.sheetFor = r.lastResult.round;
+  // A shop switched off, or a sabotage aimed after the game moved on, can no longer be used.
+  if (!r.shop) { S.shopSheet = null; S.targeting = null; }
+  if (S.targeting && r.status !== 'playing' && S.catalog && S.catalog.catalog[S.targeting.item].kind === 'sabotage') S.targeting = null;
+  fxToasts();
   render();
 }
 function closeSheet() { S.seen = S.sheetFor; S.sheetFor = null; S.bidDraft = ''; S.strokes = []; S.read = null; render(); }
@@ -680,7 +702,7 @@ function pressEnd() {
   setTimeout(() => { if (S.pendingRender && !S.drawing && !S.pressing) { S.pendingRender = false; render(); } }, 0); // after the click
 }
 document.addEventListener('pointerdown', e => {
-  if (!e.target.closest || !e.target.closest('button, a, summary, label')) return;
+  if (!e.target.closest || !e.target.closest('button, a, summary, label, [role="button"]')) return;
   S.pressing = true; clearTimeout(pressTimer); pressTimer = setTimeout(pressEnd, 1500);
 }, true);
 document.addEventListener('pointerup', pressEnd, true);
@@ -697,11 +719,12 @@ function render() {
   if (active) { const el = document.getElementById(active); if (el) { el.focus(); try { el.setSelectionRange(caret, caret); } catch (e) {} } }
 }
 function view() {
-  if (!S.code || !S.room) return homeView() + flagSheetView();
+  if (!S.code || !S.room) return homeView() + flagSheetView() + shopView();
   const body = S.room.status === 'lobby' ? lobbyView() : S.room.status === 'over' ? overView() : gameView();
   return `<div class="topbar"><span class="muted small">Room <span class="code">${esc(S.code)}</span></span><button class="link" onclick="leaveRoom()">Leave</button></div>`
+    + (S.targeting ? `<p class="aimbar">Tap a captain's ship below <button class="link" onclick="S.targeting=null;render()">Cancel</button></p>` : '')
     + (S.reconnecting ? `<p class="reconnecting" role="status">Reconnecting to the room<span class="dots"><i>.</i><i>.</i><i>.</i></span></p>` : '')
-    + body + (S.error ? `<p class="err">${esc(S.error)}</p>` : '') + sheetView() + flagSheetView();
+    + body + (S.error ? `<p class="err">${esc(S.error)}</p>` : '') + sheetView() + flagSheetView() + shopView();
 }
 function homeView() {
   return `<header class="harbor">
@@ -723,6 +746,7 @@ function homeView() {
   <div class="row"><input id="join" class="text code grow" maxlength="4" value="${esc(S.joinCode)}" oninput="S.joinCode=this.value" placeholder="ABCD" autocapitalize="characters">
   <button onclick="enterRoom(S.joinCode)" ${S.busy?'disabled':''}>Join</button></div>
   <p class="or">or start your own</p>
+  <label class="switch"><input type="checkbox" ${S.shopOn ? 'checked' : ''} onchange="S.shopOn=this.checked;ls.set('pb_shop',this.checked?'on':'off')"> Shop and effects</label>
   <button class="primary wide" onclick="createRoom()" ${S.busy?'disabled':''}>Create a room</button>
   ${S.error ? `<p class="err" style="margin-top:12px">${esc(S.error)}</p>` : ''}
   <div class="divider"></div>
@@ -797,7 +821,11 @@ function lobbyView() {
     <div class="invite-actions"><button class="share" onclick="shareInvite()">${navigator.share ? 'Share invite' : 'Copy invite link'}</button>
     <button class="share" onclick="copyText(S.code, 'Code copied')">Copy code</button></div>
     ${S.copied ? `<p class="small copied" role="status">${esc(S.copied)}</p>` : ''}</div>
-  <div class="card"><ul class="players">${ps.map((p, i) => `<li>${tile(0, true, p.id, look(p))}<span class="name">${esc(p.nick)}${p.id===S.room.me?' (you)':''}</span><span class="status">${i>=MAX_PLAYERS?'watching':p.id===S.room.hostId?'host · ready':'ready'}</span></li>`).join('')}</ul></div>
+  <div class="card"><ul class="players">${ps.map((p, i) => `<li class="${S.targeting && p.id !== S.room.me ? 'aim' : ''}" ${S.targeting && p.id !== S.room.me ? `onclick="pickTarget('${p.id}')" role="button" tabindex="0"` : ''}>${tile(0, true, p.id, look(p))}<span class="name">${esc(p.nick)}${p.id===S.room.me?' (you)':''}</span><span class="status">${i>=MAX_PLAYERS?'watching':p.id===S.room.hostId?'host · ready':'ready'}</span></li>`).join('')}</ul></div>
+  <p class="small muted shopline">${S.room.isHost
+    ? `<label class="switch"><input type="checkbox" ${S.room.shop ? 'checked' : ''} onchange="setShop(this.checked)"> Shop and effects</label>`
+    : `Shop and effects: <b>${S.room.shop ? 'on' : 'off'}</b>`}</p>
+  ${S.room.shop ? shopButton() : ''}
   <div style="margin-top:16px">${S.room.isHost
     ? `<button class="primary wide" onclick="startGame()" ${n<2||S.busy?'disabled':''}>${n<2?'Need at least 2 players':'Start game with '+Math.min(n,MAX_PLAYERS)}</button>`
     : `<p class="waiting" role="status">Waiting for ${esc(nickOf(S.room.hostId))} to start the game<span class="dots"><i>.</i><i>.</i><i>.</i></span></p>`}</div>`;
@@ -810,7 +838,8 @@ function playersList(withStatus) {
     const taunt = withStatus ? '' : tauntFor(id);
     const st = withStatus ? (pl(id).locked ? `<span class="status ok">Bid locked</span>` : `<span class="status">Thinking…</span>`)
       : taunt ? `<span class="status taunt">“${esc(taunt)}”</span>` : '';
-    return `<li class="${id===r.me?'me':''}">${tile(inv / GOAL, true, id, lookOfId(id))}<span class="name">${esc(nickOf(id))}${id===r.me?' (you)':''}</span><span class="inv">${inv}</span>${st}</li>`;
+    const aimable = S.targeting && id !== r.me && (S.catalog.catalog[S.targeting.item].kind === 'gift' || r.order.includes(r.me));
+    return `<li class="${id===r.me?'me':''}${aimable ? ' aim' : ''}" ${aimable ? `onclick="pickTarget('${id}')" role="button" tabindex="0"` : ''}>${tile(inv / GOAL, true, id, lookOfId(id))}<span class="name">${esc(nickOf(id))}${id===r.me?' (you)':''}</span><span class="inv">${inv}</span>${st}</li>`;
   }).join('')}</ul>`;
 }
 function gameView() {
@@ -834,7 +863,8 @@ function gameView() {
   return `<div class="potcard"><span class="plate">Round ${r.round}</span>
     <div class="num">${r.pot} 🍌</div><div class="sub">up for auction this round</div></div>
     ${inGame() ? `<div class="myship" role="img" aria-label="Your ship: ${mine} bananas, ${cargoWord(mine / GOAL).toLowerCase()}">${heroScene(mine / GOAL, r.me, lookOfId(r.me), true)}
-    <div class="myship-foot"><span>Your ship<br><b>${cargoWord(mine / GOAL)}</b></span><span class="num">${mine} 🍌</span></div></div>` : ''}
+    <div class="myship-foot"><span>Your ship<br><b>${cargoWord(mine / GOAL)}</b></span><span class="num">${mine} 🍌</span></div></div>
+    ${S.room.shop && S.room.wallet ? `<div class="walletrow"><span class="coins">🪙 ${S.room.wallet.credits}</span>${shopButton()}</div>` : ''}` : ''}
     <div style="margin:12px 0 18px">${action}</div>
     <div class="card">${playersList(true)}</div>${skip}
     ${historyView()}`;
@@ -907,6 +937,8 @@ function overView() {
     <div class="muted">${r.inventories[w[0]]} bananas after ${r.round - 1} rounds</div></div>
     ${tauntFor(r.me) ? `<div class="taunt-me" role="status">${bongoSays(`${flagThumb(flagOf(pl(r.me).flag))}<b>${esc(nickOf(r.me))}</b>, ${r.inventories[r.me]} ${r.inventories[r.me] === 1 ? 'banana' : 'bananas'}. ${esc(tauntFor(r.me))}`, 'smug', 'Ha ha ha!')}</div>` : ''}
     <div class="card" style="margin-top:14px">${playersList(false)}</div>
+    ${r.earned && r.earned[r.me] !== undefined ? bongoSays(`You earned <b>+${r.earned[r.me]} 🪙</b> this game.${S.room.wallet ? ` You now have ${S.room.wallet.credits} 🪙.` : ''}`, 'happy') : ''}
+    ${S.room.shop ? shopButton() : ''}
     ${r.isHost
       ? `<button class="primary wide" style="margin-top:16px" onclick="rematch()" ${S.busy ? 'disabled' : ''}>Rematch!</button>
          <button class="link" style="display:block;margin:6px auto 0" onclick="backToLobby()">Back to the lobby</button>`
@@ -1130,6 +1162,67 @@ function toast(text) {
   const el = document.createElement('p'); el.className = 'toast'; el.setAttribute('role', 'status'); el.textContent = text;
   document.body.appendChild(el); setTimeout(() => el.remove(), 2600);
 }
+// ---------- ship shop ----------
+const shopButton = () => `<button class="shopbtn" onclick="openShop()">🪙 Shop</button>`;
+const setShop = on => act(() => api('settings', { shop: on }));
+const SHOP_TABS = [['sabotage', '💣 Sabotage'], ['defence', '🛡️ Defence'], ['gift', '🎁 Gifts'], ['bling', '✨ Bling'], ['emote', '📯 Emotes']];
+const EMOTE_TEXT = { honk: '📯 HONK!', ha: 'Ha!', oops: 'Oops', ouch: 'Ouch' };
+function openShop(tab) { S.shopSheet = true; if (tab) S.shopTab = tab; if (!S.catalog) loadCatalog().then(render); render(); }
+function closeShop() { S.shopSheet = null; render(); }
+function shopView() {
+  if (!S.shopSheet || !S.room) return '';
+  const r = S.room, w = r.wallet, cat = S.catalog && S.catalog.catalog;
+  const tabs = SHOP_TABS.filter(([k]) => k !== 'sabotage' || r.status === 'playing');
+  if (!tabs.some(([k]) => k === S.shopTab)) S.shopTab = tabs[0][0];
+  let body;
+  if (!cat || !w) body = `<p class="muted">${!w ? 'The shop is closed right now.' : 'Opening the shop…'}</p>`;
+  else if (S.shopTab === 'emote') body = `<div class="shopgrid">${Object.keys(EMOTE_TEXT).map(k => `<button class="shopitem" onclick="sendEmote('${k}')"><span class="icon">${EMOTE_TEXT[k]}</span><span>Free</span></button>`).join('')}</div>`;
+  else {
+    const items = r.market.filter(k => cat[k] && cat[k].kind === S.shopTab);
+    const owned = S.shopTab === 'bling' ? w.owned.filter(k => cat[k] && !items.includes(k)) : [];
+    body = `<div class="shopgrid">${[...items, ...owned].map(k => {
+      const it = cat[k], have = S.shopTab === 'bling' && w.owned.includes(k), stock = S.shopTab === 'defence' ? (w.stock[k] || 0) : 0;
+      const label = have ? (w.worn.includes(k) ? 'Wearing · tap to remove' : 'Owned · tap to wear') : `${it.price} 🪙${stock ? ` · you have ${stock}` : ''}`;
+      const poor = !have && w.credits < it.price;
+      return `<button class="shopitem${poor ? ' poor' : ''}" onclick="${have ? `wearItem('${k}', ${!w.worn.includes(k)})` : `buyItem('${k}')`}"><span class="icon">${it.icon}</span><b>${esc(it.name)}</b><span>${label}</span></button>`;
+    }).join('') || '<p class="muted">Nothing of this kind on sale this game.</p>'}</div>`;
+  }
+  return `<div class="sheet-bg" onclick="if(event.target===this)closeShop()"><div class="sheet" role="dialog" aria-label="Shop">
+    <div class="topbar"><h2>Today's market</h2><button class="link" onclick="closeShop()">Done</button></div>
+    <p class="small muted" style="margin-top:-6px">🪙 ${w ? w.credits : 0} · New stock every game.</p>
+    <div class="shoptabs" role="tablist">${tabs.map(([k, l]) => `<button role="tab" aria-selected="${S.shopTab === k}" onclick="S.shopTab='${k}';render()">${l}</button>`).join('')}</div>
+    ${body}</div></div>`;
+}
+function buyItem(k) {
+  const it = S.catalog.catalog[k];
+  if (it.kind === 'sabotage' || it.kind === 'gift') { S.targeting = { item: k }; S.shopSheet = null; return render(); }
+  act(async () => { await api('buy', { item: k }); });
+}
+function pickTarget(id) {
+  const k = S.targeting.item; S.targeting = null;
+  act(async () => { await api('buy', { item: k, target: id }); });
+}
+const sendEmote = k => { S.shopSheet = null; act(() => api('emote', { kind: k })); };
+const wearItem = (k, on) => act(() => api('wear', { item: k, on }));
+// Captain Bongo announces each new effect once, on every screen.
+function fxText(e) {
+  const n = id => esc(nickOf(id)), it = S.catalog && S.catalog.catalog[e.kind];
+  if (e.kind === 'emote') return '';
+  if (!it) return '';
+  if (e.blocked) return { hose: `🧯 ${n(e.target)} hosed down ${n(e.from)}'s bomb!`, umbrella: `☂️ ${n(e.target)} popped an umbrella over ${n(e.from)}'s rain cloud!`,
+    bubble: `🫧 ${n(e.target)}'s bubble shield popped ${n(e.from)}'s ${it.name.toLowerCase()}!` }[e.blocked] || '';
+  if (it.kind === 'gift') return `${it.icon} ${n(e.from)} gave ${n(e.target)} ${/^[aeiou]/i.test(it.name) ? 'an' : 'a'} ${it.name.toLowerCase()}!`;
+  return `${it.icon} ${n(e.from)} unleashed ${/^[aeiou]/i.test(it.name) ? 'an' : 'a'} ${it.name.toLowerCase()} on ${n(e.target)}!`;
+}
+function fxToasts() {
+  if (!S.catalog) return; // announced once the catalogue has loaded, on the next change
+  for (const e of (S.room && S.room.effects) || []) {
+    const key = `${e.kind}|${e.from}|${e.target || ''}|${e.at}`;
+    if (S.seenFx.has(key)) continue;
+    S.seenFx.add(key);
+    const t = fxText(e); if (t) toast(t.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&'));
+  }
+}
 function closeFlags() { S.flagSheet = false; render(); }
 const flagThumb = k => `<svg viewBox="0 0 40 30" aria-hidden="true">${k ? flagArt(k, 40, 30) : '<path d="M4 4 36 15 4 26Z" fill="var(--hibiscus)"/>'}</svg>`;
 // Pirate is the visible teaser; the other easter eggs only surface when you search their words.
@@ -1186,7 +1279,8 @@ function pickFlag(k) {
 }
 document.addEventListener('keydown', e => {
   if (e.key === 'Enter' && e.target.id === 'bid') lockBid();
-  if (e.key === 'Escape') { if (S.flagSheet) closeFlags(); else if (S.sheetFor != null) closeSheet(); }
+  if ((e.key === 'Enter' || e.key === ' ') && e.target.classList && e.target.classList.contains('aim')) { e.preventDefault(); e.target.click(); }
+  if (e.key === 'Escape') { if (S.flagSheet) closeFlags(); else if (S.shopSheet) closeShop(); else if (S.targeting) { S.targeting = null; render(); } else if (S.sheetFor != null) closeSheet(); }
 });
 
 // #og-card: the 1200×630 social preview, drawn from the game's own artwork.
@@ -1209,6 +1303,9 @@ S.flag = flagOf(ls.get('pb_flag'));
 function pickHull(k) { S.hull = k; ls.set('pb_hull', k); render(); }
 S.cabin = CABINS[ls.get('pb_cabin')] ? ls.get('pb_cabin') : 'white';
 function pickCabin(k) { S.cabin = k; ls.set('pb_cabin', k); render(); }
+S.shopOn = ls.get('pb_shop') !== 'off';
+async function loadCatalog() { try { S.catalog = (await (await fetch('/api/shop')).json()); } catch (e) { S.catalog = null; } }
+loadCatalog();
 if (location.hash === '#og-card') app.innerHTML = ogCard(); else {
 render();
 loadScores();
