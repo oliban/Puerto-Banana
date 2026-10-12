@@ -4,6 +4,22 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Puerto Banana</title>
+<!-- Social preview: the server fills in %%ORIGIN%%, %%URL%%, %%TITLE%% and %%DESC%% per request -->
+<meta name="description" content="%%DESC%%">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Puerto Banana">
+<meta property="og:title" content="%%TITLE%%">
+<meta property="og:description" content="%%DESC%%">
+<meta property="og:url" content="%%URL%%">
+<meta property="og:image" content="%%ORIGIN%%/assets/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="A banana cargo ship sailing in a sunny Caribbean bay">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#0582B8">
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/assets/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Figtree:wght@400;600;800&display=swap" rel="stylesheet">
@@ -64,9 +80,8 @@ input.text{width:100%;min-height:48px;padding:11px 14px;border-radius:14px;borde
 input.text:focus{border-color:var(--sea)}
 input.code{text-transform:uppercase;font-family:Bungee,sans-serif;letter-spacing:.2em;min-width:0}
 label,.label{display:block;font-weight:600;margin:0 0 6px}
-.hullpick{display:grid;grid-template-columns:auto minmax(0,120px);gap:12px;align-items:center}
-.swatches{display:grid;grid-template-columns:repeat(4,44px);gap:8px}
-.swatch{min-height:44px;width:44px;padding:0;border-radius:50%;background:var(--c);box-shadow:inset 0 0 0 3px rgba(255,255,255,.35)}
+.swatches{display:grid;grid-template-columns:repeat(var(--cols,4),44px);gap:var(--gap,8px)}
+.swatch{min-height:44px;width:44px;padding:0;border-radius:50%;background:var(--c);box-shadow:inset 0 0 0 3px rgba(255,255,255,.35),0 0 0 1px var(--line)}
 .swatch[aria-checked="true"]{box-shadow:0 0 0 3px var(--bg),0 0 0 6px var(--ink)}
 .stack>*+*{margin-top:12px}
 .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
@@ -74,6 +89,24 @@ label,.label{display:block;font-weight:600;margin:0 0 6px}
 .card{background:var(--surface);border-radius:18px;padding:16px;box-shadow:0 3px 0 var(--line)}
 .divider{height:4px;margin:24px 0;background:radial-gradient(circle,var(--sea) 1.6px,transparent 2.2px) 0 0/12px 4px repeat-x}
 .err{color:var(--coral);font-weight:600}
+/* Social preview card (#og-card), screenshotted at 1200×630 into assets/og.png */
+body.og{overflow:hidden;background:linear-gradient(#E9FCFF,#A6ECF5 62%)}
+body.og #app{max-width:none;padding:0}
+.ogcard{position:relative;width:1200px;height:630px;overflow:hidden}
+.ogcard .scene{position:absolute;left:120px;bottom:-40px;width:1100px}
+.og-sea{position:absolute;inset:0;width:1200px;height:630px}
+body.og .puff{display:none} /* smoke would drift over the tagline */
+.og-text{position:absolute;left:56px;top:48px;z-index:1;color:#0B3954}
+.og-text h1{margin:0;font-size:104px;line-height:.95;text-shadow:5px 5px 0 #FFD60A,9px 9px 0 #FF9F1C}
+.og-text p{margin:22px 0 0;max-width:300px;font-size:30px;font-weight:800;line-height:1.25}
+/* Lobby invite: the code is the thing to share, so it reads like a boarding ticket */
+.invite{margin:4px 0 16px;padding:16px;border-radius:18px;text-align:center;background:var(--banana);color:var(--banana-ink);box-shadow:0 4px 0 var(--banana-edge)}
+.invite-label{display:block;font-weight:800;font-size:.85rem;text-transform:uppercase;letter-spacing:.08em}
+.invite-code{display:block;width:100%;background:none;box-shadow:none;min-height:0;padding:0;color:inherit;cursor:copy;font-family:Bungee,Impact,sans-serif;font-size:clamp(3rem,18vw,4.4rem);letter-spacing:.18em;line-height:1.1;margin:4px 0 2px;padding-left:.18em}
+.invite p{margin:0 0 12px}
+.invite-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.invite .share{background:var(--surface);color:var(--ink);box-shadow:0 3px 0 rgba(0,0,0,.15);padding:10px 8px}
+.invite .copied{margin:10px 0 0;font-weight:700}
 .or{display:flex;align-items:center;gap:10px;margin:16px 0 12px;color:var(--muted);font-size:.88rem;font-weight:600}
 .or::before,.or::after{content:"";flex:1;height:1px;background:var(--line)}
 .topbar{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:12px}
@@ -89,7 +122,7 @@ label,.label{display:block;font-weight:600;margin:0 0 6px}
 .sh-sea{fill:var(--sea-deep)} .sh-sea2{fill:var(--sea)}
 .nb{fill:var(--banana);stroke:var(--banana-edge);stroke-width:.9;stroke-linejoin:round} .nb-tip{stroke:#5B4214;stroke-width:1.6;stroke-linecap:round}
 .hs-sun{fill:var(--sun)} .hs-glow{fill:var(--sun);opacity:.25} .hs-cloud{fill:var(--cloud);opacity:.9}
-.hs-bird{stroke:var(--ink);stroke-width:1.4;fill:none;stroke-linecap:round;opacity:.6}
+.hs-bird{stroke:var(--ink);stroke-width:1.7;fill:none;stroke-linecap:round;stroke-linejoin:round;opacity:.6}
 .hs-sand{fill:var(--sand)} .hs-trunk{stroke:var(--trunk);stroke-width:5;fill:none;stroke-linecap:round} .hs-palm{fill:var(--palm)} .hs-nut{fill:var(--trunk)}
 .sh-bob{animation:bob 4.5s ease-in-out infinite;transform-box:fill-box;transform-origin:50% 100%}
 .sh-wave{animation:drift 5s linear infinite}
@@ -102,6 +135,26 @@ label,.label{display:block;font-weight:600;margin:0 0 6px}
   50%{opacity:calc(var(--o) * .75);transform:translate(calc(var(--dx) * .35),calc(var(--dy) * .6)) scale(calc(var(--s) * .6))}
   100%{fill:var(--smoke-light);opacity:0;transform:translate(var(--dx),var(--dy)) scale(var(--s))}}
 .still .puff{display:none}
+/* Sun: a breathing glow and warm rings rippling outward */
+.hs-glow{transform-box:fill-box;transform-origin:center;animation:breathe 4.5s ease-in-out infinite}
+@keyframes breathe{50%{transform:scale(1.12);opacity:.38}}
+.hs-heat{fill:none;stroke:var(--sun);stroke-width:3;opacity:0;transform-box:fill-box;transform-origin:center;animation:heat 4.5s ease-out infinite}
+@keyframes heat{0%{transform:scale(1);opacity:.55}100%{transform:scale(2.1);opacity:0;stroke-width:1}}
+/* Night mode swaps the sun for a crescent moon and a few twinkling stars */
+.hs-night{display:none}
+.hs-moon{fill:#FFF3C4} .hs-crater{fill:#E9D9A0} .hs-moonglow{fill:#FFF3C4;opacity:.12}
+.hs-star{fill:#FFF8DC;animation:twinkle 3s ease-in-out infinite}
+@keyframes twinkle{50%{opacity:.25}}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .hs-day{display:none}:root:not([data-theme="light"]) .hs-night{display:inline}}
+:root[data-theme="dark"] .hs-day{display:none} :root[data-theme="dark"] .hs-night{display:inline}
+/* Birds: a slight downwind glide; wings beat via SMIL in bird() */
+.hs-birdfly{animation:glide 9s ease-in-out infinite}
+@keyframes glide{50%{transform:translate(-7px,-2px)}}
+/* Palm sways in the same wind as the flags: leaning downwind (left, astern), fronds moving more than the trunk */
+.hs-sway{transform-box:view-box;transform-origin:336px 148px;animation:sway 2.6s ease-in-out infinite}
+.hs-crown{transform-box:view-box;transform-origin:318px 92px;animation:crown 2.6s ease-in-out -.4s infinite}
+@keyframes sway{0%,100%{transform:rotate(-1deg)}50%{transform:rotate(-3.5deg)}}
+@keyframes crown{0%,100%{transform:rotate(0)}50%{transform:rotate(-5deg) scaleX(.97)}}
 /* Ship flags: a gentle wave on moving ships; the invisible tap target on your own ship opens the picker */
 .sh-wave-flag{transform-box:fill-box;transform-origin:left center;animation:flagwave 2.6s ease-in-out infinite}
 @keyframes flagwave{50%{transform:skewY(5deg) scaleX(.92)}}
@@ -113,6 +166,8 @@ label,.label{display:block;font-weight:600;margin:0 0 6px}
 .flagbtn span{overflow:hidden;text-overflow:ellipsis;max-width:100%;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
 .flagbtn[aria-pressed="true"]{box-shadow:inset 0 0 0 3px var(--ink)}
 .flaggrid>p{grid-column:1/-1}
+.flaghead{margin:8px 0 0;font-weight:800;font-size:.85rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.credits{margin-top:14px}.credits ul{padding-left:18px;margin:6px 0 0}.credits a{color:inherit}
 .wiggle{animation:wiggle 1.2s ease-in-out}
 @keyframes wiggle{20%{transform:rotate(-2deg)}40%{transform:rotate(2deg)}60%{transform:rotate(-1.5deg)}80%{transform:rotate(1deg)}}
 @keyframes bob{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(1.5px) rotate(-.8deg)}}
@@ -142,6 +197,11 @@ label,.label{display:block;font-weight:600;margin:0 0 6px}
 .players .inv{grid-area:inv;font-family:Bungee,sans-serif;font-size:1.15rem;text-align:right}
 .players .status{grid-area:status;font-size:.88rem;color:var(--muted);align-self:start}
 .players .status.ok{color:var(--ok);font-weight:600}
+.players .status.taunt{color:var(--coral);font-style:italic;font-weight:600}
+/* Your own taunt, big, with the flag that earned it */
+.taunt-me{margin-top:14px;display:flex;gap:14px;align-items:center;box-shadow:inset 0 0 0 3px var(--coral)}
+.taunt-me svg{flex:0 0 56px;width:56px;height:42px;border-radius:4px}
+.taunt-me p{margin:0;font-weight:800;font-size:1.05rem;line-height:1.35}
 .bidbox{display:grid;grid-template-columns:56px minmax(0,1fr) 56px;gap:8px;align-items:stretch}
 .bidbox button{font-size:1.6rem;padding:0}
 .bidbox input{width:100%;min-width:0;text-align:center;font-family:Bungee,sans-serif;font-size:2.2rem;border-radius:14px;border:2px solid var(--line);background:var(--surface);padding:6px 0}
@@ -222,7 +282,7 @@ summary{cursor:pointer;font-weight:600;color:var(--muted);min-height:44px;displa
 @keyframes surface{from{transform:translateY(14px);opacity:0}to{transform:none;opacity:1}}
 .party-banner{position:absolute;left:50%;top:16px;transform:translateX(-50%);width:min(92vw,420px);background:var(--surface);color:var(--ink);
   border-radius:16px;padding:12px 16px;font-weight:800;text-align:center;box-shadow:0 6px 24px rgba(0,0,0,.25)}
-@media (prefers-reduced-motion:reduce){.reveal li,.sh-bob,.sh-wave,.sh-float,.sh-wave-flag,.wiggle{animation:none}.puff{display:none}}
+@media (prefers-reduced-motion:reduce){.reveal li,.sh-bob,.sh-wave,.sh-float,.sh-wave-flag,.wiggle,.hs-sway,.hs-crown,.hs-birdfly,.hs-glow,.hs-star{animation:none}.hs-heat{display:none}.puff{display:none}}
 </style>
 </head>
 <body>
@@ -239,7 +299,7 @@ summary{cursor:pointer;font-weight:600;color:var(--muted);min-height:44px;displa
 <div id="app"><p class="muted">Loading the docks…</p></div>
 <script>
 const GOAL = 200, MAX_PLAYERS = 6;
-const S = { hull: 'navy', flag: '', flagSheet: false, flagQuery: '', countries: null, code: null, room: null, es: null, nick: '', joinCode: '', bidDraft: '', error: '', busy: false, sheetFor: null, seen: 0, scores: null, rivals: null, rivalHi: null };
+const S = { tauntBook: null, hull: 'navy', cabin: 'white', flag: '', flagSheet: false, flagQuery: '', countries: null, code: null, room: null, es: null, nick: '', joinCode: '', bidDraft: '', error: '', busy: false, sheetFor: null, seen: 0, scores: null, rivals: null, rivalHi: null };
 const app = document.getElementById('app');
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const ls = { get(k){try{return localStorage.getItem(k)}catch(e){return null}}, set(k,v){try{localStorage.setItem(k,v)}catch(e){}}, del(k){try{localStorage.removeItem(k)}catch(e){}} };
@@ -322,18 +382,60 @@ const FLAG_EGGS = { pirate: ['Jolly Roger', ['pirate', 'jolly', 'roger', 'skull'
   rainbow: ['Rainbow', ['rainbow', 'pride']], chequered: ['Chequered', ['chequered', 'checkered', 'race', 'finish']],
   white: ['White flag', ['white', 'surrender']] };
 const FLAG_EXTRAS = ['eu', 'un', 'gb-eng', 'gb-sct', 'gb-wls', 'gb-nir']; // non-country flags worth offering
-const flagOf = f => FLAG_EGGS[f] || /^[a-z]{2}(-[a-z]{2,4})?$/.test(f || '') ? f : ''; // mirrors players.js
-const flagOfId = id => pl(id).flag;
+// Swedish provinces (code "ls-<slug>"), files in assets/flags/se/ from Wikimedia Commons: [name, isCoatOfArms, author, licence, source]
+const LANDSKAP = {
+  blekinge: ['Blekinge', true, "Lokal_Profil", 'CC BY-SA 2.5', "https://commons.wikimedia.org/wiki/File:Blekinge_vapen.svg"],
+  bohuslan: ['Bohuslän', false, "Kaiser Torikka", 'Public domain', "https://commons.wikimedia.org/wiki/File:Flag_of_Bohusl%C3%A4n.svg"],
+  dalarna: ['Dalarna', true, "Lokal_Profil", 'CC BY-SA 2.5', "https://commons.wikimedia.org/wiki/File:Dalarna_vapen.svg"],
+  dalsland: ['Dalsland', true, "Lokal_Profil", 'CC BY-SA 2.5', "https://commons.wikimedia.org/wiki/File:Dalsland_vapen.svg"],
+  gotland: ['Gotland', false, "unknown", 'CC BY-SA 3.0', "https://commons.wikimedia.org/wiki/File:Flag_of_Gotland.svg"],
+  gastrikland: ['Gästrikland', true, "Marmelad", 'CC BY-SA 2.5', "https://commons.wikimedia.org/wiki/File:G%C3%A4strikland_vapen.svg"],
+  halland: ['Halland', true, "Lokal_Profil", 'CC BY-SA 2.5', "https://commons.wikimedia.org/wiki/File:Halland_vapen.svg"],
+  halsingland: ['Hälsingland', false, "Kaiser Torikka", 'Public domain', "https://commons.wikimedia.org/wiki/File:Flag_of_H%C3%A4lsingland.svg"],
+  harjedalen: ['Härjedalen', false, "Lokal_Profil", 'Public domain', "https://commons.wikimedia.org/wiki/File:Flag_of_H%C3%A4rjedalen.svg"],
+  jamtland: ['Jämtland', true, "Marmelad", 'CC BY-SA 2.5', "https://commons.wikimedia.org/wiki/File:J%C3%A4mtland_vapen.svg"],
+  lappland: ['Lappland', false, "Shorepine", 'CC BY-SA 4.0', "https://commons.wikimedia.org/wiki/File:Flag_of_Lapland.svg"],
+  medelpad: ['Medelpad', true, "Lokal_Profil", 'CC BY-SA 2.5', "https://commons.wikimedia.org/wiki/File:Medelpad_vapen.svg"],
+  norrbotten: ['Norrbotten', true, "Lokal_Profil", 'CC BY-SA 2.5', "https://commons.wikimedia.org/wiki/File:Norrbotten_vapen.svg"],
+  narke: ['Närke', true, "Lokal_Profil", 'CC BY-SA 2.5', "https://commons.wikimedia.org/wiki/File:N%C3%A4rke_vapen.svg"],
+  skane: ['Skåne', false, "Jon Harald Søby", 'Public domain', "https://commons.wikimedia.org/wiki/File:Flag_of_Sk%C3%A5ne.svg"],
+  smaland: ['Småland', false, "Daniel78", 'Public domain', "https://commons.wikimedia.org/wiki/File:Flag_of_Sm%C3%A5land.svg"],
+  sodermanland: ['Södermanland', true, "Lokal_Profil", 'CC BY-SA 2.5', "https://commons.wikimedia.org/wiki/File:S%C3%B6dermanland_vapen.svg"],
+  uppland: ['Uppland', true, "Lokal_Profil", 'CC BY-SA 2.5', "https://commons.wikimedia.org/wiki/File:Uppland_vapen.svg"],
+  varmland: ['Värmland', true, "Lokal_Profil", 'CC BY-SA 2.5', "https://commons.wikimedia.org/wiki/File:V%C3%A4rmland_vapen.svg"],
+  vasterbotten: ['Västerbotten', true, "Lokal_Profil", 'CC BY-SA 2.5', "https://commons.wikimedia.org/wiki/File:V%C3%A4sterbotten_vapen.svg"],
+  vastergotland: ['Västergötland', true, "Lokal Profil", 'CC BY-SA 2.5', "https://commons.wikimedia.org/wiki/File:V%C3%A4sterg%C3%B6tland_vapen.svg"],
+  vastmanland: ['Västmanland', true, "Lokal_Profil", 'CC BY-SA 2.5', "https://commons.wikimedia.org/wiki/File:V%C3%A4stmanland_vapen.svg"],
+  angermanland: ['Ångermanland', true, "Lokal_Profil", 'CC BY-SA 2.5', "https://commons.wikimedia.org/wiki/File:%C3%85ngermanland_vapen.svg"],
+  oland: ['Öland', true, "Lokal_Profil", 'CC BY-SA 2.5', "https://commons.wikimedia.org/wiki/File:%C3%96land_vapen.svg"],
+  ostergotland: ['Östergötland', false, "Zscout370 at English Wikipedia", 'Public domain', "https://commons.wikimedia.org/wiki/File:Unofficial_flag_of_%C3%96sterg%C3%B6tland.svg"]
+};
+// Coats of arms become banners of arms: the shield's field cropped to the flag rectangle (outline and point trimmed).
+const ARMS_CROP = '6 8 239 179';
+const fold = t => t.normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase(); // "Skåne" matches "skane"
+const flagOf = f => typeof f !== 'string' ? '' : f.startsWith('ls-') ? (LANDSKAP[f.slice(3)] ? f : '')
+  : FLAG_EGGS[f] || /^[a-z]{2}(-[a-z]{2,4})?$/.test(f) ? f : ''; // mirrors players.js
+// The artwork for a (valid, non-empty) flag code, filling a w×h box.
+function flagArt(flag, w, h) {
+  if (FLAG_EGGS[flag]) return `<use href="#flag-${flag}" width="${w}" height="${h}"/>`;
+  if (flag.startsWith('ls-')) {
+    const slug = flag.slice(3), src = `/assets/flags/se/${slug}.svg`;
+    return LANDSKAP[slug][1]
+      ? `<svg width="${w}" height="${h}" viewBox="${ARMS_CROP}" preserveAspectRatio="xMidYMid slice"><image href="${src}" width="251" height="304"/></svg>`
+      : `<image href="${src}" width="${w}" height="${h}" preserveAspectRatio="xMidYMid slice"/>`;
+  }
+  return `<image href="${FLAG_CDN}flags/4x3/${flag}.svg" width="${w}" height="${h}" preserveAspectRatio="none"/>`;
+}
 // The flag at the masthead, in ship coordinates; '' is the default pink pennant.
 function mastFlag(flag) {
   flag = flagOf(flag);
-  if (!flag) return `<path class="sh-flag" d="M206 20 218 24 206 28Z"/>`;
-  // Drawn at 0,0 inside a group pinned to the masthead, so the wave (skew/scale about the left edge) stays on the pole.
-  const box = 'width="13" height="9.75"';
-  const art = FLAG_EGGS[flag] ? `<use href="#flag-${flag}" ${box}/>` : `<image href="${FLAG_CDN}flags/4x3/${flag}.svg" ${box} preserveAspectRatio="none"/>`;
-  return `<g transform="translate(206.5 19)"><g class="sh-wave-flag">${art}</g></g>`;
+  if (!flag) return `<path class="sh-flag" d="M209 20 198 24 209 28Z"/>`;
+  // The ship sails right, so its wind streams flags aft (left) and we see their reverse side: mirrored.
+  // Drawn at 0,0 in a group pinned to the masthead, so the wave (skew/scale about the hoist) stays on the pole.
+  const art = flagArt(flag, 11.5, 8.6);
+  return `<g transform="translate(208.5 19) scale(-1 1)"><g class="sh-wave-flag">${art}</g></g>`;
 }
-function shipBody(f, key = '', flag = '', mine = false) {
+function shipBody(f, key = '', look = {}, mine = false) {
   const n = f > 0 ? Math.max(1, Math.round(Math.min(f, 1) * SLOTS)) : 0, over = overflow(f);
   let cargo = '';
   for (let i = 0; i < n; i++) cargo += bunch(slotX(i), slotY(i), i);
@@ -359,7 +461,7 @@ function shipBody(f, key = '', flag = '', mine = false) {
     <path class="sh-funnel" d="M25 22 27 2H43L45 22Z"/><rect class="sh-band" x="26.5" y="7" width="17" height="5"/>${smoke}
     ${cargo}
     <path class="sh-hull" d="M6 52 212 45 200 82H22Z"/><path class="sh-keel" d="M22 82H200L192 100H30Z"/><path class="sh-stripe" d="M22 82H200"/>${ports}
-    <path class="sh-mast" d="M206 46V19"/>${mastFlag(flag)}${mine ? '<rect class="flag-hit" x="186" y="0" width="34" height="40" onclick="openFlags(event)"/>' : ''}</g></g>`;
+    <path class="sh-mast" d="M209 49V19"/>${mastFlag(look.flag)}${mine ? '<rect class="flag-hit" x="184" y="0" width="36" height="40" onclick="openFlags(event)"/>' : ''}</g></g>`;
   // Overfull ships shed a random handful of bananas into the sea around them
   const rnd = rng(key + '|' + Math.round(f * GOAL));
   const floats = over ? 1 + Math.floor(rnd() * (2 + over / 2)) : 0;
@@ -373,40 +475,66 @@ function shipBody(f, key = '', flag = '', mine = false) {
 // Hull colours players pick on the home screen; keys match HULLS in server.js.
 const HULLS = { navy: ['Navy', '#1D4E89'], coral: ['Coral', '#E0505B'], mango: ['Mango', '#EE8A1E'], hibiscus: ['Hibiscus', '#D63A85'],
   palm: ['Palm green', '#2A9457'], turquoise: ['Turquoise', '#0E97A5'], purple: ['Purple', '#6A4C93'], charcoal: ['Charcoal', '#33414E'] };
-const hullStyle = hull => HULLS[hull] ? ` style="--hull:${HULLS[hull][1]}"` : '';
-const hullOfId = id => pl(id).hull;
-function shipSVG(fill, label, key, hull, flag, mine) {
-  const f = Math.max(0, Number(fill) || 0), { ship, spill } = shipBody(f, key, flag, mine);
+// Cabin colours players can pick; keys match CABINS in players.js.
+const CABINS = { white: ['White', '#FFFFFF'], sand: ['Sand', '#F6DFB0'], sunshine: ['Sunshine', '#FFE873'], mint: ['Mint', '#BFF0D4'],
+  sky: ['Sky', '#BDE4FF'], pink: ['Flamingo', '#FFC4DA'] };
+// A ship's look: hull and cabin colour (CSS variables on its <svg>) and the flag at its masthead.
+const look = p => ({ hull: p.hull, cabin: p.cabin, flag: p.flag });
+const myLook = () => look(S);
+const lookOfId = id => look(pl(id));
+const lookStyle = l => {
+  const v = [HULLS[l.hull] && `--hull:${HULLS[l.hull][1]}`, CABINS[l.cabin] && `--cabin:${CABINS[l.cabin][1]}`].filter(Boolean);
+  return v.length ? ` style="${v.join(';')}"` : '';
+};
+function shipSVG(fill, label, key, look = {}, mine) {
+  const f = Math.max(0, Number(fill) || 0), { ship, spill } = shipBody(f, key, look, mine);
   const a11y = label ? `role="img" aria-label="${esc(label)}"` : 'aria-hidden="true"';
-  return `<svg class="shipsvg" viewBox="0 -18 220 138" ${a11y}${hullStyle(hull)}>${waves(88, 220, 120, 'sh-sea2')}${ship}${waves(93, 220, 120, 'sh-sea sh-wave')}${spill}</svg>`;
+  return `<svg class="shipsvg" viewBox="0 -18 220 138" ${a11y}${lookStyle(look)}>${waves(88, 220, 120, 'sh-sea2')}${ship}${waves(93, 220, 120, 'sh-sea sh-wave')}${spill}</svg>`;
 }
-const tile = (fill, still, key, hull, flag, mine) => `<span class="tile${still ? ' still' : ''}">${shipSVG(fill, '', key, hull, flag, mine)}</span>`;
-function heroScene(fill = 0.75, key = 'hero', hull, flag, mine) {
-  const { ship, spill } = shipBody(fill, key, flag, mine), place = 'transform="translate(10 52) scale(1.1)"';
+const tile = (fill, still, key, look, mine) => `<span class="tile${still ? ' still' : ''}">${shipSVG(fill, '', key, look, mine)}</span>`;
+// A gull: two wings pivoting at the body. The tips sweep up and down for a few beats, then it glides.
+// SMIL animates the path shape (so Safari does too); reduced motion gets a still gull.
+function bird(x, y, w, cycle, offset, glide = 9, glideDelay = 0) {
+  const shape = (tip, arc) => `M${x} ${(y - tip).toFixed(1)}Q${x + w} ${(y - arc).toFixed(1)} ${x + 2 * w} ${y}Q${x + 3 * w} ${(y - arc).toFixed(1)} ${x + 4 * w} ${(y - tip).toFixed(1)}`;
+  const up = shape(1.3 * w, 1.0 * w), down = shape(-0.7 * w, 0.1 * w), held = shape(0.3 * w, 0.55 * w);
+  const frames = [[0, held], [.08, up], [.18, down], [.28, up], [.38, down], [.48, up], [.56, held], [1, held]];
+  const flap = matchMedia('(prefers-reduced-motion: reduce)').matches ? ''
+    : `<animate attributeName="d" dur="${cycle}s" begin="${offset}s" repeatCount="indefinite" calcMode="spline"
+        keyTimes="${frames.map(f => f[0]).join(';')}" values="${frames.map(f => f[1]).join(';')}"
+        keySplines="${Array(frames.length - 1).fill('.45 0 .55 1').join(';')}"/>`;
+  return `<g class="hs-birdfly" style="animation-duration:${glide}s;animation-delay:${glideDelay}s"><path class="hs-bird" d="${held}">${flap}</path></g>`;
+}
+function heroScene(fill = 0.75, key = 'hero', look = {}, mine) {
+  const { ship, spill } = shipBody(fill, key, look, mine), place = 'transform="translate(10 52) scale(1.1)"';
   const fronds = ['c10-12 26-12 36-2c-12-4-24-2-36 2z', 'c-6-14-20-18-32-12c12 0 24 4 32 12z', 'c-14-2-26 6-30 18c8-10 18-14 30-18z', 'c14-2 26 6 30 18c-8-10-18-14-30-18z', 'c2-14 12-22 24-22c-10 4-18 12-24 22z'];
-  return `<svg class="scene" viewBox="0 0 360 196" aria-hidden="true"${hullStyle(hull)}>
-    <circle class="hs-glow" cx="300" cy="40" r="36"/><circle class="hs-sun" cx="300" cy="40" r="22"/>
+  return `<svg class="scene" viewBox="0 0 360 196" aria-hidden="true"${lookStyle(look)}>
+    <g class="hs-day"><circle class="hs-heat" cx="300" cy="40" r="24"/><circle class="hs-heat" style="animation-delay:-2.25s" cx="300" cy="40" r="24"/><circle class="hs-glow" cx="300" cy="40" r="36"/><circle class="hs-sun" cx="300" cy="40" r="22"/></g>
+    <g class="hs-night"><mask id="moon-${key}"><rect x="260" y="0" width="80" height="80" fill="#fff"/><circle cx="311" cy="32" r="19" fill="#000"/></mask>
+      <circle class="hs-moonglow" cx="300" cy="40" r="32"/>
+      <g mask="url(#moon-${key})"><circle class="hs-moon" cx="300" cy="40" r="20"/><circle class="hs-crater" cx="291" cy="46" r="3"/><circle class="hs-crater" cx="294" cy="34" r="1.8"/></g>
+      ${[[40, 18, 0], [118, 40, 1.1], [205, 12, 2.3], [250, 60, .6], [26, 70, 1.8], [168, 22, 2.9], [338, 82, .3]].map(([x, y, d]) =>
+        `<circle class="hs-star" cx="${x}" cy="${y}" r="1.3" style="animation-delay:-${d}s"/>`).join('')}</g>
     <g class="hs-cloud"><ellipse cx="62" cy="34" rx="26" ry="8"/><ellipse cx="78" cy="28" rx="15" ry="9"/><ellipse cx="200" cy="20" rx="18" ry="5"/></g>
-    <path class="hs-bird" d="M150 46q4-4 8 0q4-4 8 0M176 34q3-3 6 0q3-3 6 0"/>
+    ${bird(146, 46, 4.5, 3.4, 0)}${bird(178, 33, 3.4, 4.1, -1.7, 11, -4)}
     ${waves(146, 360, 196, 'sh-sea2')}
     <ellipse class="hs-sand" cx="336" cy="150" rx="50" ry="11"/>
-    <path class="hs-trunk" d="M336 148C333 126 328 106 318 92"/>
-    ${fronds.map(d => `<path class="hs-palm" d="M318 92${d}"/>`).join('')}
-    <circle class="hs-nut" cx="316" cy="96" r="2.6"/><circle class="hs-nut" cx="321" cy="95" r="2.6"/>
+    <g class="hs-sway"><path class="hs-trunk" d="M336 148C333 126 328 106 318 92"/>
+    <g class="hs-crown">${fronds.map(d => `<path class="hs-palm" d="M318 92${d}"/>`).join('')}</g>
+    <circle class="hs-nut" cx="316" cy="96" r="2.6"/><circle class="hs-nut" cx="321" cy="95" r="2.6"/></g>
     <g ${place}>${ship}</g>${waves(156, 360, 196, 'sh-sea sh-wave')}<g ${place}>${spill}</g></svg>`;
 }
 
 // ---------- rooms ----------
 function createRoom() {
   if (!S.nick.trim()) { S.error = 'Pick a name first.'; return render(); }
-  act(async () => { const { code } = await api('create', { nick: S.nick, hull: S.hull, flag: S.flag }); connect(code); });
+  act(async () => { const { code } = await api('create', { nick: S.nick, ...myLook() }); connect(code); });
 }
 function enterRoom(code, silent) {
   code = String(code || '').trim().toUpperCase();
   if (!/^[A-Z]{4}$/.test(code)) { if (!silent) { S.error = 'Room codes are 4 letters.'; render(); } return; }
   if (!silent && !S.nick.trim()) { S.error = 'Pick a name first.'; return render(); }
   act(async () => {
-    try { await api('join', { code, nick: S.nick, hull: S.hull, flag: S.flag }); connect(code); }
+    try { await api('join', { code, nick: S.nick, ...myLook() }); connect(code); }
     catch (e) { ls.del('pb_code'); if (!silent) throw e; }
   });
 }
@@ -420,6 +548,16 @@ function connect(code) {
 function dropRoom() { if (S.es) S.es.close(); S.es = null; ls.del('pb_code'); S.code = null; S.room = null; S.sheetFor = null; S.bidDraft = ''; loadScores(); loadRivals(); }
 function leaveRoom() { api('leave').catch(() => {}); dropRoom(); render(); }
 const startGame = () => act(() => api('start'));
+// The phone's share sheet where there is one; otherwise copy the link. The link pre-fills the code (?join=ABCD).
+async function shareInvite() {
+  const url = location.origin + '/?join=' + S.code;
+  if (navigator.share) { try { await navigator.share({ title: 'Puerto Banana', text: `Join my Puerto Banana room! Code: ${S.code}`, url }); } catch (e) {} return; }
+  copyText(url, 'Invite link copied');
+}
+async function copyText(text, done) {
+  try { await navigator.clipboard.writeText(text); S.copied = done; render(); setTimeout(() => { S.copied = ''; render(); }, 2500); }
+  catch (e) { S.error = "Couldn't copy. The room code is " + S.code + '.'; render(); }
+}
 const backToLobby = () => act(() => api('lobby'));
 const skipMissing = () => act(() => api('skip'));
 function lockBid() {
@@ -430,7 +568,8 @@ function lockBid() {
 
 function onChange() {
   const r = S.room;
-  if (r.status === 'over' && S.lastStatus !== 'over') setTimeout(() => { loadScores(); loadRivals(); }, 600); // the server saves the result just after the last round
+  if (r.status === 'over' && S.lastStatus !== 'over') setTimeout(() => { loadScores(); loadRivals(); }, 600);
+  if (r.status === 'over' && Object.keys(r.taunts || {}).length) loadTaunts(); // the server saves the result just after the last round
   S.lastStatus = r.status;
   if (r.status === 'lobby' || (r.status === 'playing' && !r.lastResult)) S.seen = 0;
   if (r.lastResult && r.lastResult.round > S.seen && S.sheetFor == null) S.sheetFor = r.lastResult.round;
@@ -460,15 +599,17 @@ function view() {
 function homeView() {
   return `<header class="harbor">
     <h1>Puerto Banana</h1>
-    ${heroScene(0.75, 'hero', S.hull, S.flag, true)}
+    ${heroScene(0.75, 'hero', myLook(), true)}
     <p class="harbor-foot">Bid blind for the banana cargo. Win it and you pay the runner-up the gap. First to ${GOAL} bananas wins.</p>
   </header>
   <div class="stack">
     <div><label for="nick">Your name</label><input id="nick" class="text" maxlength="20" value="${esc(S.nick)}" oninput="S.nick=this.value;ls.set('pb_nick',this.value)" onchange="loadRivals()" autocomplete="nickname"></div>
-    <div><span class="label" id="hull-l">Ship colour</span>
-    <div class="hullpick"><div class="swatches" role="radiogroup" aria-labelledby="hull-l">${Object.entries(HULLS).map(([k, [name, c]]) =>
-      `<button id="hull-${k}" class="swatch" role="radio" aria-checked="${S.hull === k}" aria-label="${name}" style="--c:${c}" onclick="pickHull('${k}')"></button>`).join('')}</div>
-    ${tile(0.5, false, 'preview', S.hull, S.flag, true)}</div></div>
+    <div><span class="label" id="hull-l">Hull colour</span>
+    <div class="swatches" role="radiogroup" aria-labelledby="hull-l">${Object.entries(HULLS).map(([k, [name, c]]) =>
+      `<button id="hull-${k}" class="swatch" role="radio" aria-checked="${S.hull === k}" aria-label="${name}" style="--c:${c}" onclick="pickHull('${k}')"></button>`).join('')}</div></div>
+    <div><span class="label" id="cabin-l">Cabin colour</span>
+    <div class="swatches" style="--cols:6;--gap:4px" role="radiogroup" aria-labelledby="cabin-l">${Object.entries(CABINS).map(([k, [name, c]]) =>
+      `<button id="cabin-${k}" class="swatch" role="radio" aria-checked="${S.cabin === k}" aria-label="${name}" style="--c:${c}" onclick="pickCabin('${k}')"></button>`).join('')}</div></div>
   </div>
   <div class="divider"></div>
   <label for="join">Join with a code</label>
@@ -543,8 +684,13 @@ function fmtDate(iso) { const d = new Date(iso); return isNaN(d) ? '' : d.toLoca
 function lobbyView() {
   const ps = S.room.players, n = ps.length;
   return `<h2>Waiting at the dock</h2>
-  <p class="muted">Tell friends to join with code <b class="code">${esc(S.code)}</b>.</p>
-  <div class="card"><ul class="players">${ps.map((p, i) => `<li>${tile(0, true, p.id, p.hull, p.flag)}<span class="name">${esc(p.nick)}${p.id===S.room.me?' (you)':''}</span><span class="status">${i>=MAX_PLAYERS?'watching':'ready'}</span></li>`).join('')}</ul></div>
+  <div class="invite"><span class="invite-label">Room code to share</span>
+    <button class="invite-code" onclick="copyText(S.code, 'Code copied')" aria-label="Room code ${esc(S.code.split('').join(' '))}. Tap to copy">${esc(S.code)}</button>
+    <p class="small">Friends open Puerto Banana and join with this code.</p>
+    <div class="invite-actions"><button class="share" onclick="shareInvite()">${navigator.share ? 'Share invite' : 'Copy invite link'}</button>
+    <button class="share" onclick="copyText(S.code, 'Code copied')">Copy code</button></div>
+    ${S.copied ? `<p class="small copied" role="status">${esc(S.copied)}</p>` : ''}</div>
+  <div class="card"><ul class="players">${ps.map((p, i) => `<li>${tile(0, true, p.id, look(p))}<span class="name">${esc(p.nick)}${p.id===S.room.me?' (you)':''}</span><span class="status">${i>=MAX_PLAYERS?'watching':'ready'}</span></li>`).join('')}</ul></div>
   <div style="margin-top:16px"><button class="primary wide" onclick="startGame()" ${n<2||S.busy?'disabled':''}>${n<2?'Need at least 2 players':'Start game with '+Math.min(n,MAX_PLAYERS)}</button></div>`;
 }
 function playersList(withStatus) {
@@ -552,8 +698,10 @@ function playersList(withStatus) {
   const ids = r.order.slice().sort((a, b) => r.inventories[b] - r.inventories[a]);
   return `<ul class="players">${ids.map(id => {
     const inv = r.inventories[id];
-    const st = withStatus ? (pl(id).locked ? `<span class="status ok">Bid locked</span>` : `<span class="status">Thinking…</span>`) : '';
-    return `<li class="${id===r.me?'me':''}">${tile(inv / GOAL, true, id, hullOfId(id), flagOfId(id))}<span class="name">${esc(nickOf(id))}${id===r.me?' (you)':''}</span><span class="inv">${inv}</span>${st}</li>`;
+    const taunt = withStatus ? '' : tauntFor(id);
+    const st = withStatus ? (pl(id).locked ? `<span class="status ok">Bid locked</span>` : `<span class="status">Thinking…</span>`)
+      : taunt ? `<span class="status taunt">“${esc(taunt)}”</span>` : '';
+    return `<li class="${id===r.me?'me':''}">${tile(inv / GOAL, true, id, lookOfId(id))}<span class="name">${esc(nickOf(id))}${id===r.me?' (you)':''}</span><span class="inv">${inv}</span>${st}</li>`;
   }).join('')}</ul>`;
 }
 function gameView() {
@@ -573,7 +721,7 @@ function gameView() {
   const mine = r.inventories[r.me];
   return `<div class="potcard"><span class="plate">Round ${r.round}</span>
     <div class="num">${r.pot} 🍌</div><div class="sub">up for auction this round</div></div>
-    ${inGame() ? `<div class="myship" role="img" aria-label="Your ship: ${mine} bananas, ${cargoWord(mine / GOAL).toLowerCase()}">${heroScene(mine / GOAL, r.me, hullOfId(r.me), flagOfId(r.me), true)}
+    ${inGame() ? `<div class="myship" role="img" aria-label="Your ship: ${mine} bananas, ${cargoWord(mine / GOAL).toLowerCase()}">${heroScene(mine / GOAL, r.me, lookOfId(r.me), true)}
     <div class="myship-foot"><span>Your ship<br><b>${cargoWord(mine / GOAL)}</b></span><span class="num">${mine} 🍌</span></div></div>` : ''}
     <div style="margin:12px 0 18px">${action}</div>
     <div class="card">${playersList(true)}</div>${skip}
@@ -582,12 +730,27 @@ function gameView() {
 function nudge(d) { S.bidDraft = String(Math.max(0, (parseInt(S.bidDraft, 10) || 0) + d)); render(); }
 function overView() {
   const r = S.room, w = r.winners || [];
-  return `<div class="card winner">${tile(Math.max(1.6, r.inventories[w[0]] / GOAL), false, w[0], hullOfId(w[0]), flagOfId(w[0]))}<div class="muted">King of the bananas</div>
+  return `<div class="card winner">${tile(Math.max(1.6, r.inventories[w[0]] / GOAL), false, w[0], lookOfId(w[0]))}<div class="muted">King of the bananas</div>
     <div class="num">${w.map(id => esc(nickOf(id))).join(' & ')}</div>
     <div class="muted">${r.inventories[w[0]]} bananas after ${r.round - 1} rounds</div></div>
+    ${tauntFor(r.me) ? `<div class="card taunt-me" role="status">${flagThumb(flagOf(pl(r.me).flag))}<p>${esc(tauntFor(r.me))}</p></div>` : ''}
     <div class="card" style="margin-top:14px">${playersList(false)}</div>
     <button class="primary wide" style="margin-top:16px" onclick="backToLobby()">Back to the lobby</button>
     ${historyView()}`;
+}
+// ---------- loser taunts ----------
+// The server picks a number for each loser who ended with 10 bananas or fewer; it indexes that
+// player's flag's taunts in assets/taunts.json (loaded only when a game ends), so every screen agrees.
+async function loadTaunts() {
+  if (S.tauntBook) return;
+  try { const r = await fetch('/assets/taunts.json'); if (!r.ok) throw new Error(); S.tauntBook = await r.json(); render(); }
+  catch (e) { S.tauntBook = null; }
+}
+function tauntFor(id) {
+  const n = S.room && S.room.taunts ? S.room.taunts[id] : undefined;
+  if (n === undefined || !S.tauntBook) return '';
+  const list = S.tauntBook[flagOf(pl(id).flag) || 'pennant'] || S.tauntBook.pennant || [];
+  return list.length ? list[n % list.length] : '';
 }
 function historyView() {
   const h = (S.room.history || []).slice().reverse();
@@ -678,8 +841,8 @@ function battleView(r, rivals, line) {
   let rivalsSvg = '', shots = '';
   rivals.forEach((id, i) => {
     const x = 150 + i * gap + (gap - 220 * s) / 2, cx = x + 110 * s, hit = 1.2 + i * 0.7 + 0.8;
-    rivalsSvg += `<g transform="translate(${x.toFixed(1)} ${(sea - 92 * s).toFixed(1)}) scale(${s.toFixed(3)})"${hullStyle(hullOfId(id))}>
-      <g class="sinking" style="--d:${hit.toFixed(2)}s">${shipBody(r.inventories[id] / GOAL, 'sunk' + id, flagOfId(id)).ship}</g></g>`;
+    rivalsSvg += `<g transform="translate(${x.toFixed(1)} ${(sea - 92 * s).toFixed(1)}) scale(${s.toFixed(3)})"${lookStyle(lookOfId(id))}>
+      <g class="sinking" style="--d:${hit.toFixed(2)}s">${shipBody(r.inventories[id] / GOAL, 'sunk' + id, lookOfId(id)).ship}</g></g>`;
     shots += `<g class="torp" style="--d:${(hit - 0.8).toFixed(2)}s;--dx:${(cx - 118).toFixed(0)}px"><path d="M100 ${sea + 5}h14" stroke="#fff" stroke-width="2" opacity=".8"/>
       <rect x="112" y="${sea + 3}" width="12" height="4" rx="2" fill="#22313F"/></g>
       <circle class="boom" style="--d:${hit.toFixed(2)}s" cx="${cx.toFixed(0)}" cy="${sea - 4}" r="16" fill="#FF9F1C"/>
@@ -687,10 +850,10 @@ function battleView(r, rivals, line) {
       ${[0, 1, 2].map(k => `<circle class="bubble" style="--d:${(hit + 0.6 + k * 0.2).toFixed(2)}s" cx="${(cx - 6 + k * 6).toFixed(0)}" cy="${sea + 10}" r="${2 + k % 2}" fill="#fff" opacity="0"/>`).join('')}
       <use class="flotsam" style="--d:${(hit + 1.2).toFixed(2)}s" href="#nana" x="${(cx - 9).toFixed(0)}" y="${sea + 6}" width="18" height="9"/>`;
   });
-  const wb = shipBody(0.85, 'battle' + win, flagOfId(win)).ship; // drawn riding high so the attacker reads clearly
+  const wb = shipBody(0.85, 'battle' + win, lookOfId(win)).ship; // drawn riding high so the attacker reads clearly
   return `<div class="battle"><svg viewBox="0 84 ${W} 106" style="display:block;width:100%">
     ${waves(sea - 4, W, 190, 'sh-sea2')}
-    <g transform="translate(4 ${(sea - 92 * 0.62).toFixed(1)}) scale(0.62)"${hullStyle(hullOfId(win))}>${wb}</g>${rivalsSvg}
+    <g transform="translate(4 ${(sea - 92 * 0.62).toFixed(1)}) scale(0.62)"${lookStyle(lookOfId(win))}>${wb}</g>${rivalsSvg}
     ${waves(sea + 1, W, 190, 'sh-sea sh-wave')}${shots}</svg><p>${line}</p></div>`;
 }
 function sheetView() {
@@ -702,7 +865,7 @@ function sheetView() {
     <h2>Round ${r.round} results</h2>
     <ul class="story">${r.steps.flatMap(stepLines).map(l => `<li>${l}</li>`).join('')}</ul>
     <ul class="reveal">${ids.map((id, i) => { const b = r.before[id], a = r.after[id], d = a - b;
-      return `<li class="${r.bids[id]===top?'top':''}" style="animation-delay:${i*0.12}s">${tile(a / GOAL, true, id, hullOfId(id), flagOfId(id))}
+      return `<li class="${r.bids[id]===top?'top':''}" style="animation-delay:${i*0.12}s">${tile(a / GOAL, true, id, lookOfId(id))}
         <span class="who"><b>${esc(nickOf(id))}${id===S.room.me?' (you)':''}</b>
         <span class="small">Bananas ${b} → <b>${a}</b> <span class="delta ${d>0?'up':d<0?'down':''}">(${d>0?'+'+d:d<0?'−'+(-d):'no change'})</span></span></span>
         <span class="bid"><span class="small muted">Bid</span><span class="num">${r.bids[id]}</span></span></li>`; }).join('')}</ul>
@@ -725,19 +888,23 @@ function openFlags(e) {
   render();
 }
 function closeFlags() { S.flagSheet = false; render(); }
-const flagThumb = k => FLAG_EGGS[k] ? `<svg viewBox="0 0 40 30" aria-hidden="true"><use href="#flag-${k}"/></svg>`
-  : k ? `<img src="${FLAG_CDN}flags/4x3/${k}.svg" alt="" loading="lazy">`
-  : `<svg viewBox="0 0 40 30" aria-hidden="true"><path d="M4 4 36 15 4 26Z" fill="var(--hibiscus)"/></svg>`;
+const flagThumb = k => `<svg viewBox="0 0 40 30" aria-hidden="true">${k ? flagArt(k, 40, 30) : '<path d="M4 4 36 15 4 26Z" fill="var(--hibiscus)"/>'}</svg>`;
 // Pirate is the visible teaser; the other easter eggs only surface when you search their words.
 function flagItems() {
   const q = S.flagQuery.trim().toLowerCase();
   const eggs = Object.entries(FLAG_EGGS).filter(([k, [, words]]) => k === 'pirate' || (q.length >= 3 && words.some(w => w.startsWith(q) || q.startsWith(w))));
   const cs = Array.isArray(S.countries) ? S.countries.filter(c => !q || c.name.toLowerCase().includes(q) || c.code === q) : [];
-  const items = [['', 'Pennant'], ...eggs.map(([k, [name]]) => [k, name]), ...cs.map(c => [c.code, c.name])];
+  const provinceWords = ['landskap', 'province', 'sverige', 'sweden'];
+  const ls = Object.entries(LANDSKAP).filter(([slug, [name]]) => !q || fold(name).includes(fold(q)) || provinceWords.some(w => w.startsWith(q) && q.length >= 3));
+  const btn = ([k, name]) => `<button class="flagbtn" aria-pressed="${S.flag === k}" onclick="pickFlag('${k}')">${flagThumb(k)}<span>${esc(name)}</span></button>`;
+  const head = t => `<p class="flaghead">${t}</p>`;
   const note = S.countries === null ? `<p class="muted small">Unrolling the flag locker…</p>`
     : S.countries === 'error' ? `<p class="muted small">The country flags can't be loaded right now.</p>`
     : !cs.length && q && !eggs.some(([, [, words]]) => words.some(w => w.startsWith(q) || q.startsWith(w))) ? `<p class="muted small">No flag matches "${esc(S.flagQuery)}".</p>` : '';
-  return items.map(([k, name]) => `<button class="flagbtn" aria-pressed="${S.flag === k}" onclick="pickFlag('${k}')">${flagThumb(k)}<span>${esc(name)}</span></button>`).join('') + note;
+  return [['', 'Pennant'], ...eggs.map(([k, [name]]) => [k, name])].map(btn).join('')
+    + (ls.length ? head("Sweden's provinces") + ls.map(([slug, [name]]) => btn(['ls-' + slug, name])).join('') : '')
+    + (cs.length ? head('Countries and regions') + cs.map(c => btn([c.code, c.name])).join('') : '')
+    + (ls.length && !cs.length && note.includes('No flag') ? '' : note);
 }
 function fillFlags() { const el = document.getElementById('flaglist'); if (el) el.innerHTML = flagItems(); }
 function flagSheetView() {
@@ -745,11 +912,14 @@ function flagSheetView() {
   return `<div class="sheet-bg" onclick="if(event.target===this)closeFlags()"><div class="sheet" role="dialog" aria-label="Choose your ship's flag">
     <div class="topbar"><h2>Raise your flag</h2><button class="link" onclick="closeFlags()">Done</button></div>
     <input id="flagq" class="text" type="search" placeholder="Search flags: Sweden, se…" value="${esc(S.flagQuery)}" oninput="S.flagQuery=this.value;fillFlags()" autocomplete="off">
-    <div class="flaggrid" id="flaglist">${flagItems()}</div></div></div>`;
+    <div class="flaggrid" id="flaglist">${flagItems()}</div>
+    <details class="credits"><summary>Flag credits</summary><p class="small">Country flags: flag-icons (MIT). Province flags and banners of arms from Wikimedia Commons:</p>
+    <ul class="small">${Object.values(LANDSKAP).map(([name, , author, licence, src]) => `<li>${esc(name)}: <a href="${esc(src)}" target="_blank" rel="noopener">${esc(author)}</a>, ${esc(licence)}</li>`).join('')}</ul></details></div></div>`;
 }
 function pickFlag(k) {
   S.flag = flagOf(k); ls.set('pb_flag', S.flag);
-  if (S.code) api('join', { code: S.code, nick: S.nick, hull: S.hull, flag: S.flag }).catch(() => {}); // opponents see it too
+  if (S.code) api('join', { code: S.code, nick: S.nick, ...myLook() }).catch(() => {}); // opponents see it too
+  S.flagSheet = false; // tapping a flag is the choice; no Done needed
   render();
   if (FLAG_EGGS[S.flag]) document.querySelectorAll('.harbor .scene, .myship .scene').forEach(el => { el.classList.add('wiggle'); setTimeout(() => el.classList.remove('wiggle'), 1300); });
 }
@@ -758,14 +928,34 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape') { if (S.flagSheet) closeFlags(); else if (S.sheetFor != null) closeSheet(); }
 });
 
+// #og-card: the 1200×630 social preview, drawn from the game's own artwork.
+// Regenerate assets/og.png with the server running:
+//   "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless --hide-scrollbars --window-size=1200,630 \
+//     --virtual-time-budget=3000 --screenshot=assets/og.png "http://localhost:8080/#og-card"
+function ogCard() {
+  document.body.classList.add('og');
+  // The scene is 1100px wide (scale 1100/360) from x=120; the full-width sea behind it uses the same scale,
+  // levels and wave phase so the two meet without a seam.
+  const k = 1100 / 360, top = 630 + 40 - 196 * k;
+  const sea = `<svg class="og-sea" viewBox="0 0 ${(1200 / k).toFixed(2)} ${(630 / k).toFixed(2)}" aria-hidden="true"><g transform="translate(${(120 / k % 30 - 30).toFixed(2)} 0)">
+    ${waves(top / k + 146, 1200 / k + 30, 630 / k, 'sh-sea2')}${waves(top / k + 156, 1200 / k + 30, 630 / k, 'sh-sea sh-wave')}</g></svg>`;
+  return `<div class="ogcard">${sea}<div class="og-text"><h1>Puerto<br>Banana</h1><p>Bid blind for banana cargo with your friends. First to 200 wins.</p></div>
+    ${heroScene(1.15, 'og-card', { hull: 'coral', cabin: 'white', flag: 'pirate' })}</div>`;
+}
 S.nick = ls.get('pb_nick') || '';
 S.hull = HULLS[ls.get('pb_hull')] ? ls.get('pb_hull') : 'navy';
 S.flag = flagOf(ls.get('pb_flag'));
 function pickHull(k) { S.hull = k; ls.set('pb_hull', k); render(); }
+S.cabin = CABINS[ls.get('pb_cabin')] ? ls.get('pb_cabin') : 'white';
+function pickCabin(k) { S.cabin = k; ls.set('pb_cabin', k); render(); }
+if (location.hash === '#og-card') app.innerHTML = ogCard(); else {
 render();
 loadScores();
 loadRivals();
-const saved = ls.get('pb_code'); if (saved) enterRoom(saved, true);
+}
+const invited = (new URLSearchParams(location.search).get('join') || '').toUpperCase();
+if (/^[A-Z]{4}$/.test(invited)) { S.joinCode = invited; history.replaceState(null, '', location.pathname); render(); } // from a shared invite link
+const saved = ls.get('pb_code'); if (saved && !S.joinCode && location.hash !== '#og-card') enterRoom(saved, true);
 </script>
 </body>
 </html>

@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://web.resource.org/cc/"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
+   version="1.0"
+   width="251"
+   height="304.20001"
+   id="svg4166">
+  <defs
+     id="defs4168">
+    <clipPath
+       id="clipPath2093">
+      <path
+         d="M 118.4056,132.86387 L 201.86775,33.397411 L 132.31106,-24.967511 C 94.995421,-56.803173 54.057027,-35.777646 39.335627,-18.233341 C 24.872329,-0.99663122 11.017066,43.278466 48.848902,74.498942 L 118.4056,132.86387 z "
+         style="fill:#eeeeee;fill-opacity:1;stroke:none"
+         id="Shield" />
+    </clipPath>
+  </defs>
+  <metadata
+     id="metadata1880"><rdf:RDF><cc:Work
+         rdf:about=""><dc:title>Norrbotten landskapsvapen</dc:title><dc:date>26-01-2008</dc:date><dc:creator><cc:Agent><dc:title>Lokal_Profil</dc:title></cc:Agent></dc:creator><cc:license
+         rdf:resource="http://creativecommons.org/licenses/by-sa/2.5/" /><dc:rights><cc:Agent><dc:title>cc-by-sa-2.5</dc:title></cc:Agent></dc:rights><dc:format>image/svg+xml</dc:format><dc:type
+         rdf:resource="http://purl.org/dc/dcmitype/StillImage" /></cc:Work><cc:License
+         rdf:about="http://creativecommons.org/licenses/by-sa/2.5/"><cc:permits
+         rdf:resource="http://web.resource.org/cc/Reproduction" /><cc:permits
+         rdf:resource="http://web.resource.org/cc/Distribution" /><cc:requires
+         rdf:resource="http://web.resource.org/cc/Notice" /><cc:requires
+         rdf:resource="http://web.resource.org/cc/Attribution" /><cc:permits
+         rdf:resource="http://web.resource.org/cc/DerivativeWorks" /><cc:requires
+         rdf:resource="http://web.resource.org/cc/ShareAlike" /></cc:License></rdf:RDF>
+  </metadata>
+  <g
+     transform="matrix(-1.228212,-1.463728,1.463728,-1.228212,200.5012,337.9381)"
+     clip-path="url(#clipPath2093)"
+     id="Backdrop">
+    <path
+       d="M 36.454593,106 C 25.715344,106 23.715114,118.61369 12.975862,118.61369 C 8.5226999,118.61369 2.9894524,114.92528 0,113.27936 L 0,138.67789 C 2.9894524,140.32381 8.5226999,142 12.975862,142 C 23.715114,142 25.715344,129.39852 36.454593,129.39852 C 47.193842,129.39852 49.194071,142.00001 59.933327,142 C 70.672575,142 72.672808,129.39852 83.412059,129.39852 C 94.151308,129.39852 96.151541,142.00001 106.89079,142 C 117.63005,142 119.63027,129.39852 130.36953,129.39852 C 141.10879,129.39852 143.10901,142.00001 153.84825,142 C 164.5875,142 166.58776,129.39852 177.32699,129.39852 C 188.06625,129.39852 190.06647,142.00001 200.80573,142 C 206.51096,142 211.18464,138.82737 214.04841,136.24736 L 214.04841,112.84883 C 211.18464,115.42883 206.51096,118.61369 200.80573,118.61369 C 190.06647,118.61369 188.06625,106 177.32699,106 C 166.58776,106 164.5875,118.61369 153.84825,118.61369 C 143.10901,118.61369 141.10877,106 130.36953,106 C 119.63028,106 117.63005,118.61369 106.89079,118.61369 C 96.151541,118.61369 94.151311,106 83.412059,106 C 72.672805,106 70.672575,118.61369 59.933327,118.61369 C 49.194071,118.61369 47.193842,106 36.454593,106 z "
+       style="fill:#003d8f"
+       id="path4127" />
+    <use
+       transform="translate(0,-46)"
+       id="use1987"
+       x="0"
+       y="0"
+       width="142"
+       height="142"
+       xlink:href="#path4127" />
+    <use
+       transform="translate(0,-92)"
+       id="use1989"
+       x="0"
+       y="0"
+       width="142"
+       height="142"
+       xlink:href="#path4127" />
+    <use
+       transform="translate(0,-138)"
+       id="use1991"
+       x="0"
+       y="0"
+       width="142"
+       height="142"
+       xlink:href="#path4127" />
+    <path
+       d="M 36.454593,83 C 25.715344,83 23.715114,95.61369 12.975862,95.61369 C 8.5226999,95.61369 2.9894524,91.92528 0,90.27936 L 0,115.67789 C 2.9894524,117.32381 8.5226999,119 12.975862,119 C 23.715114,119 25.715344,106.39852 36.454593,106.39852 C 47.193842,106.39852 49.194071,119.00001 59.933327,119 C 70.672575,119 72.672808,106.39852 83.412059,106.39852 C 94.151308,106.39852 96.151541,119.00001 106.89079,119 C 117.63005,119 119.63027,106.39852 130.36953,106.39852 C 141.10879,106.39852 143.10901,119.00001 153.84825,119 C 164.5875,119 166.58776,106.39852 177.32699,106.39852 C 188.06625,106.39852 190.06647,119.00001 200.80573,119 C 206.51096,119 211.18464,115.82737 214.04841,113.24736 L 214.04841,87.84883 C 211.18464,90.42883 206.51096,95.61369 200.80573,95.61369 C 190.06647,95.61369 188.06625,83 177.32699,83 C 166.58776,83 164.5875,95.61369 153.84825,95.61369 C 143.10901,95.61369 141.10877,83 130.36953,83 C 119.63028,83 117.63005,95.61369 106.89079,95.61369 C 96.151541,95.61369 94.151311,83 83.412059,83 C 72.672805,83 70.672575,95.61369 59.933327,95.61369 C 49.194071,95.61369 47.193842,83 36.454593,83 z "
+       style="fill:#ffcd50"
+       id="use1993" />
+    <use
+       transform="translate(0,-46)"
+       id="use1997"
+       x="0"
+       y="0"
+       width="142"
+       height="142"
+       xlink:href="#use1993" />
+    <use
+       transform="translate(0,-92)"
+       id="use1999"
+       x="0"
+       y="0"
+       width="142"
+       height="142"
+       xlink:href="#use1993" />
+    <use
+       transform="translate(0,-138)"
+       id="use2073"
+       x="0"
+       y="0"
+       width="251"
+       height="304.20001"
+       xlink:href="#use1993" />
+  </g>
+  <path
+     d="M 249.5625,157.15625 L 93.21875,297.75 C 104.91891,301.1713 116.07115,302.75 125.5,302.75 C 168.49385,302.74999 250.32973,268.65838 249.5625,174.9375 L 249.5625,157.15625 z "
+     style="fill:#003d8f"
+     id="Snedstam" />
+  <path
+     d="M 249.55062,1.4395041 L 1.449569,1.4395041 L 1.449569,174.9361 C 0.68232904,268.65698 81.739009,302.75585 125.5001,302.75585 C 168.49395,302.75585 250.31785,268.65698 249.55062,174.9361 L 249.55062,1.4395041 z "
+     style="fill:none;fill-opacity:0;stroke:#000000;stroke-width:1.88832211"
+     id="Frame" />
+</svg>

@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <clipPath id="tile"><rect width="64" height="64" rx="14"/></clipPath>
+  <g clip-path="url(#tile)">
+    <rect width="64" height="64" fill="#0582B8"/>
+    <path d="M0 44q8-5 16 0t16 0 16 0 16 0V64H0Z" fill="#3FD0E0"/>
+    <path d="M9 20C15 41 47 44 56 18c-1.6-2.2-4.3-2.4-5.8-.6C42 33 22 33 15 16c-1.8-1.9-4.9-1.4-6 4Z" fill="#FFD60A" stroke="#C98E00" stroke-width="2.4" stroke-linejoin="round"/>
+    <path d="M53 18.5 58 12" stroke="#5B4214" stroke-width="4" stroke-linecap="round"/>
+  </g>
+</svg>

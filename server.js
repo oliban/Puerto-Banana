@@ -10,12 +10,46 @@ const { computeRivals } = require('./rivals');
 
 const PORT = process.env.PORT || 8080;
 const GOAL = 200, START = 10, MAX_PLAYERS = 6;
-const { hullOf, flagOf } = require('./players'); // hull keys; the client maps each to a colour
+const { hullOf, cabinOf, flagOf } = require('./players'); // hull keys; the client maps each to a colour
+const TAUNT_MAX = 10; // a loser ending with this many bananas or fewer gets taunted (by their flag, client-side)
 const TORPEDO_ODDS = 0.2; // share of finished games where the winner's victory show torpedoes the rivals (visual only)
 let random = Math.random;  // swappable in tests
 const rooms = new Map();          // code -> room
 const streams = new Map();        // code -> Set<{res, token}>
-const INDEX = fs.readFileSync(path.join(__dirname, 'index.html'));
+const INDEX = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8');
+const HOME = 'https://puerto-banana.fly.dev';
+// The home page with its social-preview tags filled in. Links must be absolute, so they use the address the
+// page was requested on (only if it looks like a plain host); an invite link (?join=ABCD) names the room.
+function indexFor(req, url) {
+  const host = /^[a-z0-9.-]+(:\d{1,5})?$/i.test(req.headers.host || '') ? req.headers.host : '';
+  const proto = req.headers['x-forwarded-proto'] === 'https' || !/^(localhost|127\.|\[::1\])/.test(host) ? 'https' : 'http';
+  const origin = host ? `${proto}://${host}` : HOME;
+  const code = /^[a-z]{4}$/i.test(url.searchParams.get('join') || '') ? url.searchParams.get('join').toUpperCase() : '';
+  const fill = {
+    ORIGIN: origin,
+    URL: origin + (code ? `/?join=${code}` : '/'),
+    TITLE: code ? `Join my Puerto Banana room: ${code}` : 'Puerto Banana: bid blind for banana cargo',
+    DESC: code ? `You're invited aboard! Pick a name, join room ${code} and bid blind for bananas. First to 200 wins.`
+      : 'A blind-bid banana auction for 2-6 friends, each on their own phone. Win the cargo, pay the runner-up the gap. First to 200 bananas wins.',
+  };
+  return INDEX.replace(/%%(ORIGIN|URL|TITLE|DESC)%%/g, (_, k) => fill[k]);
+}
+// Static files: only assets/<lowercase path>.(svg|png|ico|json), never anything outside that folder.
+const ASSETS = path.join(__dirname, 'assets');
+const TYPES = { svg: 'image/svg+xml', png: 'image/png', ico: 'image/x-icon', json: 'application/json; charset=utf-8' };
+function serveAsset(res, pathname) {
+  const m = /^\/assets\/([a-z0-9_-]+(?:\/[a-z0-9_-]+)*)\.(svg|png|ico|json)$/.exec(pathname);
+  if (!m) return false;
+  const file = path.join(ASSETS, `${m[1]}.${m[2]}`);
+  if (!file.startsWith(ASSETS + path.sep)) return false;
+  let body;
+  try { body = fs.readFileSync(file); } catch (e) { return false; }
+  res.writeHead(200, { 'content-type': TYPES[m[2]], 'cache-control': 'public, max-age=86400',
+    // An SVG opened directly is a document: allow its own styles, never scripts or outside loads.
+    'content-security-policy': "default-src 'none'; style-src 'unsafe-inline'; img-src data:", 'x-content-type-options': 'nosniff' });
+  res.end(body);
+  return true;
+}
 
 const rid = n => crypto.randomBytes(n).toString('hex');
 function newCode() {
@@ -34,10 +68,10 @@ function view(room, token) {
     code: room.code, status: room.status, round: room.round, pot: room.pot,
     me: me ? me.id : null, isHost: room.hostToken === token,
     players: Object.values(room.players).sort((a, b) => a.joinedAt - b.joinedAt)
-      .map(p => ({ id: p.id, nick: p.nick, hull: p.hull, flag: p.flag, locked: room.bids[p.token] !== undefined })),
+      .map(p => ({ id: p.id, nick: p.nick, hull: p.hull, cabin: p.cabin, flag: p.flag, locked: room.bids[p.token] !== undefined })),
     order, inventories,
     myBid: room.bids[token] ?? null,
-    lastResult: room.lastResult, history: room.history, winners: room.winners, torpedo: !!room.torpedo,
+    lastResult: room.lastResult, history: room.history, winners: room.winners, torpedo: !!room.torpedo, taunts: room.taunts || {},
   };
 }
 
@@ -65,6 +99,9 @@ function resolveRound(room, stores) {
     room.status = 'over';
     room.winners = room.order.filter(t => inv[t] === top).map(ids);
     room.torpedo = random() < TORPEDO_ODDS; // rolled once, so every player sees the same show
+    // One taunt pick per low-scoring loser; the client maps it onto that flag's taunts (pick % count)
+    room.taunts = Object.fromEntries(room.order.filter(t => inv[t] <= TAUNT_MAX && !room.winners.includes(ids(t)))
+      .map(t => [ids(t), Math.floor(random() * 1000)]));
     recordGame(room, stores);
   }
 }
@@ -93,16 +130,16 @@ const actions = {
     const room = rooms.get(String(b.code || '').toUpperCase());
     if (!room) throw new Error('No room with that code.');
     const nick = String(b.nick || '').trim().slice(0, 20) || 'Player';
-    const hull = hullOf(b.hull), flag = flagOf(b.flag);
-    if (!room.players[token]) room.players[token] = { token, id: rid(4), nick, hull, flag, joinedAt: Date.now() };
-    else Object.assign(room.players[token], { nick, hull, flag });
+    const hull = hullOf(b.hull), cabin = cabinOf(b.cabin), flag = flagOf(b.flag);
+    if (!room.players[token]) room.players[token] = { token, id: rid(4), nick, hull, cabin, flag, joinedAt: Date.now() };
+    else Object.assign(room.players[token], { nick, hull, cabin, flag });
     broadcast(room); return { code: room.code };
   },
   start(b, token, room) {
     if (room.status !== 'lobby') throw new Error('Game already running.');
     const ts = Object.values(room.players).sort((a, b) => a.joinedAt - b.joinedAt).map(p => p.token).slice(0, MAX_PLAYERS);
     if (ts.length < 2) throw new Error('Need at least 2 players.');
-    Object.assign(room, { status: 'playing', order: ts, inventories: Object.fromEntries(ts.map(t => [t, START])), bids: {}, round: 1, pot: START, lastResult: null, history: [], winners: [], torpedo: false, scoresRecorded: false });
+    Object.assign(room, { status: 'playing', order: ts, inventories: Object.fromEntries(ts.map(t => [t, START])), bids: {}, round: 1, pot: START, lastResult: null, history: [], winners: [], torpedo: false, taunts: {}, scoresRecorded: false });
     broadcast(room);
   },
   bid(b, token, room, stores) {
@@ -121,7 +158,7 @@ const actions = {
     resolveRound(room, stores); broadcast(room);
   },
   lobby(b, token, room) {
-    Object.assign(room, { status: 'lobby', order: [], bids: {}, round: 0, lastResult: null, history: [], winners: [], torpedo: false });
+    Object.assign(room, { status: 'lobby', order: [], bids: {}, round: 0, lastResult: null, history: [], winners: [], torpedo: false, taunts: {} });
     broadcast(room);
   },
   leave(b, token, room) {
@@ -142,7 +179,8 @@ function createServer({ dataDir, logger = console, random: rnd } = {}) {
   const stores = { scores: createLeaderboardStore({ dataDir, logger }), games: createGamesStore({ dataDir, logger }) };
   const server = http.createServer(async (req, res) => {
     const url = new URL(req.url, 'http://x');
-    if (req.method === 'GET' && url.pathname === '/') { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' }); return res.end(INDEX); }
+    if (req.method === 'GET' && url.pathname === '/') { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' }); return res.end(indexFor(req, url)); }
+    if (req.method === 'GET' && url.pathname.startsWith('/assets/') && serveAsset(res, url.pathname)) return;
     if (req.method === 'GET' && url.pathname === '/healthz') return json(res, 200, { ok: true, rooms: rooms.size });
     if (req.method === 'GET' && url.pathname === '/api/highscores') {
       await stores.scores.ready;

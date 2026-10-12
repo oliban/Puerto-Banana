@@ -57,6 +57,46 @@ async function twoPlayerGame(port, hostNick, mateNick) {
 }
 
 const tests = {
+  async 'the home page carries a social preview with absolute links; invite links name the room'() {
+    await withServer(null, async port => {
+      const page = (p, headers = {}) => new Promise((ok, fail) => http.get({ port, path: p, headers }, res => { let d = ''; res.on('data', c => { d += c; }); res.on('end', () => ok(d)); }).on('error', fail));
+      const meta = (html, prop) => (html.match(new RegExp(`<meta (?:property|name)="${prop}" content="([^"]*)"`)) || [])[1];
+      const home = await page('/', { host: 'banana.example', 'x-forwarded-proto': 'https' });
+      a.equal(meta(home, 'og:image'), 'https://banana.example/assets/og.png');
+      a.equal(meta(home, 'og:url'), 'https://banana.example/');
+      a.equal(meta(home, 'twitter:card'), 'summary_large_image');
+      a.match(meta(home, 'og:title'), /Puerto Banana/);
+      a.match(home, /<link rel="icon" href="\/assets\/favicon.svg"/);
+      const invite = await page('/?join=qgww', { host: 'banana.example', 'x-forwarded-proto': 'https' });
+      a.match(meta(invite, 'og:title'), /QGWW/);
+      a.equal(meta(invite, 'og:url'), 'https://banana.example/?join=QGWW');
+      const evil = await page('/?join=%22%3E%3Cscript%3E', { host: 'x"><script>alert(1)</script>' });
+      a.ok(!evil.includes('<script>alert'), 'host header and code never reach the page raw');
+      a.equal(meta(evil, 'og:image'), 'https://puerto-banana.fly.dev/assets/og.png');
+      a.doesNotMatch(meta(evil, 'og:title'), /script/);
+    });
+  },
+  async 'assets are served with a type and a locked-down policy; nothing outside assets/ is'() {
+    await withServer(null, async port => {
+      const raw = (p) => new Promise((ok, fail) => http.get({ port, path: p }, res => { let d = ''; res.on('data', c => { d += c; }); res.on('end', () => ok({ status: res.statusCode, headers: res.headers, body: d })); }).on('error', fail));
+      const svg = await raw('/assets/test-fixture.svg');
+      a.equal(svg.status, 200);
+      a.equal(svg.headers['content-type'], 'image/svg+xml');
+      a.match(svg.headers['content-security-policy'], /default-src 'none'/);
+      a.match(svg.body, /<svg/);
+      for (const bad of ['/assets/../server.js', '/assets/%2e%2e/server.js', '/assets/..%2fserver.js', '/assets/test-fixture.js', '/assets/missing.svg', '/server.js'])
+        a.equal((await raw(bad)).status, 404, bad);
+    });
+  },
+  async 'players carry their cabin colour; unknown colours fall back to white'() {
+    await withServer(null, async port => {
+      const host = tok(), mate = tok();
+      const { body: { code } } = await api(port, { action: 'create', token: host, nick: 'Cap', cabin: 'mint' });
+      await api(port, { action: 'join', token: mate, code, nick: 'Mate', cabin: 'url(x)' });
+      const v = await view(port, code, host);
+      a.deepEqual(v.players.map(p => [p.nick, p.cabin]), [['Cap', 'mint'], ['Mate', 'white']]);
+    });
+  },
   async 'players carry their flag; anything unknown falls back to the pennant'() {
     await withServer(null, async port => {
       const host = tok(), mate = tok(), third = tok();
@@ -68,6 +108,10 @@ const tests = {
       await api(port, { action: 'join', token: third, code, nick: 'Odd', flag: 'gb-sct' });
       v = await view(port, code, host);
       a.equal(v.players.find(p => p.nick === 'Odd').flag, 'gb-sct');
+      await api(port, { action: 'join', token: third, code, nick: 'Odd', flag: 'ls-skane' });
+      a.equal((await view(port, code, host)).players.find(p => p.nick === 'Odd').flag, 'ls-skane');
+      await api(port, { action: 'join', token: third, code, nick: 'Odd', flag: 'ls-atlantis' });
+      a.equal((await view(port, code, host)).players.find(p => p.nick === 'Odd').flag, '');
     });
   },
   async 'players carry their hull colour; unknown colours fall back to navy'() {
@@ -216,6 +260,32 @@ const tests = {
       await until(async () => (await scores(port)).body.length >= 1);
       await until(() => logger.errors.some(e => /\[games\]/.test(e)));
     });
+  },
+  async 'losers ending with 10 bananas or fewer get one taunt each, picked once; others get none'() {
+    await withServer(null, async port => {
+      const rich = tok(), mid = tok(), broke = tok();
+      const { body: { code } } = await api(port, { action: 'create', token: rich, nick: 'Rich' });
+      await api(port, { action: 'join', token: mid, code, nick: 'Mid' });
+      await api(port, { action: 'join', token: broke, code, nick: 'Broke' });
+      await api(port, { action: 'start', token: rich, code });
+      let v = await view(port, code, rich);
+      a.deepEqual(v.taunts, {});
+      const id = nick => v.players.find(p => p.nick === nick).id;
+      for (let i = 0; i < 50 && v.status === 'playing'; i++) {
+        // Broke overbids and can't pay (3+ players: loses everything); Rich then wins and pays Mid the gap
+        await api(port, { action: 'bid', token: broke, code, bid: 100000 });
+        await api(port, { action: 'bid', token: rich, code, bid: 1 });
+        await api(port, { action: 'bid', token: mid, code, bid: 0 });
+        v = await view(port, code, rich);
+      }
+      a.equal(v.status, 'over');
+      a.ok(v.inventories[id('Broke')] <= 10 && v.inventories[id('Mid')] > 10);
+      a.deepEqual(Object.keys(v.taunts), [id('Broke')]); // only the low loser; never the winner or Mid
+      a.ok(Number.isInteger(v.taunts[id('Broke')]) && v.taunts[id('Broke')] >= 0);
+      a.deepEqual((await view(port, code, mid)).taunts, v.taunts); // same pick on every screen
+      await api(port, { action: 'lobby', token: rich, code });
+      a.deepEqual((await view(port, code, rich)).taunts, {});
+    }, { random: () => 0.5 });
   },
   async 'unavailable storage keeps health, rooms and games working'() {
     await withServer(dir => fs.mkdir(path.join(dir, 'highscores.json')), async (port, logger) => {
