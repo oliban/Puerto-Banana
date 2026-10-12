@@ -20,7 +20,7 @@
   --coral:#D93842; --ok:#078A7E;
   --sea:#3FD0E0; --sea-deep:#0582B8; --sky:#A6ECF5; --sky-2:#E9FCFF;
   --hull:#1D4E89; --keel:#FF6B6B; --rail:#1D4E89; --cabin:#FFFFFF;
-  --mango:#FF9F1C; --hibiscus:#FF3E8A; --palm:#2BB673; --trunk:#9C6B3C; --sand:#FFE0A3; --sun:#FFC93C; --cloud:#FFFFFF;
+  --mango:#FF9F1C; --hibiscus:#FF3E8A; --palm:#2BB673; --trunk:#9C6B3C; --sand:#FFE0A3; --sun:#FFC93C; --cloud:#FFFFFF; --smoke-dark:#5F6873; --smoke-light:#F4F7F9;
  
   color-scheme:light dark;
 }
@@ -30,7 +30,7 @@
     --banana-ink:#2A2200; --banana-edge:#C98E00; --coral:#FF7A7F; --ok:#3ED6C2;
     --sea:#0F7C99; --sea-deep:#06506E; --sky:#12425C; --sky-2:#0A2A3E;
     --hull:#2A64A8; --keel:#E85A5A; --rail:#7FB4E8; --cabin:#DCEFF5;
-    --palm:#23A866; --trunk:#B88553; --sand:#C9A66B; --sun:#FFF0B8; --cloud:#2B5A73;
+    --palm:#23A866; --trunk:#B88553; --sand:#C9A66B; --sun:#FFF0B8; --cloud:#2B5A73; --smoke-dark:#7F8A95; --smoke-light:#CBD6DD;
 
   }
 }
@@ -39,7 +39,7 @@
   --banana-ink:#2A2200; --banana-edge:#C98E00; --coral:#FF7A7F; --ok:#3ED6C2;
   --sea:#0F7C99; --sea-deep:#06506E; --sky:#12425C; --sky-2:#0A2A3E;
   --hull:#2A64A8; --keel:#E85A5A; --rail:#7FB4E8; --cabin:#DCEFF5;
-  --palm:#23A866; --trunk:#B88553; --sand:#C9A66B; --sun:#FFF0B8; --cloud:#2B5A73;
+  --palm:#23A866; --trunk:#B88553; --sand:#C9A66B; --sun:#FFF0B8; --cloud:#2B5A73; --smoke-dark:#7F8A95; --smoke-light:#CBD6DD;
 
 }
 *,*::before,*::after{box-sizing:border-box}
@@ -74,6 +74,8 @@ label,.label{display:block;font-weight:600;margin:0 0 6px}
 .card{background:var(--surface);border-radius:18px;padding:16px;box-shadow:0 3px 0 var(--line)}
 .divider{height:4px;margin:24px 0;background:radial-gradient(circle,var(--sea) 1.6px,transparent 2.2px) 0 0/12px 4px repeat-x}
 .err{color:var(--coral);font-weight:600}
+.or{display:flex;align-items:center;gap:10px;margin:16px 0 12px;color:var(--muted);font-size:.88rem;font-weight:600}
+.or::before,.or::after{content:"";flex:1;height:1px;background:var(--line)}
 .topbar{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:12px}
 .topbar .code{font-family:Bungee,sans-serif;letter-spacing:.15em}
 
@@ -93,6 +95,13 @@ label,.label{display:block;font-weight:600;margin:0 0 6px}
 .sh-wave{animation:drift 5s linear infinite}
 .sh-float{animation:float 3.2s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
 .still .sh-bob,.still .sh-wave,.still .sh-float{animation:none}
+/* Funnel smoke: each puff grows, lightens and drifts back over the stern; timings are per ship (see shipBody) */
+.puff{filter:url(#smokeblur);transform-box:fill-box;transform-origin:center;opacity:0;animation:puff var(--t) cubic-bezier(.3,.6,.5,1) var(--d) infinite}
+@keyframes puff{0%{fill:var(--smoke-dark);opacity:0;transform:translate(0,0) scale(1)}
+  8%{opacity:var(--o)}
+  50%{opacity:calc(var(--o) * .75);transform:translate(calc(var(--dx) * .35),calc(var(--dy) * .6)) scale(calc(var(--s) * .6))}
+  100%{fill:var(--smoke-light);opacity:0;transform:translate(var(--dx),var(--dy)) scale(var(--s))}}
+.still .puff{display:none}
 @keyframes bob{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(1.5px) rotate(-.8deg)}}
 @keyframes drift{to{transform:translateX(-30px)}}
 @keyframes float{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-2px) rotate(8deg)}}
@@ -185,11 +194,12 @@ summary{cursor:pointer;font-weight:600;color:var(--muted);min-height:44px;displa
 @keyframes surface{from{transform:translateY(14px);opacity:0}to{transform:none;opacity:1}}
 .party-banner{position:absolute;left:50%;top:16px;transform:translateX(-50%);width:min(92vw,420px);background:var(--surface);color:var(--ink);
   border-radius:16px;padding:12px 16px;font-weight:800;text-align:center;box-shadow:0 6px 24px rgba(0,0,0,.25)}
-@media (prefers-reduced-motion:reduce){.reveal li,.sh-bob,.sh-wave,.sh-float{animation:none}}
+@media (prefers-reduced-motion:reduce){.reveal li,.sh-bob,.sh-wave,.sh-float{animation:none}.puff{display:none}}
 </style>
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs>
+  <filter id="smokeblur" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="1.3"/></filter>
   <symbol id="nana" viewBox="0 0 26 12"><path class="nb" d="M2 3C6 10.5 18 11.5 23.5 3.5 22.8 2.6 21.7 2.5 21 3.2 16 8 8 7.8 4 2.4 3.3 1.8 2.3 2.1 2 3Z"/><path class="nb-tip" d="M22.5 3.4 24.6 1.2"/></symbol>
   <symbol id="bunch" viewBox="0 0 26 18"><use href="#nana" width="26" height="12"/><use href="#nana" x="1" y="3" width="25" height="12"/><use href="#nana" y="6" width="26" height="12"/></symbol>
 </defs></svg>
@@ -262,13 +272,20 @@ function shipBody(f, key = '') {
     for (let c = 0; c < m; c++) cargo += bunch(x0 + c * HOLD.w, HOLD.deck - HOLD.bh - (HOLD.rows + t) * HOLD.h, 50 + t * 7 + c);
     left -= m;
   }
+  // Funnel smoke, individual per ship: heavier loads puff more, bigger and darker
+  const srnd = rng(key + '|smoke'), puffs = 5 + Math.round(Math.min(f, 1.2) * 2.5), beat = 2.8 + srnd() * 1.4;
+  let smoke = '';
+  for (let i = 0; i < puffs; i++) {
+    const t = beat + srnd() * 0.8, d = -(i / puffs) * t - srnd() * 0.4;
+    smoke += `<circle class="puff" cx="${(34 + srnd() * 2).toFixed(1)}" cy="2" r="${(3 + srnd() + Math.min(f, 1.2)).toFixed(1)}" style="--t:${t.toFixed(2)}s;--d:${d.toFixed(2)}s;--dx:${(-16 - srnd() * 20).toFixed(0)}px;--dy:${(-24 - srnd() * 16).toFixed(0)}px;--s:${(2.8 + srnd() * 2).toFixed(2)};--o:${(0.6 + srnd() * 0.15 + Math.min(f, 1) * 0.15).toFixed(2)}"/>`;
+  }
   const sink = (-6 + Math.min(f, 1) * 42 + Math.min(Math.max(f - 1, 0), 0.6) * 10).toFixed(1), tilt = over ? 1.8 : 0;
   const ports = [44, 64, 84, 104, 124, 144, 164, 184].map(x => `<circle class="sh-port" cx="${x}" cy="64" r="2.4"/>`).join('');
   const ship = `<g transform="translate(0 ${sink}) rotate(${tilt} 110 80)"><g class="sh-bob">
     <path class="sh-mast" d="M128 50V12M128 16 158 26"/>
     <rect class="sh-cabin" x="16" y="22" width="40" height="34" rx="3"/>
     <rect class="sh-win" x="21" y="28" width="30" height="6" rx="2"/><rect class="sh-win" x="21" y="39" width="30" height="5" rx="2"/>
-    <path class="sh-funnel" d="M25 22 27 2H43L45 22Z"/><rect class="sh-band" x="26.5" y="7" width="17" height="5"/>
+    <path class="sh-funnel" d="M25 22 27 2H43L45 22Z"/><rect class="sh-band" x="26.5" y="7" width="17" height="5"/>${smoke}
     ${cargo}
     <path class="sh-hull" d="M6 52 212 45 200 82H22Z"/><path class="sh-keel" d="M22 82H200L192 100H30Z"/><path class="sh-stripe" d="M22 82H200"/>${ports}
     <path class="sh-mast" d="M206 46V24"/><path class="sh-flag" d="M206 24 218 28 206 32Z"/></g></g>`;
@@ -381,12 +398,13 @@ function homeView() {
     <div class="hullpick"><div class="swatches" role="radiogroup" aria-labelledby="hull-l">${Object.entries(HULLS).map(([k, [name, c]]) =>
       `<button id="hull-${k}" class="swatch" role="radio" aria-checked="${S.hull === k}" aria-label="${name}" style="--c:${c}" onclick="pickHull('${k}')"></button>`).join('')}</div>
     ${tile(0.5, false, 'preview', S.hull)}</div></div>
-    <button class="primary wide" onclick="createRoom()" ${S.busy?'disabled':''}>Create a room</button>
   </div>
   <div class="divider"></div>
   <label for="join">Join with a code</label>
   <div class="row"><input id="join" class="text code grow" maxlength="4" value="${esc(S.joinCode)}" oninput="S.joinCode=this.value" placeholder="ABCD" autocapitalize="characters">
   <button onclick="enterRoom(S.joinCode)" ${S.busy?'disabled':''}>Join</button></div>
+  <p class="or">or start your own</p>
+  <button class="primary wide" onclick="createRoom()" ${S.busy?'disabled':''}>Create a room</button>
   ${S.error ? `<p class="err" style="margin-top:12px">${esc(S.error)}</p>` : ''}
   <details><summary>How a round works</summary><div class="small" style="margin-top:8px">
   <p>The container holds as many bananas as the richest player. Everyone secretly bids any number, even more than they own.</p>
