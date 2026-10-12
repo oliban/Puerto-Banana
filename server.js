@@ -116,9 +116,12 @@ function broadcast(room) {
   for (const s of streams.get(room.code) || []) {
     s.res.write(`data: ${JSON.stringify(view(room, s.token))}\n\n`);
   }
+  if (room.effects && room.effects.length > 60) room.effects = room.effects.slice(-60);
 }
 
 function resolveRound(room, stores) {
+  ensureShop(room); // sabotage and gifts last until their round resolves; the diamond stays for the game
+  room.effects = room.effects.filter(e => e.round === undefined || e.round !== room.round || e.kind === 'diamond');
   const ids = t => room.players[t].id;
   const bids = {}; room.order.forEach(t => { bids[t] = room.bids[t] ?? 0; });
   const { inv, steps } = resolveAuction(room.inventories, bids, room.pot, room.order);
@@ -227,6 +230,70 @@ const actions = {
     room.shop = b.shop !== false;
     broadcast(room);
   },
+  buy(b, token, room, stores) {
+    ensureShop(room);
+    const item = CATALOG[b.item];
+    if (!item) throw new Error('Unknown item.');
+    if (!room.shop) throw new Error('The shop is off in this room.');
+    if (!stores.wallets.available) throw new Error('The shop is closed right now.');
+    if (!room.market.includes(b.item)) throw new Error('Not for sale this game: check back next game!');
+    const me = room.players[token];
+    const wallet = stores.wallets.get(token);
+    let target = null;
+    if (item.kind === 'sabotage' || item.kind === 'gift') {
+      target = Object.values(room.players).find(p => p.id === b.target && p.token !== token) || null;
+      if (item.kind === 'sabotage' && (!target || room.status !== 'playing' || !room.order.includes(token) || !room.order.includes(target.token)))
+        throw new Error("Pick a rival's ship.");
+      if (item.kind === 'gift' && !target) throw new Error('Pick a captain to give it to.');
+    }
+    const round = room.status === 'playing' ? room.round : 0;
+    if (item.kind === 'sabotage') {
+      if (room.effects.some(e => e.from === me.id && kindOf(e.kind) === 'sabotage' && e.round === round)) throw new Error("You've already sabotaged this round.");
+      if (room.effects.filter(e => e.target === target.id && kindOf(e.kind) === 'sabotage' && !e.blocked && e.round === round).length >= 2)
+        throw new Error(`${target.nick}'s ship can't take any more right now.`);
+    }
+    if (item.kind === 'gift' && room.effects.some(e => e.from === me.id && kindOf(e.kind) === 'gift' && e.round === round))
+      throw new Error("You've already sent a gift this round.");
+    if (item.kind === 'bling' && wallet.owned.includes(b.item)) throw new Error('You already own that.');
+    if (wallet.credits < item.price) throw new Error(`Not enough 🪙: ${item.name} costs ${item.price}.`);
+    const after = stores.wallets.change(token, w => {
+      w.credits -= item.price;
+      if (item.kind === 'defence') w.stock[b.item] = (w.stock[b.item] || 0) + 1;
+      if (item.kind === 'bling') { w.owned.push(b.item); w.worn.push(b.item); }
+    });
+    if (item.kind === 'bling') me.bling = after.worn;
+    if (item.kind === 'sabotage' || item.kind === 'gift') {
+      const fx = { kind: b.item, from: me.id, target: target.id, round, at: Date.now() };
+      if (item.kind === 'sabotage') {
+        const blocker = blockerFor(b.item, stores.wallets.get(target.token).stock);
+        if (blocker) { fx.blocked = blocker; stores.wallets.change(target.token, w => { w.stock[blocker] -= 1; if (!w.stock[blocker]) delete w.stock[blocker]; }); }
+      }
+      room.effects.push(fx);
+    }
+    broadcast(room);
+    return { ok: true, wallet: after };
+  },
+  wear(b, token, room, stores) {
+    if (!stores.wallets.available) throw new Error('The shop is closed right now.');
+    if (!stores.wallets.get(token).owned.includes(b.item)) throw new Error("You don't own that.");
+    const after = stores.wallets.change(token, w => {
+      w.worn = w.worn.filter(k => k !== b.item);
+      if (b.on !== false) w.worn.push(b.item);
+    });
+    room.players[token].bling = after.worn;
+    broadcast(room);
+    return { ok: true, wallet: after };
+  },
+  emote(b, token, room) {
+    ensureShop(room);
+    if (!EMOTES.includes(b.kind)) throw new Error('Unknown item.');
+    if (!room.shop) throw new Error('The shop is off in this room.');
+    const me = room.players[token];
+    if (Date.now() - (me.emotedAt || 0) < 10000) throw new Error('Wait a moment before the next one.');
+    me.emotedAt = Date.now();
+    room.effects.push({ kind: 'emote', emote: b.kind, from: me.id, at: me.emotedAt });
+    broadcast(room);
+  },
   leave(b, token, room) {
     if (room.status === 'lobby' || room.status === 'over') { delete room.players[token]; if (room.hostToken === token) { const next = Object.keys(room.players)[0]; if (next) room.hostToken = next; } broadcast(room); }
   },
@@ -312,6 +379,7 @@ function createServer({ dataDir = process.env.DATA_DIR || '/data', logger = cons
   });
   server.stores = stores;
   server.flush = flush; // save rooms now (on shutdown, and in tests)
+  server.rooms = () => rooms; // for tests
   return server;
 }
 

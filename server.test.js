@@ -44,7 +44,7 @@ async function withServer(setup, fn, opts = {}) {
     if (setup) await setup(dir);
     const server = createServer({ dataDir: dir, logger, ...opts });
     await new Promise(r => server.listen(0, '127.0.0.1', r));
-    try { await fn(server.address().port, logger, dir); } finally { server.closeAllConnections?.(); await new Promise(r => server.close(r)); }
+    try { await fn(server.address().port, logger, dir, server); } finally { await server.flush(); server.closeAllConnections?.(); await new Promise(r => server.close(r)); }
   } finally { await fs.rm(dir, { recursive: true, force: true }); }
 }
 
@@ -55,6 +55,18 @@ async function twoPlayerGame(port, hostNick, mateNick) {
   a.equal((await api(port, { action: 'start', token: host, code })).status, 200);
   return { host, mate, code };
 }
+
+// A playing 3-captain game where everyone has credits and the market holds everything (random pinned, then market opened up).
+async function shopGame(port, dir) {
+  const host = tok(), mate = tok(), third = tok();
+  const { body: { code } } = await api(port, { action: 'create', token: host, nick: 'Cap' });
+  await api(port, { action: 'join', token: mate, code, nick: 'Bo' });
+  await api(port, { action: 'join', token: third, code, nick: 'Cy' });
+  await api(port, { action: 'start', token: host, code });
+  return { host, mate, third, code };
+}
+const give = (srv, token, credits, stock = {}) => srv.stores.wallets.change(token, w => { w.credits = credits; Object.assign(w.stock, stock); });
+const openMarket = (srv, code) => { const room = srv.rooms().get(code); room.market = Object.keys(require('./shop').CATALOG); };
 
 const tests = {
   async 'every player earns credits once per game; spectators earn nothing'() {
@@ -446,6 +458,144 @@ const tests = {
       a.equal(v.status, 'over');
       await until(() => logger.errors.some(e => /unavailable/i.test(e)));
       a.equal((await scores(port)).status, 503);
+    });
+  },
+  async 'sabotage costs credits, needs stock in the market, hits rivals only and respects the limits'() {
+    await withServer(null, async (port, _l, _d, srv) => {
+      const g = await shopGame(port);
+      const v0 = await view(port, g.code, g.host);
+      const [cap, bo, cy] = v0.order;
+      openMarket(srv, g.code);
+      const buy = (token, item, target) => api(port, { action: 'buy', token, code: g.code, item, target });
+      let r = await buy(g.host, 'kraken', bo);
+      a.equal(r.status, 400); a.equal(r.body.error, 'Not enough 🪙: Kraken costs 15.');
+      give(srv, g.host, 100); give(srv, g.mate, 100); give(srv, g.third, 100);
+      a.equal((await buy(g.host, 'kraken', cap)).body.error, "Pick a rival's ship.");
+      r = await buy(g.host, 'kraken', bo);
+      a.equal(r.status, 200); a.equal(r.body.wallet.credits, 85);
+      a.equal((await buy(g.host, 'shark', cy)).body.error, "You've already sabotaged this round.");
+      a.equal((await buy(g.third, 'bomb', bo)).status, 200);
+      a.equal((await buy(g.mate, 'cloud', cap)).status, 200);
+      const sab = (await view(port, g.code, g.mate)).effects.filter(e => e.target === bo);
+      a.deepEqual(sab.map(e => e.kind).sort(), ['bomb', 'kraken']);
+      srv.rooms().get(g.code).market = ['shark'];
+      a.equal((await buy(g.mate, 'gulls', cap)).body.error, 'Not for sale this game: check back next game!');
+      a.equal((await buy(g.host, 'nonsense', bo)).body.error, 'Unknown item.');
+    });
+  },
+  async 'the third sabotage on one ship is refused and keeps its credits'() {
+    await withServer(null, async (port, _l, _d, srv) => {
+      const host = tok(), b = tok(), c = tok(), d = tok();
+      const { body: { code } } = await api(port, { action: 'create', token: host, nick: 'Cap' });
+      for (const [t, n] of [[b, 'Bo'], [c, 'Cy'], [d, 'Di']]) await api(port, { action: 'join', token: t, code, nick: n });
+      await api(port, { action: 'start', token: host, code });
+      openMarket(srv, code);
+      const v = await view(port, code, host);
+      const bo = v.players.find(p => p.nick === 'Bo').id;
+      for (const t of [host, c, d]) give(srv, t, 50);
+      await api(port, { action: 'buy', token: host, code, item: 'shark', target: bo });
+      await api(port, { action: 'buy', token: c, code, item: 'shark', target: bo });
+      const r = await api(port, { action: 'buy', token: d, code, item: 'shark', target: bo });
+      a.equal(r.body.error, "Bo's ship can't take any more right now.");
+      a.equal(srv.stores.wallets.get(d).credits, 50);
+    });
+  },
+  async 'a matching defence blocks and is used up; bubble blocks anything; the attacker still pays'() {
+    await withServer(null, async (port, _l, _d, srv) => {
+      const g = await shopGame(port);
+      openMarket(srv, g.code);
+      const [, bo, cy] = (await view(port, g.code, g.host)).order;
+      give(srv, g.host, 100); give(srv, g.third, 100);
+      give(srv, g.mate, 0, { hose: 1, bubble: 1 });
+      await api(port, { action: 'buy', token: g.host, code: g.code, item: 'bomb', target: bo });
+      let fx = (await view(port, g.code, g.mate)).effects.find(e => e.kind === 'bomb');
+      a.equal(fx.blocked, 'hose');
+      a.deepEqual(srv.stores.wallets.get(g.mate).stock, { bubble: 1 });
+      a.equal(srv.stores.wallets.get(g.host).credits, 88);
+      await api(port, { action: 'buy', token: g.third, code: g.code, item: 'kraken', target: bo });
+      fx = (await view(port, g.code, g.mate)).effects.find(e => e.kind === 'kraken');
+      a.equal(fx.blocked, 'bubble');
+      a.deepEqual(srv.stores.wallets.get(g.mate).stock, {});
+    });
+  },
+  async 'sabotage and gifts end with their round; the diamond lasts the game; a rematch clears everything'() {
+    await withServer(null, async (port, _l, _d, srv) => {
+      const g = await shopGame(port);
+      openMarket(srv, g.code);
+      const [, bo, cy] = (await view(port, g.code, g.host)).order;
+      give(srv, g.host, 200); give(srv, g.mate, 200);
+      await api(port, { action: 'buy', token: g.host, code: g.code, item: 'kraken', target: bo });
+      await api(port, { action: 'buy', token: g.mate, code: g.code, item: 'diamond', target: cy });
+      await api(port, { action: 'buy', token: g.host, code: g.code, item: 'cake', target: cy });
+      await api(port, { action: 'skip', token: g.host, code: g.code }); // round 1 resolves
+      let kinds = (await view(port, g.code, g.host)).effects.map(e => e.kind);
+      a.deepEqual(kinds, ['diamond']);
+      let v = await view(port, g.code, g.host);
+      for (let i = 0; i < 60 && v.status === 'playing'; i++) { await api(port, { action: 'skip', token: g.host, code: g.code }); v = await view(port, g.code, g.host); }
+      a.deepEqual(v.effects.map(e => e.kind), ['diamond']);
+      await api(port, { action: 'rematch', token: g.host, code: g.code });
+      a.deepEqual((await view(port, g.code, g.host)).effects, []);
+    });
+  },
+  async 'gifts: any status, one per round, never blocked, three shown per ship'() {
+    await withServer(null, async (port, _l, _d, srv) => {
+      const host = tok(), b = tok(), c = tok(), d = tok(), e = tok();
+      const { body: { code } } = await api(port, { action: 'create', token: host, nick: 'Cap' });
+      for (const [t, n] of [[b, 'Bo'], [c, 'Cy'], [d, 'Di'], [e, 'Ed']]) await api(port, { action: 'join', token: t, code, nick: n });
+      openMarket(srv, code);
+      const cap = (await view(port, code, host)).players.find(p => p.nick === 'Cap').id;
+      for (const t of [b, c, d, e]) give(srv, t, 50, { bubble: 1 });
+      give(srv, host, 0, { bubble: 1 });
+      for (const t of [b, c, d, e]) a.equal((await api(port, { action: 'buy', token: t, code, item: 'lei', target: cap })).status, 200);
+      a.equal((await api(port, { action: 'buy', token: b, code, item: 'bottle', target: cap })).body.error, "You've already sent a gift this round.");
+      const gifts = (await view(port, code, host)).effects.filter(x => x.target === cap);
+      a.equal(gifts.length, 3);
+      a.ok(gifts.every(x => !x.blocked));
+      a.deepEqual(srv.stores.wallets.get(host).stock, { bubble: 1 });
+    });
+  },
+  async 'bling is bought once, worn and unworn, kept through reconnects, and hidden when the shop is off'() {
+    await withServer(null, async (port, _l, _d, srv) => {
+      const g = await shopGame(port);
+      openMarket(srv, g.code);
+      give(srv, g.host, 300);
+      a.equal((await api(port, { action: 'buy', token: g.host, code: g.code, item: 'parrot' })).status, 200);
+      a.equal((await api(port, { action: 'buy', token: g.host, code: g.code, item: 'parrot' })).body.error, 'You already own that.');
+      const me = (await view(port, g.code, g.mate)).players.find(p => p.nick === 'Cap');
+      a.deepEqual(me.bling, ['parrot']);
+      await api(port, { action: 'wear', token: g.host, code: g.code, item: 'parrot', on: false });
+      a.deepEqual((await view(port, g.code, g.mate)).players.find(p => p.nick === 'Cap').bling, []);
+      await api(port, { action: 'wear', token: g.host, code: g.code, item: 'parrot', on: true });
+      await api(port, { action: 'join', token: g.host, code: g.code, nick: 'Cap' }); // reconnect
+      a.deepEqual((await view(port, g.code, g.mate)).players.find(p => p.nick === 'Cap').bling, ['parrot']);
+      a.equal(srv.stores.wallets.get(g.host).credits, 260);
+      srv.rooms().get(g.code).shop = false;
+      const off = await view(port, g.code, g.mate);
+      a.deepEqual(off.players.find(p => p.nick === 'Cap').bling, []);
+      a.equal((await api(port, { action: 'buy', token: g.host, code: g.code, item: 'gold' })).body.error, 'The shop is off in this room.');
+    });
+  },
+  async 'emotes are free with a 10 s cooldown and fade from the view'() {
+    await withServer(null, async (port, _l, _d, srv) => {
+      const g = await shopGame(port);
+      a.equal((await api(port, { action: 'emote', token: g.mate, code: g.code, kind: 'honk' })).status, 200);
+      a.equal((await api(port, { action: 'emote', token: g.mate, code: g.code, kind: 'ha' })).body.error, 'Wait a moment before the next one.');
+      a.equal((await api(port, { action: 'emote', token: g.host, code: g.code, kind: 'nope' })).body.error, 'Unknown item.');
+      let fx = (await view(port, g.code, g.host)).effects.filter(e => e.kind === 'emote');
+      a.equal(fx.length, 1); a.equal(fx[0].emote, 'honk');
+      srv.rooms().get(g.code).effects.forEach(e => { e.at -= 5000; });
+      fx = (await view(port, g.code, g.host)).effects.filter(e => e.kind === 'emote');
+      a.equal(fx.length, 0);
+    });
+  },
+  async 'shop actions fail politely when wallet storage is broken; games still finish'() {
+    await withServer(dir => fs.mkdir(path.join(dir, 'wallets.json')), async port => {
+      const g = await twoPlayerGame(port, 'A', 'B');
+      a.equal((await api(port, { action: 'buy', token: g.host, code: g.code, item: 'shark', target: 'x' })).body.error, 'The shop is closed right now.');
+      let v;
+      for (let i = 0; i < 60; i++) { await api(port, { action: 'skip', token: g.host, code: g.code }); v = await view(port, g.code, g.host); if (v.status === 'over') break; }
+      a.equal(v.status, 'over');
+      a.equal(v.wallet, null);
     });
   },
   async 'the home page is still served'() {
