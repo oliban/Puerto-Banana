@@ -2,6 +2,6 @@
   "name": "puerto-banana",
   "version": "0.1.0",
   "private": true,
-  "scripts": { "start": "node server.js", "test": "node test.js && node leaderboard-store.test.js && node games-store.test.js && node rivals.test.js && node taunts.test.js && node shop.test.js && node server.test.js" },
+  "scripts": { "start": "node server.js", "test": "node test.js && node leaderboard-store.test.js && node games-store.test.js && node rivals.test.js && node taunts.test.js && node shop.test.js && node wallets-store.test.js && node server.test.js" },
   "engines": { "node": ">=20" }
 }
