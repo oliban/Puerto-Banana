@@ -57,6 +57,52 @@ async function twoPlayerGame(port, hostNick, mateNick) {
 }
 
 const tests = {
+  async 'rooms carry a shop setting and a market; the host can switch the shop off in the lobby'() {
+    await withServer(null, async port => {
+      const host = tok(), mate = tok();
+      const { body: { code } } = await api(port, { action: 'create', token: host, nick: 'Cap', shop: false });
+      await api(port, { action: 'join', token: mate, code, nick: 'Mate' });
+      let v = await view(port, code, mate);
+      a.equal(v.shop, false);
+      a.equal(v.market.length, 11);
+      a.deepEqual(v.effects, []);
+      a.deepEqual(v.wallet, { credits: 0, stock: {}, owned: [], worn: [] });
+      a.equal((await api(port, { action: 'settings', token: mate, code, shop: true })).status, 400); // host only
+      a.equal((await api(port, { action: 'settings', token: host, code, shop: true })).status, 200);
+      a.equal((await view(port, code, mate)).shop, true);
+      const before = (await view(port, code, host)).market.join();
+      let changed = false;
+      for (let i = 0; i < 6 && !changed; i++) {
+        await api(port, { action: 'start', token: host, code });
+        v = await view(port, code, host);
+        changed = v.market.join() !== before;
+        await api(port, { action: 'lobby', token: host, code });
+      }
+      a.ok(changed, 'a new game rolls a new market');
+      a.equal((await api(port, { action: 'settings', token: host, code, shop: false })).status, 200);
+      a.equal((await view(port, code, host)).shop, false);
+    });
+  },
+  async 'the shop catalogue is served'() {
+    await withServer(null, async port => {
+      const r = await request(port, 'GET', '/api/shop');
+      a.equal(r.status, 200);
+      a.equal(r.body.catalog.kraken.price, 15);
+      a.deepEqual(r.body.emotes, ['honk', 'ha', 'oops', 'ouch']);
+    });
+  },
+  async 'a room saved before the shop existed gets the shop on and a market'() {
+    await withServer(async dir => {
+      await fs.writeFile(path.join(dir, 'rooms.json'), JSON.stringify([{ code: 'OLDR', hostToken: 'c'.repeat(32), status: 'lobby',
+        players: { ['c'.repeat(32)]: { token: 'c'.repeat(32), id: 'aaaa', nick: 'Old', joinedAt: 1 } }, order: [], inventories: {}, bids: {},
+        round: 0, pot: 0, lastResult: null, history: [], winners: [], touched: Date.now() }]));
+    }, async port => {
+      const v = await view(port, 'OLDR', 'c'.repeat(32));
+      a.equal(v.shop, true);
+      a.equal(v.market.length, 11);
+      a.deepEqual(v.effects, []);
+    });
+  },
   async 'the bid scratchpad recognizer is served as JavaScript'() {
     await withServer(null, async port => {
       const r = await new Promise((ok, fail) => http.get({ port, path: '/digits.js' }, res => { let d = ''; res.on('data', c => { d += c; }); res.on('end', () => ok({ status: res.statusCode, type: res.headers['content-type'], body: d })); }).on('error', fail));

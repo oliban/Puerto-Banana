@@ -8,6 +8,8 @@ const { createLeaderboardStore } = require('./leaderboard-store');
 const { createGamesStore } = require('./games-store');
 const { computeRivals } = require('./rivals');
 const { createJsonFileStore } = require('./json-file-store');
+const { CATALOG, EMOTES, rollMarket, earnings, blockerFor } = require('./shop');
+const { createWalletsStore } = require('./wallets-store');
 
 const PORT = process.env.PORT || 8080;
 const GOAL = 200, START = 10, MAX_PLAYERS = 6;
@@ -61,8 +63,30 @@ function newCode() {
   return c;
 }
 
+// Rooms saved before the shop existed get it switched on with a freshly rolled market.
+function ensureShop(room) {
+  if (room.shop === undefined) room.shop = true;
+  if (!Array.isArray(room.market)) room.market = rollMarket(random);
+  if (!Array.isArray(room.effects)) room.effects = [];
+}
+const kindOf = k => CATALOG[k] && CATALOG[k].kind;
+// What every screen should be drawing right now: short-lived entries fade, players who left are dropped,
+// and a ship shows at most its three newest gifts.
+function liveEffects(room) {
+  ensureShop(room);
+  if (!room.shop) return [];
+  const now = Date.now(), present = new Set(Object.values(room.players).map(p => p.id));
+  const live = room.effects.filter(e => present.has(e.from) && (!e.target || present.has(e.target))
+    && !(e.kind === 'emote' && now - e.at > 4000) && !(e.blocked && now - e.at > 4000)
+    && !(kindOf(e.kind) === 'gift' && e.round === 0 && now - e.at > 30000));
+  const gifts = {};
+  return live.reverse().filter(e => kindOf(e.kind) !== 'gift' || (gifts[e.target] = (gifts[e.target] || 0) + 1) <= 3).reverse();
+}
+let walletsRef = null; // the server's wallet store, for view()
+
 // What one player is allowed to see.
 function view(room, token) {
+  ensureShop(room);
   const me = room.players[token];
   const order = room.order.map(t => room.players[t].id);
   const inventories = {};
@@ -71,10 +95,12 @@ function view(room, token) {
     code: room.code, status: room.status, round: room.round, pot: room.pot,
     me: me ? me.id : null, isHost: room.hostToken === token, hostId: room.players[room.hostToken]?.id ?? null,
     players: Object.values(room.players).sort((a, b) => a.joinedAt - b.joinedAt)
-      .map(p => ({ id: p.id, nick: p.nick, hull: p.hull, cabin: p.cabin, flag: p.flag, locked: room.bids[p.token] !== undefined })),
+      .map(p => ({ id: p.id, nick: p.nick, hull: p.hull, cabin: p.cabin, flag: p.flag, bling: room.shop ? (p.bling || []) : [], locked: room.bids[p.token] !== undefined })),
     order, inventories,
     myBid: room.bids[token] ?? null,
     lastResult: room.lastResult, history: room.history, winners: room.winners, torpedo: !!room.torpedo, taunts: room.taunts || {},
+    shop: room.shop, market: room.market, effects: liveEffects(room), earned: room.earned || {},
+    wallet: walletsRef && walletsRef.available && me ? walletsRef.get(token) : null,
   };
 }
 
@@ -135,14 +161,15 @@ function newGame(room) {
   const ts = Object.values(room.players).sort((a, b) => a.joinedAt - b.joinedAt).map(p => p.token).slice(0, MAX_PLAYERS);
   if (ts.length < 2) throw new Error('Need at least 2 players.');
   Object.assign(room, { status: 'playing', order: ts, inventories: Object.fromEntries(ts.map(t => [t, START])), bids: {}, round: 1, pot: START,
-    lastResult: null, history: [], winners: [], torpedo: false, taunts: {}, scoresRecorded: false });
+    lastResult: null, history: [], winners: [], torpedo: false, taunts: {}, scoresRecorded: false, market: rollMarket(random), effects: [], earned: {} });
   broadcast(room);
 }
 
 const actions = {
   create(b, token) {
     const code = newCode();
-    rooms.set(code, { code, hostToken: token, status: 'lobby', players: {}, order: [], inventories: {}, bids: {}, round: 0, pot: 0, lastResult: null, history: [], winners: [], scoresRecorded: false, touched: Date.now() });
+    rooms.set(code, { code, hostToken: token, status: 'lobby', players: {}, order: [], inventories: {}, bids: {}, round: 0, pot: 0, lastResult: null, history: [], winners: [], scoresRecorded: false, touched: Date.now(),
+      shop: b.shop !== false, market: rollMarket(random), effects: [] });
     return actions.join({ ...b, code }, token);
   },
   join(b, token) {
@@ -152,6 +179,7 @@ const actions = {
     const hull = hullOf(b.hull), cabin = cabinOf(b.cabin), flag = flagOf(b.flag);
     if (!room.players[token]) room.players[token] = { token, id: rid(4), nick, hull, cabin, flag, joinedAt: Date.now() };
     else Object.assign(room.players[token], { nick, hull, cabin, flag });
+    if (walletsRef && walletsRef.available) room.players[token].bling = walletsRef.get(token).worn;
     broadcast(room); return { code: room.code };
   },
   start(b, token, room) {
@@ -181,7 +209,13 @@ const actions = {
     resolveRound(room, stores); broadcast(room);
   },
   lobby(b, token, room) {
-    Object.assign(room, { status: 'lobby', order: [], bids: {}, round: 0, lastResult: null, history: [], winners: [], torpedo: false, taunts: {} });
+    Object.assign(room, { status: 'lobby', order: [], bids: {}, round: 0, lastResult: null, history: [], winners: [], torpedo: false, taunts: {}, effects: [], earned: {} });
+    broadcast(room);
+  },
+  settings(b, token, room) {
+    if (room.hostToken !== token) throw new Error('Only the host can change that.');
+    if (room.status !== 'lobby') throw new Error('Change it in the lobby.');
+    room.shop = b.shop !== false;
     broadcast(room);
   },
   leave(b, token, room) {
@@ -199,18 +233,20 @@ const json = (res, code, obj) => { res.writeHead(code, { 'content-type': 'applic
 
 function createServer({ dataDir = process.env.DATA_DIR || '/data', logger = console, random: rnd } = {}) {
   random = rnd || Math.random;
-  const stores = { scores: createLeaderboardStore({ dataDir, logger }), games: createGamesStore({ dataDir, logger }) };
+  const stores = { scores: createLeaderboardStore({ dataDir, logger }), games: createGamesStore({ dataDir, logger }), wallets: createWalletsStore({ dataDir, logger }) };
+  walletsRef = stores.wallets;
   // This server owns the rooms: start from what the last one saved, minus rooms idle past their TTL.
   const roomStore = createJsonFileStore({ dataDir, file: 'rooms.json', label: 'rooms', clean: cleanRoom, logger,
     unavailableMessage: 'Room storage is unavailable.' });
   rooms.clear(); streams.clear();
-  const roomsReady = roomStore.ready.then(() => {
+  const roomsReady = Promise.all([roomStore.ready, stores.wallets.ready]).then(() => {
     const cut = Date.now() - ROOM_TTL;
     for (const r of roomStore.rows()) if (r.touched >= cut) rooms.set(r.code, r);
   });
   let saveTimer = null;
   const flush = async () => {
     clearTimeout(saveTimer); saveTimer = null;
+    await stores.wallets.flush();
     await roomsReady;
     if (!roomStore.available) return;
     await roomStore.update(() => [...rooms.values()]).catch(e => logger.error('[rooms] save failed:', e.message));
@@ -225,6 +261,7 @@ function createServer({ dataDir = process.env.DATA_DIR || '/data', logger = cons
       res.writeHead(200, { 'content-type': 'text/javascript; charset=utf-8', 'cache-control': 'public, max-age=86400' });
       return res.end(DIGITS);
     }
+    if (req.method === 'GET' && url.pathname === '/api/shop') return json(res, 200, { catalog: CATALOG, emotes: EMOTES });
     if (req.method === 'GET' && url.pathname === '/healthz') return json(res, 200, { ok: true, rooms: rooms.size });
     if (req.method === 'GET' && url.pathname === '/api/highscores') {
       await stores.scores.ready;
