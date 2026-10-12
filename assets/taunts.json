@@ -59,6 +59,11 @@
 "Tango takes two. You were dancing alone, captain.",
 "Dinner in Buenos Aires starts at ten. Your bidding apparently started even later."
 ],
+"arcade": [
+"GAME OVER. Insert coin to try again.",
+"The invaders came, saw your bids and left unimpressed.",
+"High score: 0 bananas. Enter your initials, captain."
+],
 "as": [
 "American Samoa sends more players to the NFL per head than anywhere. You could not tackle one banana.",
 "You crossed the International Date Line and lost the bananas on both days.",
@@ -175,6 +180,11 @@
 "La Paz is so high you get out of breath. You got out of bananas.",
 "The salt flats are the flattest place on Earth. So was your bidding.",
 "Bolivia has two capitals and you could not capture one banana."
+],
+"bongo": [
+"You flew Captain Bongo's own face and he still laughed the loudest at your bids.",
+"Even the mascot is embarrassed to be on this flag.",
+"Bongo eats a banana a minute. You couldn't keep one."
 ],
 "bq": [
 "Bonaire's licence plates say Diver's Paradise. Your hold says Bidder's Despair.",
@@ -370,6 +380,11 @@
 "Mangu for breakfast is mashed plantains. Mashed is how your bidding ended too.",
 "Dominican baseball sends stars to the major leagues. You sent ten bananas to the minors.",
 "Dominicans say ahorita, meaning soon or maybe never. Your bids arrived never."
+],
+"duck": [
+"Rubber ducks float better than your strategy.",
+"Squeak squeak. That's the sound of an empty cargo hold.",
+"You flew a bath toy into a banana war. Bold."
 ],
 "dz": [
 "The biggest country in Africa and you could not fill one cargo hold. The Sahara is less empty.",
@@ -760,6 +775,11 @@
 "Your parents expected an A+. You got ten bananas.",
 "Even your kimchi fermented faster than your banana pile grew.",
 "Your esports pros win world titles. You lost to a monkey's auction."
+],
+"kraken": [
+"You released the kraken. It ate your bananas first.",
+"Eight arms and you still couldn't grab a single bunch.",
+"The kraken drags ships to the deep. Yours went down on its own."
 ],
 "kw": [
 "The Kuwaiti dinar is the strongest currency on Earth. Your bids were the weakest.",
@@ -1210,6 +1230,11 @@
 "Every ship in the world queues for your canal, and yours still came in last.",
 "Panama's Geisha coffee sells for a fortune per cup. Your bids sold for pennies."
 ],
+"parrot": [
+"Your parrot kept squawking 'bid more'. You should have listened.",
+"Polly wants a banana. Polly is not getting one from you.",
+"Even the parrot on your flag flew off to a richer ship."
+],
 "pe": [
 "Peru has over 3,000 kinds of potato. You found zero kinds of banana.",
 "Peruvians will tell you pisco is Peruvian, full stop. Another fact: you lost.",
@@ -1242,12 +1267,22 @@
 "Rice with every meal, captain, and not a single banana for dessert.",
 "Even a jeepney carries more cargo than your ship, and it's full of passengers."
 ],
+"pineapple": [
+"A pineapple flag: spiky on the outside, empty on the inside. Like your cargo hold.",
+"Wrong fruit, captain. This is a banana auction.",
+"Pineapple on pizza is a crime. Pineapple on a banana boat is a loss."
+],
 "pirate": [
 "Arr! The only thing you plundered was your own pantry.",
 "Some pirate. The treasure chest is empty and the parrot has filed for a transfer.",
 "Dead men tell no tales, and your banana count tells a very short one.",
 "You flew the skull and crossbones and still got robbed blind at auction.",
 "Walk the plank, captain. It is the only thing on this ship with any weight."
+],
+"pizza": [
+"You flew a pizza flag and got sliced up at the auction.",
+"Extra cheese, no bananas. Interesting order, captain.",
+"Every slice of this game went to someone else."
 ],
 "pk": [
 "Pakistani trucks are painted like art galleries. Your ship looks like an empty frame.",
@@ -1602,6 +1637,11 @@
 "You passed a resolution condemning your own bidding.",
 "Your bid needed a working group, a draft and a second draft. The bananas did not wait.",
 "One country one vote. Your bananas got zero votes."
+],
+"unicorn": [
+"A unicorn flag, as rare as one of your winning bids.",
+"Magical flag, very mundane result.",
+"Even a unicorn couldn't find a banana on your ship."
 ],
 "us": [
 "In America everything is supersized. Except your banana pile.",

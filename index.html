@@ -170,6 +170,8 @@ body.og .puff{display:none} /* smoke would drift over the tagline */
 .flagbtn span{overflow:hidden;text-overflow:ellipsis;max-width:100%;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
 .flagbtn[aria-pressed="true"]{box-shadow:inset 0 0 0 3px var(--ink)}
 .flaggrid>p{grid-column:1/-1}
+.toast{position:fixed;left:50%;top:calc(14px + env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:30;margin:0;padding:10px 16px;border-radius:14px;background:var(--banana);color:var(--banana-ink);font-weight:800;box-shadow:0 6px 18px rgba(0,0,0,.2);animation:pop .3s ease-out both;white-space:nowrap}
+.flagfound{grid-column:1/-1;margin:4px 0 0;padding:8px 12px;border-radius:12px;background:var(--banana);color:var(--banana-ink);font-weight:800;text-align:center;animation:pop .3s ease-out both}
 .flaghead{margin:8px 0 0;font-weight:800;font-size:.85rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
 .credits{margin-top:14px}.credits ul{padding-left:18px;margin:6px 0 0}.credits a{color:inherit}
 .wiggle{animation:wiggle 1.2s ease-in-out}
@@ -300,9 +302,16 @@ summary{cursor:pointer;font-weight:600;color:var(--muted);min-height:44px;displa
 @keyframes rise{from{transform:translateY(0);opacity:0}20%{opacity:.9}to{transform:translateY(-26px);opacity:0}}
 .flotsam{animation:surface 1s ease-out var(--d) both}
 @keyframes surface{from{transform:translateY(14px);opacity:0}to{transform:none;opacity:1}}
-.storm{position:absolute;inset:0;overflow:hidden}
-.storm-tint{position:absolute;inset:0;background:rgba(28,38,52,.42);animation:tint 7.5s ease both}
-@keyframes tint{0%{opacity:0}10%,85%{opacity:1}100%{opacity:0}}
+.storm{position:absolute;inset:0;overflow:hidden;pointer-events:auto;cursor:pointer;animation:stormfade 7.5s ease both}
+@keyframes stormfade{0%{opacity:0}6%,88%{opacity:1}100%{opacity:0}}
+.storm-tint{background:linear-gradient(#2C3644,#4A5868 55%,#26404F)!important}
+.storm-ship{position:absolute;left:50%;top:50%;width:min(94vw,460px);transform:translate(-50%,-50%);text-align:center}
+.storm-ship .scene{filter:saturate(.45) brightness(.8);animation:mourn 3s ease-in-out infinite;transform-origin:50% 80%}
+.storm-ship .hs-day,.storm-ship .hs-night,.storm-ship .hs-birdfly{display:none}
+@keyframes mourn{50%{transform:rotate(2.5deg) translateY(3px)}}
+.storm-ship p{margin:14px 0 0;color:#E8EEF5;font-weight:800;font-size:1.1rem;line-height:1.35;text-shadow:0 2px 6px rgba(0,0,0,.5)}
+.storm-tint{position:absolute;inset:0}
+
 .storm-flash{position:absolute;inset:0;background:#F4F8FF;opacity:0;animation:flash 7.5s linear both}
 @keyframes flash{0%,17%{opacity:0}18%{opacity:.75}20%{opacity:0}21%{opacity:.45}23%,58%{opacity:0}59%{opacity:.6}61%,100%{opacity:0}}
 .storm-clouds{position:absolute;top:-8px;left:0;width:100%;height:150px;fill:#3E4A5A;opacity:.95;animation:clouds 7.5s ease both}
@@ -327,6 +336,14 @@ summary{cursor:pointer;font-weight:600;color:var(--muted);min-height:44px;displa
   <symbol id="flag-chequered" viewBox="0 0 4 3"><rect width="4" height="3" fill="#fff"/><path d="M0 0h1v1H0zM2 0h1v1H2zM1 1h1v1H1zM3 1h1v1H3zM0 2h1v1H0zM2 2h1v1H2z" fill="#111"/></symbol>
   <symbol id="flag-white" viewBox="0 0 40 30"><rect x=".5" y=".5" width="39" height="29" fill="#fff" stroke="#c9d3d9"/></symbol>
   <symbol id="peel" viewBox="0 0 30 30"><path d="M15 9C9 12 4 20 3 27c3-4 7-9 12-13Z" fill="#E8C547" stroke="#A9861A" stroke-width="1"/><path d="M15 9c6 3 11 11 12 18-3-4-7-9-12-13Z" fill="#E8C547" stroke="#A9861A" stroke-width="1"/><path d="M15 9c-1 6 0 14 2 20-3-5-4-12-4-17Z" fill="#D9B43A" stroke="#A9861A" stroke-width="1"/><path d="M14 4h2v6h-2Z" fill="#6B4F1D"/><circle cx="9" cy="21" r="1" fill="#7A5A1A"/><circle cx="21" cy="19" r="1.2" fill="#7A5A1A"/></symbol>
+  <symbol id="flag-bongo" viewBox="0 0 40 30"><rect width="40" height="30" fill="#0582B8"/><circle cx="11" cy="15" r="4" fill="#8B5A2B"/><circle cx="29" cy="15" r="4" fill="#8B5A2B"/><circle cx="20" cy="15" r="10" fill="#8B5A2B"/><ellipse cx="20" cy="18" rx="7" ry="5.5" fill="#F2D2A9"/><circle cx="16.5" cy="13" r="1.6" fill="#2B1A0C"/><circle cx="23.5" cy="13" r="1.6" fill="#2B1A0C"/><path d="M17 20q3 2.5 6 0" stroke="#7A2E1F" stroke-width="1.4" fill="none" stroke-linecap="round"/><path d="M12 7h16l-2 3H14Z" fill="#fff"/></symbol>
+  <symbol id="flag-pineapple" viewBox="0 0 40 30"><rect width="40" height="30" fill="#BFF0D4"/><path d="M20 3l-3 6 3-2 3 2Zm-5 2 3 5m7-5-3 5" stroke="#2A9457" stroke-width="2.2" fill="#2A9457" stroke-linecap="round"/><ellipse cx="20" cy="19" rx="7" ry="9" fill="#F4B400" stroke="#C98E00"/><path d="M14 14l12 10M14 22l12-10M16 11l10 14M24 11 14 25" stroke="#C98E00" stroke-width=".8"/></symbol>
+  <symbol id="flag-parrot" viewBox="0 0 40 30"><rect width="40" height="30" fill="#2BB673"/><path d="M14 26c-2-8 1-16 8-17 5 0 7 4 5 7-2 3-6 2-6 6v4Z" fill="#E0505B"/><path d="M27 12l5 1-4 3Z" fill="#FFD60A"/><circle cx="24" cy="12" r="1.5" fill="#fff"/><circle cx="24.3" cy="12" r=".7" fill="#111"/><path d="M15 18c3 1 5 4 5 8" stroke="#1D4E89" stroke-width="3" fill="none"/></symbol>
+  <symbol id="flag-kraken" viewBox="0 0 40 30"><rect width="40" height="30" fill="#0B3954"/><ellipse cx="20" cy="11" rx="7" ry="7" fill="#9B59B6"/><circle cx="17.5" cy="11" r="1.6" fill="#FFD60A"/><circle cx="22.5" cy="11" r="1.6" fill="#FFD60A"/><path d="M14 16c-4 3-6 8-3 10M17 17c-2 4-2 8 0 9M23 17c2 4 2 8 0 9M26 16c4 3 6 8 3 10" stroke="#9B59B6" stroke-width="2.4" fill="none" stroke-linecap="round"/></symbol>
+  <symbol id="flag-pizza" viewBox="0 0 40 30"><rect width="40" height="30" fill="#2A9457"/><path d="M8 7h24L20 27Z" fill="#F6C451" stroke="#C98E00"/><path d="M8 7h24" stroke="#C1772A" stroke-width="3" stroke-linecap="round"/><circle cx="16" cy="12" r="2" fill="#D93842"/><circle cx="23" cy="11" r="2" fill="#D93842"/><circle cx="20" cy="18" r="2" fill="#D93842"/></symbol>
+  <symbol id="flag-unicorn" viewBox="0 0 40 30"><rect width="40" height="30" fill="#E8D7FF"/><path d="M0 22h40v8H0Z" fill="#FFC4DA"/><circle cx="21" cy="16" r="7" fill="#fff" stroke="#C9B3E6"/><path d="M22 9l3-8 1 9Z" fill="#F4B400"/><path d="M15 12c-3 2-4 6-3 9M16 10c-4 1-6 4-6 7" stroke="#FF3E8A" stroke-width="2" fill="none" stroke-linecap="round"/><circle cx="23" cy="15" r="1.2" fill="#2B1A0C"/></symbol>
+  <symbol id="flag-duck" viewBox="0 0 40 30"><rect width="40" height="30" fill="#A6ECF5"/><path d="M0 24q5-3 10 0t10 0 10 0 10 0V30H0Z" fill="#3FD0E0"/><ellipse cx="20" cy="19" rx="10" ry="6" fill="#FFD60A"/><circle cx="25" cy="11" r="5" fill="#FFD60A"/><path d="M29 11l5 1-5 2Z" fill="#FF9F1C"/><circle cx="26" cy="10" r="1" fill="#111"/></symbol>
+  <symbol id="flag-arcade" viewBox="0 0 11 8"><rect x="-2" y="-1.5" width="15" height="11" fill="#111"/><path fill="#39FF6A" d="M2 0h1v1H2zM8 0h1v1H8zM3 1h5v1H3zM2 2h2v1H2zM5 2h1v1H5zM7 2h2v1H7zM1 3h9v1H1zM1 4h1v1H1zM3 4h5v1H3zM9 4h1v1H9zM1 5h1v1H1zM9 5h1v1H9zM3 6h2v1H3zM6 6h2v1H6z"/></symbol>
   <symbol id="bunch" viewBox="0 0 26 18"><use href="#nana" width="26" height="12"/><use href="#nana" x="1" y="3" width="25" height="12"/><use href="#nana" y="6" width="26" height="12"/></symbol>
 </defs></svg>
 <div id="app"><p class="muted">Loading the docks…</p></div>
@@ -423,7 +440,13 @@ function rng(key) {
 const FLAG_CDN = 'https://cdn.jsdelivr.net/npm/flag-icons@7.5.0/';
 const FLAG_EGGS = { pirate: ['Jolly Roger', ['pirate', 'jolly', 'roger', 'skull']], banana: ['Banana Republic', ['banana']],
   rainbow: ['Rainbow', ['rainbow', 'pride']], chequered: ['Chequered', ['chequered', 'checkered', 'race', 'finish']],
-  white: ['White flag', ['white', 'surrender']] };
+  white: ['White flag', ['white', 'surrender']], bongo: ['Captain Bongo', ['bongo', 'monkey', 'mascot']],
+  pineapple: ['Pineapple', ['pineapple', 'ananas']], parrot: ['Parrot', ['parrot', 'polly']],
+  kraken: ['Kraken', ['kraken', 'octopus', 'squid']], pizza: ['Pizza', ['pizza']], unicorn: ['Unicorn', ['unicorn']],
+  duck: ['Rubber duck', ['duck', 'rubber']], arcade: ['Space invader', ['arcade', 'invader', 'retro', 'safsten']] };
+// Secret flags (every egg but the Jolly Roger teaser) show only once found by searching; found ones are remembered.
+const SECRET_FLAGS = Object.keys(FLAG_EGGS).filter(k => k !== 'pirate');
+const foundFlags = () => { try { return JSON.parse(ls.get('pb_found') || '[]').filter(k => SECRET_FLAGS.includes(k)); } catch (e) { return []; } };
 const FLAG_EXTRAS = ['eu', 'un', 'gb-eng', 'gb-sct', 'gb-wls', 'gb-nir']; // non-country flags worth offering
 // Swedish provinces (code "ls-<slug>"), files in assets/flags/se/ from Wikimedia Commons: [name, isCoatOfArms, author, licence, source]
 const LANDSKAP = {
@@ -635,6 +658,8 @@ function onChange() {
   S.lastStatus = r.status;
   if (r.status === 'lobby' || (r.status === 'playing' && !r.lastResult)) S.seen = 0;
   if (r.lastResult && r.lastResult.round > S.seen && S.sheetFor == null) S.sheetFor = r.lastResult.round;
+  // Rounds can resolve while a results sheet is still open (e.g. the host skips missing bids): show the latest one.
+  if (r.lastResult && S.sheetFor != null && r.lastResult.round > S.sheetFor) S.sheetFor = r.lastResult.round;
   render();
 }
 function closeSheet() { S.seen = S.sheetFor; S.sheetFor = null; S.bidDraft = ''; S.strokes = []; S.read = null; render(); }
@@ -645,8 +670,24 @@ const pl = id => S.room.players.find(p => p.id === id) || {};
 const inGame = () => S.room.order.includes(S.room.me);
 
 // ---------- rendering ----------
+// A tap is only delivered if the element under the finger still exists when the finger lifts. Rebuilding the page
+// mid-tap (another player locks a bid, the scratchpad finishes reading) used to swallow taps, so renders wait
+// while a control is pressed and run right after the tap lands. A failsafe releases a press that never ends.
+let pressTimer;
+function pressEnd() {
+  if (!S.pressing) return;
+  S.pressing = false; clearTimeout(pressTimer);
+  setTimeout(() => { if (S.pendingRender && !S.drawing && !S.pressing) { S.pendingRender = false; render(); } }, 0); // after the click
+}
+document.addEventListener('pointerdown', e => {
+  if (!e.target.closest || !e.target.closest('button, a, summary, label')) return;
+  S.pressing = true; clearTimeout(pressTimer); pressTimer = setTimeout(pressEnd, 1500);
+}, true);
+document.addEventListener('pointerup', pressEnd, true);
+document.addEventListener('pointercancel', pressEnd, true);
+
 function render() {
-  if (S.drawing) { S.pendingRender = true; return; } // never rebuild the page under a finger mid-stroke
+  if (S.drawing || S.pressing) { S.pendingRender = true; return; } // never rebuild the page under a finger
   const active = document.activeElement && document.activeElement.id;
   const caret = active && document.activeElement.selectionStart;
   app.innerHTML = view();
@@ -981,7 +1022,7 @@ function celebrate(r) {
   if (lost) {
     const t = torpedo ? BATTLE.start + BATTLE.travel + BATTLE.sink + BATTLE.linger : 0;
     if (torpedo) party.insertAdjacentHTML('beforeend', battleView(r, [r.me], `💥 ${winnerName} torpedoed your ship!`, true));
-    setTimeout(() => { party.querySelector('.battle')?.remove(); party.insertAdjacentHTML('beforeend', stormView()); }, t * 1000);
+    setTimeout(() => { party.querySelector('.battle')?.remove(); party.insertAdjacentHTML('beforeend', stormView(r, winnerName)); }, t * 1000);
     setTimeout(() => party.remove(), (t + 7.5) * 1000);
     return;
   }
@@ -1001,8 +1042,9 @@ function rainView() {
   }
   return h;
 }
-// The losers' weather: a grey tint, dark clouds, slanting rain, two lightning flashes and soggy banana peels.
-function stormView() {
+// The losers' weather: full screen, your own ship rocking under dark clouds in slanting rain, two lightning
+// flashes and soggy banana peels. Tap anywhere to skip it.
+function stormView(r, winnerName) {
   let rain = '', peels = '';
   for (let i = 0; i < 70; i++) rain += `<i class="rainline" style="--x:${rand(-10, 105).toFixed(1)}vw;--t:${rand(0.45, 0.8).toFixed(2)}s;--d:${rand(0, 1.2).toFixed(2)}s"></i>`;
   for (let i = 0; i < 11; i++) {
@@ -1010,7 +1052,11 @@ function stormView() {
     peels += `<svg class="drop peel" viewBox="0 0 30 30" style="--x:${rand(2, 92).toFixed(1)}vw;--w:${rand(30, 46).toFixed(0)}px;--t:${rand(5, 7.5).toFixed(2)}s;--d:${rand(0.4, 2.6).toFixed(2)}s;--r0:${r0.toFixed(0)}deg;--r1:${(r0 + rand(-120, 120)).toFixed(0)}deg"><use href="#peel"/></svg>`;
   }
   const cloud = (x, y, k) => `<g transform="translate(${x} ${y}) scale(${k})"><ellipse cx="0" cy="20" rx="70" ry="22"/><ellipse cx="-34" cy="10" rx="34" ry="24"/><ellipse cx="22" cy="0" rx="42" ry="30"/></g>`;
-  return `<div class="storm"><div class="storm-tint"></div><div class="storm-flash"></div>
+  const mine = r.inventories[r.me] || 0;
+  return `<div class="storm" onclick="document.getElementById('party')?.remove()"><div class="storm-tint"></div>
+    <div class="storm-ship">${heroScene(Math.max(mine, 1) / GOAL, 'storm', lookOfId(r.me))}
+      <p>${winnerName} ${r.winners.length > 1 ? 'take' : 'takes'} the bananas.<br>Better luck next voyage, captain.</p></div>
+    <div class="storm-flash"></div>
     <svg class="storm-clouds" viewBox="0 0 400 110" preserveAspectRatio="xMidYMin slice">${cloud(60, 20, 1.1)}${cloud(200, 10, 1.3)}${cloud(340, 24, 1.15)}</svg>
     ${rain}${peels}</div>`;
 }
@@ -1060,7 +1106,8 @@ function sheetView() {
         <span class="who"><b>${esc(nickOf(id))}${id===S.room.me?' (you)':''}</b>
         <span class="small">Bananas ${b} → <b>${a}</b> <span class="delta ${d>0?'up':d<0?'down':''}">(${d>0?'+'+d:d<0?'−'+(-d):'no change'})</span></span></span>
         <span class="bid"><span class="small muted">Bid</span><span class="num">${r.bids[id]}</span></span></li>`; }).join('')}</ul>
-    <button class="primary wide" onclick="closeSheet()">${S.room.status==='over'?'See the winner':'Next round'}</button></div></div>`;
+    <button class="primary wide" onclick="closeSheet()">${S.room.status !== 'over' ? 'Next round'
+      : S.room.winners.includes(S.room.me) ? 'Enjoy the victory' : S.room.order.includes(S.room.me) ? 'Mourn the defeat' : 'See the winner'}</button></div></div>`;
 }
 // ---------- flag picker sheet ----------
 async function loadCountries() {
@@ -1075,29 +1122,48 @@ async function loadCountries() {
 function openFlags(e) {
   if (e) e.stopPropagation();
   S.flagSheet = true; S.flagQuery = '';
+  S.secretSpots = Object.fromEntries(SECRET_FLAGS.map(k => [k, Math.random()])); // hide-and-seek spots for this visit
   if (!Array.isArray(S.countries)) { S.countries = null; loadCountries(); }
   render();
+}
+function toast(text) {
+  const el = document.createElement('p'); el.className = 'toast'; el.setAttribute('role', 'status'); el.textContent = text;
+  document.body.appendChild(el); setTimeout(() => el.remove(), 2600);
 }
 function closeFlags() { S.flagSheet = false; render(); }
 const flagThumb = k => `<svg viewBox="0 0 40 30" aria-hidden="true">${k ? flagArt(k, 40, 30) : '<path d="M4 4 36 15 4 26Z" fill="var(--hibiscus)"/>'}</svg>`;
 // Pirate is the visible teaser; the other easter eggs only surface when you search their words.
 function flagItems() {
   const q = S.flagQuery.trim().toLowerCase();
-  const eggs = Object.entries(FLAG_EGGS).filter(([k, [, words]]) => k === 'pirate' || (q.length >= 3 && words.some(w => w.startsWith(q) || q.startsWith(w))));
+  const hits = q.length >= 3 ? SECRET_FLAGS.filter(k => FLAG_EGGS[k][1].some(w => w.startsWith(q) || q.startsWith(w))) : [];
+  const found = foundFlags(), fresh = hits.filter(k => !found.includes(k));
+  if (fresh.length) { ls.set('pb_found', JSON.stringify([...found, ...fresh])); S.flagFound = FLAG_EGGS[fresh[0]][0]; }
+  const secret = SECRET_FLAGS.filter(k => found.includes(k) || hits.includes(k));
+  const eggs = hits.map(k => [k, FLAG_EGGS[k]]);
   const cs = Array.isArray(S.countries) ? S.countries.filter(c => !q || c.name.toLowerCase().includes(q) || c.code === q) : [];
   const provinceWords = ['landskap', 'province', 'sverige', 'sweden'];
-  const ls = Object.entries(LANDSKAP).filter(([slug, [name]]) => !q || fold(name).includes(fold(q)) || provinceWords.some(w => w.startsWith(q) && q.length >= 3));
+  const provs = Object.entries(LANDSKAP).filter(([slug, [name]]) => !q || fold(name).includes(fold(q)) || provinceWords.some(w => w.startsWith(q) && q.length >= 3));
   const btn = ([k, name]) => `<button class="flagbtn" aria-pressed="${S.flag === k}" onclick="pickFlag('${k}')">${flagThumb(k)}<span>${esc(name)}</span></button>`;
   const head = t => `<p class="flaghead">${t}</p>`;
   const note = S.countries === null ? `<p class="muted small">Unrolling the flag locker…</p>`
     : S.countries === 'error' ? `<p class="muted small">The country flags can't be loaded right now.</p>`
     : !cs.length && q && !eggs.some(([, [, words]]) => words.some(w => w.startsWith(q) || q.startsWith(w))) ? `<p class="muted small">No flag matches "${esc(S.flagQuery)}".</p>` : '';
-  return [['', 'Pennant'], ...eggs.map(([k, [name]]) => [k, name])].map(btn).join('')
-    + (ls.length ? head("Sweden's provinces") + ls.map(([slug, [name]]) => btn(['ls-' + slug, name])).join('') : '')
-    + (cs.length ? head('Countries and regions') + cs.map(c => btn([c.code, c.name])).join('') : '')
-    + (ls.length && !cs.length && note.includes('No flag') ? '' : note);
+  return (S.flagFound ? `<p class="flagfound" role="status">🎉 Special flag found: ${esc(S.flagFound)}!</p>` : '')
+    + head('Ship flags') + [['', 'Pennant'], ['pirate', FLAG_EGGS.pirate[0]]].map(btn).join('')
+    + (secret.length ? head('Special flags found') + secret.map(k => btn([k, FLAG_EGGS[k][0]])).join('') : '')
+    + (cs.length ? head('Countries and regions') + withStowaways(cs.map(c => [c.code, c.name]), q, found).map(btn).join('') : '')
+    + (provs.length ? head("Sweden's provinces") + provs.map(([slug, [name]]) => btn(['ls-' + slug, name])).join('') : '')
+    + (provs.length && !cs.length && note.includes('No flag') ? '' : note);
 }
-function fillFlags() { const el = document.getElementById('flaglist'); if (el) el.innerHTML = flagItems(); }
+// Unfound secret flags stow away among the countries at random spots (only while browsing, not searching).
+function withStowaways(items, q, found) {
+  if (q || !S.secretSpots) return items;
+  const out = items.slice();
+  SECRET_FLAGS.filter(k => !found.includes(k)).sort((a, b) => S.secretSpots[b] - S.secretSpots[a])
+    .forEach(k => out.splice(Math.floor(S.secretSpots[k] * out.length), 0, [k, FLAG_EGGS[k][0]]));
+  return out;
+}
+function fillFlags() { S.flagFound = ''; const el = document.getElementById('flaglist'); if (el) el.innerHTML = flagItems(); }
 function flagSheetView() {
   if (!S.flagSheet) return '';
   return `<div class="sheet-bg" onclick="if(event.target===this)closeFlags()"><div class="sheet" role="dialog" aria-label="Choose your ship's flag">
@@ -1109,6 +1175,10 @@ function flagSheetView() {
 }
 function pickFlag(k) {
   S.flag = flagOf(k); ls.set('pb_flag', S.flag);
+  if (SECRET_FLAGS.includes(S.flag) && !foundFlags().includes(S.flag)) { // spotted a stowaway
+    ls.set('pb_found', JSON.stringify([...foundFlags(), S.flag]));
+    toast(`🎉 Special flag found: ${FLAG_EGGS[S.flag][0]}!`);
+  }
   if (S.code) api('join', { code: S.code, nick: S.nick, ...myLook() }).catch(() => {}); // opponents see it too
   S.flagSheet = false; // tapping a flag is the choice; no Done needed
   render();

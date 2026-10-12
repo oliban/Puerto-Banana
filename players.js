@@ -6,7 +6,7 @@ const cabinOf = c => CABINS.includes(c) ? c : 'white';
 const NAME_MAX = 20;
 // Ship flags: a country/region code from the flag-icons set (e.g. "se", "gb-sct") or a hand-drawn
 // easter egg. Anything else is '' (the default pennant). Codes only ever reach a CDN image path.
-const FLAG_EGGS = ['pirate', 'banana', 'rainbow', 'chequered', 'white'];
+const FLAG_EGGS = ['pirate', 'banana', 'rainbow', 'chequered', 'white', 'bongo', 'pineapple', 'parrot', 'kraken', 'pizza', 'unicorn', 'duck', 'arcade'];
 // Swedish provinces (landskap), served from assets/flags/se/<slug>.svg as flag code "ls-<slug>".
 const LANDSKAP = ['blekinge', 'bohuslan', 'dalarna', 'dalsland', 'gotland', 'gastrikland', 'halland', 'halsingland', 'harjedalen',
   'jamtland', 'lappland', 'medelpad', 'norrbotten', 'narke', 'skane', 'smaland', 'sodermanland', 'uppland', 'vasterbotten',
