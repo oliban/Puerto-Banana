@@ -4,116 +4,314 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Puerto Banana</title>
+<!-- Social preview: the server fills in %%ORIGIN%%, %%URL%%, %%TITLE%% and %%DESC%% per request -->
+<meta name="description" content="%%DESC%%">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Puerto Banana">
+<meta property="og:title" content="%%TITLE%%">
+<meta property="og:description" content="%%DESC%%">
+<meta property="og:url" content="%%URL%%">
+<meta property="og:image" content="%%ORIGIN%%/assets/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="A banana cargo ship sailing in a sunny Caribbean bay">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#0582B8">
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/assets/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Figtree:wght@400;600;800&display=swap" rel="stylesheet">
 <style>
+/* Visual QA checklist (check after any layout change):
+   - 320px and 390px wide: no horizontal scroll, rows wrap, title fits
+   - safe-area insets on notched phones (top/bottom/left/right padding on #app and .sheet)
+   - every tap target >= 44px tall, :focus-visible ring on every control
+   - light + dark, and prefers-reduced-motion (ships stop bobbing, waves stop, reveal stops flipping)
+   - cargo ships at fill 0, 0.5, 1 and >1 read as empty / half / full / overfull */
 :root{
-  --bg:#E6F1EE; --surface:#FFFFFF; --ink:#12343B; --muted:#4F6E73; --line:#C9DDD8;
-  --banana:#FFD23F; --banana-ink:#3A2F00; --rust:#D9512C; --rust-ink:#FFFFFF; --ok:#1F8A5B;
-  --container:#D9512C; --container-2:#B8401F;
-  box-sizing:border-box;
-  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+  --bg:#FFF8EC; --bg-2:#DDF7F6; --surface:#FFFFFF; --ink:#0B3954; --muted:#4D6F80; --line:#D3ECEA;
+  --banana:#FFD60A; --banana-ink:#3A2F00; --banana-edge:#E5A100;
+  --coral:#D93842; --ok:#078A7E;
+  --sea:#3FD0E0; --sea-deep:#0582B8; --sky:#A6ECF5; --sky-2:#E9FCFF;
+  --hull:#1D4E89; --keel:#FF6B6B; --rail:#1D4E89; --cabin:#FFFFFF;
+  --mango:#FF9F1C; --hibiscus:#FF3E8A; --palm:#2BB673; --trunk:#9C6B3C; --sand:#FFE0A3; --sun:#FFC93C; --cloud:#FFFFFF; --smoke-dark:#5F6873; --smoke-light:#F4F7F9;
+ 
+  color-scheme:light dark;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
-    --bg:#0E2226; --surface:#163338; --ink:#E6F1EE; --muted:#9BB8B5; --line:#24484E;
-    --banana:#FFD23F; --banana-ink:#2A2200; --rust:#F06A42; --ok:#4CC38A;
-    --container:#B8401F; --container-2:#8F3015;
+    --bg:#071F2E; --bg-2:#0B3346; --surface:#0E3448; --ink:#EAFBFF; --muted:#9CC7D4; --line:#1B4A60;
+    --banana-ink:#2A2200; --banana-edge:#C98E00; --coral:#FF7A7F; --ok:#3ED6C2;
+    --sea:#0F7C99; --sea-deep:#06506E; --sky:#12425C; --sky-2:#0A2A3E;
+    --hull:#2A64A8; --keel:#E85A5A; --rail:#7FB4E8; --cabin:#DCEFF5;
+    --palm:#23A866; --trunk:#B88553; --sand:#C9A66B; --sun:#FFF0B8; --cloud:#2B5A73; --smoke-dark:#7F8A95; --smoke-light:#CBD6DD;
+
   }
 }
 :root[data-theme="dark"]{
-  --bg:#0E2226; --surface:#163338; --ink:#E6F1EE; --muted:#9BB8B5; --line:#24484E;
-  --banana:#FFD23F; --banana-ink:#2A2200; --rust:#F06A42; --ok:#4CC38A;
-  --container:#B8401F; --container-2:#8F3015;
+  --bg:#071F2E; --bg-2:#0B3346; --surface:#0E3448; --ink:#EAFBFF; --muted:#9CC7D4; --line:#1B4A60;
+  --banana-ink:#2A2200; --banana-edge:#C98E00; --coral:#FF7A7F; --ok:#3ED6C2;
+  --sea:#0F7C99; --sea-deep:#06506E; --sky:#12425C; --sky-2:#0A2A3E;
+  --hull:#2A64A8; --keel:#E85A5A; --rail:#7FB4E8; --cabin:#DCEFF5;
+  --palm:#23A866; --trunk:#B88553; --sand:#C9A66B; --sun:#FFF0B8; --cloud:#2B5A73; --smoke-dark:#7F8A95; --smoke-light:#CBD6DD;
+
 }
-html{scroll-padding-top:env(safe-area-inset-top,0px)}
-*,*::before,*::after{box-sizing:inherit}
-html,body{margin:0;height:100%}
-body{background:var(--bg);color:var(--ink);font:400 17px/1.45 Figtree,system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}
-#app{max-width:460px;margin:0 auto;padding:20px 18px 40px}
+*,*::before,*::after{box-sizing:border-box}
+html,body{margin:0;min-height:100%}
+body{background:var(--bg) linear-gradient(var(--bg-2),var(--bg) 480px) no-repeat;color:var(--ink);font:400 17px/1.45 Figtree,system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+#app{max-width:460px;margin:0 auto;
+  padding:calc(16px + env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) calc(40px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
 h1,h2,.num{font-family:Bungee,Impact,"Arial Black",sans-serif;font-weight:400;letter-spacing:.01em}
-h1{font-size:2.3rem;line-height:1;margin:8px 0 6px}
 h2{font-size:1.25rem;margin:0 0 10px}
 p{margin:0 0 12px}
 .muted{color:var(--muted)}
-.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
 .small{font-size:.88rem}
 button,input{font:inherit;color:inherit}
-button{cursor:pointer;border:0;border-radius:12px;padding:14px 18px;font-weight:800;background:var(--surface);color:var(--ink);box-shadow:inset 0 0 0 2px var(--line)}
-button.primary{background:var(--banana);color:var(--banana-ink);box-shadow:0 3px 0 #C99E00}
-button.primary:active{transform:translateY(2px);box-shadow:0 1px 0 #C99E00}
+button{cursor:pointer;border:0;border-radius:14px;padding:10px 18px;min-height:48px;font-weight:800;background:var(--surface);color:var(--ink);box-shadow:inset 0 0 0 2px var(--sea),0 3px 0 var(--line);touch-action:manipulation}
+button.primary{background:linear-gradient(var(--banana),color-mix(in srgb,var(--banana) 80%,var(--mango)));color:var(--banana-ink);box-shadow:0 4px 0 var(--banana-edge)}
+button.primary:active{transform:translateY(3px);box-shadow:0 1px 0 var(--banana-edge)}
 button:disabled{opacity:.45;cursor:default}
-button.link{background:none;box-shadow:none;padding:8px 0;color:var(--muted);font-weight:600;text-decoration:underline}
-:focus-visible{outline:3px solid var(--rust);outline-offset:2px}
-input.text{width:100%;padding:13px 14px;border-radius:12px;border:2px solid var(--line);background:var(--surface)}
-input.code{text-transform:uppercase;font-family:Bungee,sans-serif;letter-spacing:.2em}
-label{display:block;font-weight:600;margin:0 0 6px}
+button.link{background:none;box-shadow:none;padding:0 4px;min-height:44px;color:var(--muted);font-weight:600;text-decoration:underline;text-align:left}
+.wide{width:100%}
+:focus-visible{outline:3px solid var(--hibiscus);outline-offset:2px}
+input.text{width:100%;min-height:48px;padding:11px 14px;border-radius:14px;border:2px solid var(--line);background:var(--surface)}
+input.text:focus{border-color:var(--sea)}
+input.code{text-transform:uppercase;font-family:Bungee,sans-serif;letter-spacing:.2em;min-width:0}
+label,.label{display:block;font-weight:600;margin:0 0 6px}
+.swatches{display:grid;grid-template-columns:repeat(var(--cols,4),44px);gap:var(--gap,8px)}
+.swatch{min-height:44px;width:44px;padding:0;border-radius:50%;background:var(--c);box-shadow:inset 0 0 0 3px rgba(255,255,255,.35),0 0 0 1px var(--line)}
+.swatch[aria-checked="true"]{box-shadow:0 0 0 3px var(--bg),0 0 0 6px var(--ink)}
 .stack>*+*{margin-top:12px}
-.row{display:flex;gap:10px;align-items:center}
-.row>.grow{flex:1}
-.card{background:var(--surface);border-radius:16px;padding:16px}
-.divider{height:1px;background:var(--line);margin:22px 0}
-.err{color:var(--rust);font-weight:600}
-.topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.row>.grow{flex:1 1 140px}
+.card{background:var(--surface);border-radius:18px;padding:16px;box-shadow:0 3px 0 var(--line)}
+.divider{height:4px;margin:24px 0;background:radial-gradient(circle,var(--sea) 1.6px,transparent 2.2px) 0 0/12px 4px repeat-x}
+.err{color:var(--coral);font-weight:600}
+/* Social preview card (#og-card), screenshotted at 1200×630 into assets/og.png */
+body.og{overflow:hidden;background:linear-gradient(#E9FCFF,#A6ECF5 62%)}
+body.og #app{max-width:none;padding:0}
+.ogcard{position:relative;width:1200px;height:630px;overflow:hidden}
+.ogcard .scene{position:absolute;left:120px;bottom:-40px;width:1100px}
+.og-sea{position:absolute;inset:0;width:1200px;height:630px}
+body.og .puff{display:none} /* smoke would drift over the tagline */
+.og-text{position:absolute;left:56px;top:48px;z-index:1;color:#0B3954}
+.og-text h1{margin:0;font-size:104px;line-height:.95;text-shadow:5px 5px 0 #FFD60A,9px 9px 0 #FF9F1C}
+.og-text p{margin:22px 0 0;max-width:300px;font-size:30px;font-weight:800;line-height:1.25}
+/* Lobby invite: the code is the thing to share, so it reads like a boarding ticket */
+.invite{margin:4px 0 16px;padding:16px;border-radius:18px;text-align:center;background:var(--banana);color:var(--banana-ink);box-shadow:0 4px 0 var(--banana-edge)}
+.invite-label{display:block;font-weight:800;font-size:.85rem;text-transform:uppercase;letter-spacing:.08em}
+.invite-code{display:block;width:100%;background:none;box-shadow:none;min-height:0;padding:0;color:inherit;cursor:copy;font-family:Bungee,Impact,sans-serif;font-size:clamp(3rem,18vw,4.4rem);letter-spacing:.18em;line-height:1.1;margin:4px 0 2px;padding-left:.18em}
+.invite p{margin:0 0 12px}
+.invite-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.invite .share{background:var(--surface);color:var(--ink);box-shadow:0 3px 0 rgba(0,0,0,.15);padding:10px 8px}
+.invite .copied{margin:10px 0 0;font-weight:700}
+.reconnecting{margin:-4px 0 12px;padding:8px 12px;border-radius:12px;background:var(--banana);color:var(--banana-ink);font-weight:800;text-align:center}
+.waiting{text-align:center;font-weight:700;color:var(--muted);padding:12px 0;margin:0}
+.dots i{font-style:normal;animation:dot 1.4s infinite}.dots i:nth-child(2){animation-delay:.2s}.dots i:nth-child(3){animation-delay:.4s}
+@keyframes dot{0%,60%,100%{opacity:.2}30%{opacity:1}}
+.or{display:flex;align-items:center;gap:10px;margin:16px 0 12px;color:var(--muted);font-size:.88rem;font-weight:600}
+.or::before,.or::after{content:"";flex:1;height:1px;background:var(--line)}
+.topbar{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:12px}
 .topbar .code{font-family:Bungee,sans-serif;letter-spacing:.15em}
-/* The container: corrugated steel plate carrying the pot */
-.container{position:relative;border-radius:6px;color:#fff;padding:18px 18px 16px;
-  background:repeating-linear-gradient(90deg,var(--container) 0 14px,var(--container-2) 14px 18px);
-  box-shadow:inset 0 0 0 4px rgba(0,0,0,.18)}
-.container .plate{display:inline-block;background:rgba(255,255,255,.92);color:#12343B;border-radius:4px;padding:2px 8px;font-weight:800;font-size:.85rem}
-.container .num{font-size:4.2rem;line-height:1;margin-top:8px;text-shadow:0 3px 0 rgba(0,0,0,.25)}
-.container .sub{font-weight:600;opacity:.95}
+
+/* Cargo ships: one SVG drawing (shipSVG) loaded from an empty hold to bananas spilling overboard */
+.shipsvg,.scene{display:block;width:100%;height:auto}
+.tile{display:block;border-radius:12px;overflow:hidden;background:linear-gradient(var(--sky-2),var(--sky))}
+.sh-hull{fill:var(--hull)} .sh-keel{fill:var(--keel)} .sh-stripe{stroke:#fff;stroke-width:2.5}
+.sh-cabin{fill:var(--cabin)} .sh-win{fill:var(--sea-deep)} .sh-funnel{fill:var(--mango)} .sh-band{fill:var(--hibiscus)}
+.sh-port{fill:#fff;opacity:.85} .sh-flag{fill:var(--hibiscus)}
+.sh-mast{stroke:var(--rail);stroke-width:2.2;stroke-linecap:round;fill:none}
+.sh-sea{fill:var(--sea-deep)} .sh-sea2{fill:var(--sea)}
+.nb{fill:var(--banana);stroke:var(--banana-edge);stroke-width:.9;stroke-linejoin:round} .nb-tip{stroke:#5B4214;stroke-width:1.6;stroke-linecap:round}
+.hs-sun{fill:var(--sun)} .hs-glow{fill:var(--sun);opacity:.25} .hs-cloud{fill:var(--cloud);opacity:.9}
+.hs-bird{stroke:var(--ink);stroke-width:1.7;fill:none;stroke-linecap:round;stroke-linejoin:round;opacity:.6}
+.hs-sand{fill:var(--sand)} .hs-trunk{stroke:var(--trunk);stroke-width:5;fill:none;stroke-linecap:round} .hs-palm{fill:var(--palm)} .hs-nut{fill:var(--trunk)}
+.sh-bob{animation:bob 4.5s ease-in-out infinite;transform-box:fill-box;transform-origin:50% 100%}
+.sh-wave{animation:drift 5s linear infinite}
+.sh-float{animation:float 3.2s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
+.still .sh-bob,.still .sh-wave,.still .sh-float{animation:none}
+/* Funnel smoke: each puff grows, lightens and drifts back over the stern; timings are per ship (see shipBody) */
+.puff{filter:url(#smokeblur);transform-box:fill-box;transform-origin:center;opacity:0;animation:puff var(--t) cubic-bezier(.3,.6,.5,1) var(--d) infinite}
+@keyframes puff{0%{fill:var(--smoke-dark);opacity:0;transform:translate(0,0) scale(1)}
+  8%{opacity:var(--o)}
+  50%{opacity:calc(var(--o) * .75);transform:translate(calc(var(--dx) * .35),calc(var(--dy) * .6)) scale(calc(var(--s) * .6))}
+  100%{fill:var(--smoke-light);opacity:0;transform:translate(var(--dx),var(--dy)) scale(var(--s))}}
+.still .puff{display:none}
+/* Sun: a breathing glow and warm rings rippling outward */
+.hs-glow{transform-box:fill-box;transform-origin:center;animation:breathe 4.5s ease-in-out infinite}
+@keyframes breathe{50%{transform:scale(1.12);opacity:.38}}
+.hs-heat{fill:none;stroke:var(--sun);stroke-width:3;opacity:0;transform-box:fill-box;transform-origin:center;animation:heat 4.5s ease-out infinite}
+@keyframes heat{0%{transform:scale(1);opacity:.55}100%{transform:scale(2.1);opacity:0;stroke-width:1}}
+/* Night mode swaps the sun for a crescent moon and a few twinkling stars */
+.hs-night{display:none}
+.hs-moon{fill:#FFF3C4} .hs-crater{fill:#E9D9A0} .hs-moonglow{fill:#FFF3C4;opacity:.12}
+.hs-star{fill:#FFF8DC;animation:twinkle 3s ease-in-out infinite}
+@keyframes twinkle{50%{opacity:.25}}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .hs-day{display:none}:root:not([data-theme="light"]) .hs-night{display:inline}}
+:root[data-theme="dark"] .hs-day{display:none} :root[data-theme="dark"] .hs-night{display:inline}
+/* Birds: a slight downwind glide; wings beat via SMIL in bird() */
+.hs-birdfly{animation:glide 9s ease-in-out infinite}
+@keyframes glide{50%{transform:translate(-7px,-2px)}}
+/* Palm sways in the same wind as the flags: leaning downwind (left, astern), fronds moving more than the trunk */
+.hs-sway{transform-box:view-box;transform-origin:336px 148px;animation:sway 2.6s ease-in-out infinite}
+.hs-crown{transform-box:view-box;transform-origin:318px 92px;animation:crown 2.6s ease-in-out -.4s infinite}
+@keyframes sway{0%,100%{transform:rotate(-1deg)}50%{transform:rotate(-3.5deg)}}
+@keyframes crown{0%,100%{transform:rotate(0)}50%{transform:rotate(-5deg) scaleX(.97)}}
+/* Ship flags: a gentle wave on moving ships; the invisible tap target on your own ship opens the picker */
+.sh-wave-flag{transform-box:fill-box;transform-origin:left center;animation:flagwave 2.6s ease-in-out infinite}
+@keyframes flagwave{50%{transform:skewY(5deg) scaleX(.92)}}
+.still .sh-wave-flag{animation:none}
+.flag-hit{fill:transparent;cursor:pointer;pointer-events:all}
+.flaggrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:12px}
+.flagbtn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-height:80px;padding:8px 4px;font-size:.78rem;font-weight:600;line-height:1.2;text-align:center;box-shadow:inset 0 0 0 1px var(--line)}
+.flagbtn img,.flagbtn svg{width:44px;height:33px;border-radius:3px;box-shadow:0 0 0 1px var(--line);object-fit:cover}
+.flagbtn span{overflow:hidden;text-overflow:ellipsis;max-width:100%;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.flagbtn[aria-pressed="true"]{box-shadow:inset 0 0 0 3px var(--ink)}
+.flaggrid>p{grid-column:1/-1}
+.flaghead{margin:8px 0 0;font-weight:800;font-size:.85rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.credits{margin-top:14px}.credits ul{padding-left:18px;margin:6px 0 0}.credits a{color:inherit}
+.wiggle{animation:wiggle 1.2s ease-in-out}
+@keyframes wiggle{20%{transform:rotate(-2deg)}40%{transform:rotate(2deg)}60%{transform:rotate(-1.5deg)}80%{transform:rotate(1deg)}}
+@keyframes bob{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(1.5px) rotate(-.8deg)}}
+@keyframes drift{to{transform:translateX(-30px)}}
+@keyframes float{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-2px) rotate(8deg)}}
+
+/* Home: a Caribbean bay */
+.harbor{border-radius:24px;overflow:hidden;background:linear-gradient(var(--sky-2),var(--sky) 70%);margin-bottom:18px;box-shadow:0 4px 0 var(--line)}
+.harbor h1{margin:0;padding:18px 16px 0;text-align:center;color:var(--ink);font-size:clamp(1.6rem,8.6vw,2.4rem);line-height:1.05;text-shadow:3px 3px 0 var(--banana),5px 5px 0 var(--mango)}
+.harbor-foot{background:var(--sea-deep);color:#fff;margin:-1px 0 0;padding:2px 16px 16px;font-size:.95rem}
+
+/* The pot: the ship up for auction */
+.potcard{border-radius:20px;background:var(--sea-deep);color:#fff;padding:12px 18px 14px;box-shadow:0 4px 0 var(--line)}
+.plate{display:inline-block;background:var(--hibiscus);color:#fff;border-radius:999px;padding:3px 12px;font-weight:800;font-size:.85rem}
+.potcard .num{font-size:clamp(2.6rem,14vw,3.6rem);line-height:1;margin-top:6px;text-shadow:0 3px 0 rgba(0,0,0,.2)}
+.potcard .sub{font-weight:600;opacity:.95}
+/* Your own ship: the big animated bay; opponents get small stills in the list */
+.myship{margin-top:12px;border-radius:20px;overflow:hidden;background:linear-gradient(var(--sky-2),var(--sky) 70%);box-shadow:0 4px 0 var(--line)}
+.myship-foot{display:flex;justify-content:space-between;align-items:center;gap:12px;background:var(--sea-deep);color:#fff;margin-top:-1px;padding:2px 16px 12px;line-height:1.25}
+.myship-foot .num{font-size:1.9rem;line-height:1}
 .players{list-style:none;margin:0;padding:0}
-.players li{display:grid;grid-template-columns:1fr auto;gap:2px 12px;padding:12px 0;border-bottom:1px solid var(--line)}
+.players li{display:grid;grid-template-columns:64px minmax(0,1fr) auto;grid-template-areas:"ship name inv" "ship status inv";gap:0 12px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
 .players li:last-child{border-bottom:0}
-.players .name{font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.players .inv{font-family:Bungee,sans-serif;font-size:1.15rem;text-align:right}
-.players .status{font-size:.88rem;color:var(--muted)}
+.players .tile{grid-area:ship}
+.players li.me .name{color:var(--coral)}
+.players .name{grid-area:name;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;align-self:end}
+.players .inv{grid-area:inv;font-family:Bungee,sans-serif;font-size:1.15rem;text-align:right}
+.players .status{grid-area:status;font-size:.88rem;color:var(--muted);align-self:start}
 .players .status.ok{color:var(--ok);font-weight:600}
-.bar{grid-column:1/-1;height:6px;border-radius:3px;background:var(--line);overflow:hidden}
-.bar>i{display:block;height:100%;background:var(--banana)}
-.bidbox{display:grid;grid-template-columns:64px 1fr 64px;gap:10px;align-items:stretch}
+.players .status.taunt{color:var(--coral);font-style:italic;font-weight:600}
+/* Your own taunt, big, with the flag that earned it */
+.taunt-me{margin-top:14px}
+.taunt-me .bongo-says .bubble{box-shadow:inset 0 0 0 3px var(--coral),0 3px 0 var(--line)}
+.taunt-me .bubble>svg{width:30px;height:22px;vertical-align:-5px;margin-right:6px;border-radius:2px}
+/* Captain Bongo and his speech bubble */
+.bongo-says{display:flex;align-items:flex-end;gap:6px;margin:4px 0 14px}
+.bongo-says .bubble{position:relative;flex:1;min-width:0;background:var(--surface);border-radius:18px;padding:12px 14px;font-size:.95rem;line-height:1.45;box-shadow:0 3px 0 var(--line);margin-bottom:46px}
+.bongo-says .bubble:after{content:"";position:absolute;right:-10px;bottom:20px;border:10px solid transparent;border-left-color:var(--surface);border-right:0}
+.bongo-says .bubble p{margin:0 0 8px}.bongo-says .bubble p:last-child{margin:0}
+.bubble-title{font-family:Bungee,Impact,sans-serif;font-size:1rem}
+.bongo{flex:0 0 92px;width:92px;height:auto}
+.bongo-bob{animation:bongobob 2.4s ease-in-out infinite;transform-origin:50% 100%;transform-box:fill-box}
+@keyframes bongobob{50%{transform:translateY(-3px) rotate(-2deg)}}
+.bongo-talk{transform-box:fill-box;transform-origin:center;animation:bongotalk .32s ease-in-out 10 alternate}
+@keyframes bongotalk{to{transform:scaleY(.35)}}
+.bidbox{display:grid;grid-template-columns:56px minmax(0,1fr) 56px;gap:8px;align-items:stretch}
 .bidbox button{font-size:1.6rem;padding:0}
-.bidbox input{width:100%;text-align:center;font-family:Bungee,sans-serif;font-size:2.4rem;border-radius:12px;border:2px solid var(--line);background:var(--surface);padding:8px 0}
-.locked{text-align:center;padding:22px 16px}
-.tabs{display:flex;gap:6px;margin-bottom:10px}
-.tabs button{flex:1;padding:10px;font-weight:600}
-.tabs button[aria-pressed="true"]{background:var(--ink);color:var(--bg);box-shadow:none}
-.pad{position:relative;background:var(--surface);border-radius:14px;box-shadow:inset 0 0 0 2px var(--line);overflow:hidden}
-.pad canvas{display:block;width:100%;height:190px;touch-action:none;cursor:crosshair}
-.pad .hint{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--muted);pointer-events:none;font-weight:600}
-.reads{display:flex;align-items:center;gap:10px;margin-top:10px}
-.reads .num{font-size:2rem;flex:1}
-.reads .num.unsure{color:var(--rust)}
-.reads button{padding:10px 14px}
+.bidbox input{width:100%;min-width:0;text-align:center;font-family:Bungee,sans-serif;font-size:2.2rem;border-radius:14px;border:2px solid var(--line);background:var(--surface);padding:6px 0}
+/* A sealed bid is lashed down with rope */
+.locked{text-align:center;padding:20px 16px;border:3px dashed var(--mango)}
 .locked .num{font-size:2.6rem}
-.sheet-bg{position:fixed;inset:0;background:rgba(6,20,23,.55);display:flex;align-items:flex-end;justify-content:center;z-index:10}
-.sheet{background:var(--bg);width:100%;max-width:460px;max-height:88%;overflow:auto;border-radius:20px 20px 0 0;padding:20px 18px calc(20px + env(safe-area-inset-bottom,0px))}
+.sheet-bg{position:fixed;inset:0;background:rgba(4,30,45,.55);display:flex;align-items:flex-end;justify-content:center;z-index:10}
+.sheet{background:var(--bg);width:100%;max-width:460px;max-height:88%;overflow:auto;border-radius:22px 22px 0 0;border-top:6px solid var(--sea);
+  padding:20px max(16px,env(safe-area-inset-right,0px)) calc(20px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
 .reveal{list-style:none;padding:0;margin:0 0 14px}
-.reveal li{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-radius:12px;background:var(--surface);margin-bottom:8px;animation:flip .45s both}
+.reveal li{display:flex;align-items:center;gap:12px;padding:8px 12px 8px 8px;border-radius:14px;background:var(--surface);margin-bottom:8px;animation:flip .45s both}
+.reveal li .tile{flex:0 0 60px}
+.reveal li .who{flex:1;min-width:0}
 .reveal li .num{font-size:1.5rem}
 .reveal li.top{box-shadow:inset 0 0 0 3px var(--banana)}
 .delta{font-weight:800}
-.delta.up{color:var(--ok)} .delta.down{color:var(--rust)}
-.steps{margin:0 0 16px;padding-left:20px}
-.steps li{margin-bottom:6px}
+.delta.up{color:var(--ok)} .delta.down{color:var(--coral)}
+.reveal li .who{display:flex;flex-direction:column}
+.reveal li .bid{display:flex;flex-direction:column;align-items:flex-end;line-height:1.1}
 @keyframes flip{from{transform:rotateX(90deg);opacity:0}to{transform:none;opacity:1}}
-@media (prefers-reduced-motion:reduce){.reveal li{animation:none}}
-.winner{text-align:center;padding:10px 0 4px}
-.winner .num{font-size:2.6rem;color:var(--rust)}
+.winner{text-align:center;padding:0 0 16px;overflow:hidden}
+.winner .tile{border-radius:0;margin-bottom:12px}
+.winner .tile .shipsvg{max-width:320px;margin:0 auto}
+.winner .num{font-size:clamp(1.8rem,9vw,2.6rem);color:var(--coral);overflow-wrap:anywhere;padding:0 12px}
 details{margin-top:18px}
-summary{cursor:pointer;font-weight:600;color:var(--muted)}
+summary{cursor:pointer;font-weight:600;color:var(--muted);min-height:44px;display:flex;align-items:center}
 .hist{font-size:.92rem}
 .hist div{padding:6px 0;border-bottom:1px solid var(--line)}
+/* Harbour log: the shared top 20 */
+.log h2{margin-bottom:4px}
+.log ol{list-style:none;margin:10px 0 0;padding:0}
+.log li{display:grid;grid-template-columns:2.2em minmax(0,1fr) auto;align-items:baseline;gap:0 10px;padding:9px 0;border-bottom:1px solid var(--line)}
+.log li:last-child{border-bottom:0}
+.log .rank{font-family:Bungee,sans-serif;color:var(--muted)}
+.log li:nth-child(1) .rank{color:var(--mango)} .log li:nth-child(2) .rank{color:var(--sea-deep)} .log li:nth-child(3) .rank{color:var(--hibiscus)}
+.log .who{font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.log .when{grid-column:2;font-size:.82rem;color:var(--muted)}
+.log .score{font-family:Bungee,sans-serif;font-size:1.1rem;grid-column:3;grid-row:1}
+/* Rivals chart: win rate per captain, each line in its hull colour */
+.rivals h2{margin-bottom:4px}
+.rv-chart{display:block;width:100%;height:auto;margin:0 0 6px}
+.rv-grid{stroke:var(--line);stroke-width:1}
+.rv-tick{fill:var(--muted);font:600 11px Figtree,system-ui,sans-serif}
+.rv-line path{fill:none;stroke:var(--c);stroke-width:2.2;stroke-linejoin:round;stroke-linecap:round}
+.rv-line circle{fill:var(--c);stroke:var(--surface);stroke-width:2}
+.rv-me path{stroke-width:3.6}
+.rv-faded{opacity:.15}
+.rv-legend{list-style:none;margin:8px 0 0;padding:0;display:grid;gap:6px}
+.rv-chip{width:100%;display:grid;grid-template-columns:14px minmax(0,1fr) auto;gap:10px;align-items:center;min-height:44px;padding:0 12px;border-radius:12px;font-weight:600;text-align:left;box-shadow:inset 0 0 0 1px var(--line)}
+.rv-chip[aria-pressed="true"]{box-shadow:inset 0 0 0 3px var(--ink)}
+.rv-dot{width:12px;height:12px;border-radius:50%}
+.rv-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rv-stat{font-size:.85rem;color:var(--muted);font-weight:600}
+/* Victory show: banana rain, fireworks and (1 game in 5) torpedoes. Lives outside #app so re-renders keep it. */
+#party{position:fixed;inset:0;z-index:20;pointer-events:none;overflow:hidden}
+#party .drop{position:absolute;top:-8vh;left:var(--x);width:var(--w);animation:fall var(--t) linear var(--d) both}
+@keyframes fall{from{transform:translateY(0) rotate(var(--r0))}to{transform:translateY(118vh) rotate(var(--r1))}}
+#party .burst{position:absolute;left:var(--x);top:var(--y)}
+#party .burst i{position:absolute;width:7px;height:7px;margin:-3.5px;border-radius:50%;background:var(--c);box-shadow:0 0 8px var(--c);
+  transform:rotate(var(--a)) translateX(0);opacity:0;animation:spark 1.1s cubic-bezier(.15,.7,.3,1) var(--d) both}
+@keyframes spark{0%{opacity:1;transform:rotate(var(--a)) translateX(0)}70%{opacity:1}100%{opacity:0;transform:rotate(var(--a)) translateX(var(--len)) translateY(14px)}}
+#party .battle{position:absolute;left:50%;top:22%;width:min(92vw,420px);transform:translateX(-50%);border-radius:20px;overflow:hidden;
+  background:linear-gradient(var(--sky-2),var(--sky));box-shadow:0 10px 40px rgba(0,0,0,.35);animation:pop .3s ease-out both}
+#party .battle p{margin:0;padding:8px 14px 12px;background:var(--sea-deep);color:#fff;font-weight:800;text-align:center}
+@keyframes pop{from{opacity:0;transform:translateX(-50%) scale(.9)}}
+.torp{animation:torp var(--t,1.4s) ease-in var(--d) both}
+@keyframes torp{from{transform:translate(0,0);opacity:1}95%{opacity:1}to{transform:translate(var(--dx),0);opacity:0}}
+.boom{transform-box:fill-box;transform-origin:center;animation:boom .9s ease-out var(--d) both}
+@keyframes boom{from{transform:scale(0);opacity:1}to{transform:scale(1.6);opacity:0}}
+.sinking{transform-box:fill-box;transform-origin:60% 100%;animation:sink var(--t,2.6s) ease-in var(--d) both}
+@keyframes sink{from{transform:none}25%{transform:rotate(-12deg)}to{transform:translateY(90px) rotate(-30deg)}}
+.bubble{animation:rise 1.4s ease-out var(--d) both}
+@keyframes rise{from{transform:translateY(0);opacity:0}20%{opacity:.9}to{transform:translateY(-26px);opacity:0}}
+.flotsam{animation:surface 1s ease-out var(--d) both}
+@keyframes surface{from{transform:translateY(14px);opacity:0}to{transform:none;opacity:1}}
+.party-banner{position:absolute;left:50%;top:16px;transform:translateX(-50%);width:min(92vw,420px);background:var(--surface);color:var(--ink);
+  border-radius:16px;padding:12px 16px;font-weight:800;text-align:center;box-shadow:0 6px 24px rgba(0,0,0,.25)}
+@media (prefers-reduced-motion:reduce){.reveal li,.sh-bob,.sh-wave,.sh-float,.sh-wave-flag,.wiggle,.hs-sway,.hs-crown,.hs-birdfly,.hs-glow,.hs-star,.bongo-bob,.bongo-talk{animation:none}.hs-heat{display:none}.puff{display:none}}
 </style>
 </head>
 <body>
-<script src="/digits.js"></script>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs>
+  <filter id="smokeblur" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="1.3"/></filter>
+  <symbol id="nana" viewBox="0 0 26 12"><path class="nb" d="M2 3C6 10.5 18 11.5 23.5 3.5 22.8 2.6 21.7 2.5 21 3.2 16 8 8 7.8 4 2.4 3.3 1.8 2.3 2.1 2 3Z"/><path class="nb-tip" d="M22.5 3.4 24.6 1.2"/></symbol>
+  <symbol id="flag-pirate" viewBox="0 0 40 30"><rect width="40" height="30" fill="#111"/><circle cx="20" cy="12" r="6" fill="#fff"/><rect x="16.5" y="15" width="7" height="4" rx="1" fill="#fff"/><circle cx="17.7" cy="11.5" r="1.6" fill="#111"/><circle cx="22.3" cy="11.5" r="1.6" fill="#111"/><path d="M9 21 31 27M31 21 9 27" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/></symbol>
+  <symbol id="flag-banana" viewBox="0 0 40 30"><rect width="40" height="30" fill="#2BB673"/><rect y="10" width="40" height="10" fill="#FFD60A"/><path d="M9 12C13 24 28 25 33 12 31 11 30 11 29 12 25 19 15 19 12 11 11 10 9.5 11 9 12Z" fill="#FFD60A" stroke="#C98E00" stroke-width="1.2"/></symbol>
+  <symbol id="flag-rainbow" viewBox="0 0 40 30"><rect width="40" height="5" fill="#E40303"/><rect y="5" width="40" height="5" fill="#FF8C00"/><rect y="10" width="40" height="5" fill="#FFED00"/><rect y="15" width="40" height="5" fill="#008026"/><rect y="20" width="40" height="5" fill="#24408E"/><rect y="25" width="40" height="5" fill="#732982"/></symbol>
+  <symbol id="flag-chequered" viewBox="0 0 4 3"><rect width="4" height="3" fill="#fff"/><path d="M0 0h1v1H0zM2 0h1v1H2zM1 1h1v1H1zM3 1h1v1H3zM0 2h1v1H0zM2 2h1v1H2z" fill="#111"/></symbol>
+  <symbol id="flag-white" viewBox="0 0 40 30"><rect x=".5" y=".5" width="39" height="29" fill="#fff" stroke="#c9d3d9"/></symbol>
+  <symbol id="bunch" viewBox="0 0 26 18"><use href="#nana" width="26" height="12"/><use href="#nana" x="1" y="3" width="25" height="12"/><use href="#nana" y="6" width="26" height="12"/></symbol>
+</defs></svg>
 <div id="app"><p class="muted">Loading the docks…</p></div>
 <script>
 const GOAL = 200, MAX_PLAYERS = 6;
-const S = { code: null, room: null, es: null, nick: '', joinCode: '', bidDraft: '', error: '', busy: false, sheetFor: null, seen: 0, mode: 'type', strokes: [], drawing: false, pendingRender: false, read: null };
+const S = { tauntBook: null, hull: 'navy', cabin: 'white', flag: '', flagSheet: false, flagQuery: '', countries: null, code: null, room: null, es: null, nick: '', joinCode: '', bidDraft: '', error: '', busy: false, sheetFor: null, seen: 0, scores: null, rivals: null, rivalHi: null };
 const app = document.getElementById('app');
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const ls = { get(k){try{return localStorage.getItem(k)}catch(e){return null}}, set(k,v){try{localStorage.setItem(k,v)}catch(e){}}, del(k){try{localStorage.removeItem(k)}catch(e){}} };
@@ -130,17 +328,235 @@ async function api(action, extra = {}) {
 }
 async function act(fn) { S.busy = true; S.error = ''; render(); try { await fn(); } catch (e) { S.error = e.message; } S.busy = false; render(); }
 
+// ---------- harbour log (shared highscores) ----------
+// S.scores: null = loading, array = loaded, 'error' = unavailable. Never blocks rooms.
+async function loadScores() {
+  try {
+    const r = await fetch('/api/highscores');
+    if (!r.ok) throw new Error();
+    const d = await r.json();
+    S.scores = Array.isArray(d) ? d : 'error';
+  } catch (e) { S.scores = 'error'; }
+  if (!S.code || !S.room) render();
+}
+
+// ---------- rivals chart (game history) ----------
+// S.rivals: null = loading, object = loaded, 'error' = unavailable. Never blocks rooms.
+// Only the newest request may land, so a slow answer for an older name never overwrites a newer one.
+let rivalsSeq = 0;
+async function loadRivals() {
+  const seq = ++rivalsSeq;
+  let next;
+  try {
+    const r = await fetch('/api/rivals?name=' + encodeURIComponent(S.nick.trim()));
+    if (!r.ok) throw new Error();
+    const d = await r.json();
+    next = d && Array.isArray(d.players) ? d : 'error';
+  } catch (e) { next = 'error'; }
+  if (seq !== rivalsSeq) return;
+  S.rivals = next;
+  if (next === 'error' || !next.players.some(p => p.key === S.rivalHi)) S.rivalHi = null; // never leave every line faded
+  if (!S.code || !S.room) render();
+}
+function toggleRival(i) { const k = S.rivals.players[i].key; S.rivalHi = S.rivalHi === k ? null : k; render(); }
+
+// ---------- cargo ships ----------
+// One ship drawing, loaded by fill: 0 = empty hold, 1 = full to the rails, >1 = piled high and spilling.
+// The hold takes 28 bunches (about 7 bananas each); the hull also sinks with every banana, so the
+// picture keeps changing from 0 to GOAL. Single bananas only ever float in the sea, never on deck.
+// Ship coordinates are 220 wide with the waterline near y 92. The load sets how deep it sits: empty rides
+// high on its red keel, at GOAL the rail is just above the water, overfull puts the deck awash.
+const HOLD = { x: 66, cols: 7, rows: 4, w: 19, h: 9, deck: 51, bh: 11 };
+const SLOTS = HOLD.cols * HOLD.rows;
+const wob = i => (i * 37 % 13) - 6; // stable per-bunch tilt so piles look stacked by hand
+const overflow = f => f > 1.03 ? Math.min(15, Math.max(2, Math.round((f - 1) * SLOTS))) : 0;
+const cargoWord = f => f <= 0 ? 'Empty' : f < 0.1 ? 'A few bananas' : f < 0.25 ? 'Light load' : f < 0.4 ? 'Filling up' : f < 0.6 ? 'Half full'
+  : f < 0.8 ? 'Well stocked' : f < 0.95 ? 'Nearly full' : overflow(f) ? (f < 1.3 ? 'Overfull' : 'Sinking with bananas') : 'Full';
+// Each bunch is drawn bigger than its slot (same bottom edge), so neighbours and rows overlap into a packed pile.
+const PACK = { w: 25, h: 17 };
+const bunch = (x, y, i) => {
+  const bx = x - (PACK.w - HOLD.w) / 2, by = y + HOLD.bh - PACK.h;
+  return `<use href="#bunch" x="${bx.toFixed(1)}" y="${by.toFixed(1)}" width="${PACK.w}" height="${PACK.h}" transform="rotate(${wob(i)} ${(x + HOLD.w / 2).toFixed(1)} ${(y + HOLD.bh / 2).toFixed(1)})"/>`;
+};
+// The deck slopes up toward the bow (hull top runs from (6,52) to (212,45)). Each column is tucked the same
+// depth (SINK) into the hull where it stands: loaded in the hold, yet the first row shows along the whole deck.
+const deckAt = x => 52 - 7 * (x - 6) / 206, SINK = 3.5;
+const slotX = i => HOLD.x + (i % HOLD.cols) * HOLD.w;
+const slotY = i => deckAt(slotX(i) + HOLD.w / 2) + SINK - HOLD.bh - Math.floor(i / HOLD.cols) * HOLD.h;
+function waves(y, width, bottom, cls) {
+  let d = `M0 ${y}`;
+  for (let x = 0; x < width + 30; x += 30) d += 'q7.5 -4 15 0t15 0';
+  return `<path class="${cls}" d="${d}V${bottom}H0Z"/>`;
+}
+// Seeded randomness: each ship's floating bananas stay put across re-renders, and change when its load
+// changes or the page reloads.
+const SEA_SEED = (Math.random() * 2 ** 32) >>> 0;
+function rng(key) {
+  let h = SEA_SEED;
+  for (const c of String(key)) h = Math.imul(h ^ c.charCodeAt(0), 2654435761);
+  return () => { h = (h + 0x6D2B79F5) | 0; let t = Math.imul(h ^ (h >>> 15), 1 | h); t ^= t + Math.imul(t ^ (t >>> 7), 61 | t); return ((t ^ (t >>> 14)) >>> 0) / 2 ** 32; };
+}
+// ---------- flags (secret: tap the flag on your own ship) ----------
+// Country flags come from the MIT-licensed flag-icons set on jsDelivr; easter eggs are drawn above in <defs>.
+const FLAG_CDN = 'https://cdn.jsdelivr.net/npm/flag-icons@7.5.0/';
+const FLAG_EGGS = { pirate: ['Jolly Roger', ['pirate', 'jolly', 'roger', 'skull']], banana: ['Banana Republic', ['banana']],
+  rainbow: ['Rainbow', ['rainbow', 'pride']], chequered: ['Chequered', ['chequered', 'checkered', 'race', 'finish']],
+  white: ['White flag', ['white', 'surrender']] };
+const FLAG_EXTRAS = ['eu', 'un', 'gb-eng', 'gb-sct', 'gb-wls', 'gb-nir']; // non-country flags worth offering
+// Swedish provinces (code "ls-<slug>"), files in assets/flags/se/ from Wikimedia Commons: [name, isCoatOfArms, author, licence, source]
+const LANDSKAP = {
+  blekinge: ['Blekinge', true, "Lokal_Profil", 'CC BY-SA 2.5', "https://commons.wikimedia.org/wiki/File:Blekinge_vapen.svg"],
+  bohuslan: ['Bohuslän', false, "Kaiser Torikka", 'Public domain', "https://commons.wikimedia.org/wiki/File:Flag_of_Bohusl%C3%A4n.svg"],
+  dalarna: ['Dalarna', true, "Lokal_Profil", 'CC BY-SA 2.5', "https://commons.wikimedia.org/wiki/File:Dalarna_vapen.svg"],
+  dalsland: ['Dalsland', true, "Lokal_Profil", 'CC BY-SA 2.5', "https://commons.wikimedia.org/wiki/File:Dalsland_vapen.svg"],
+  gotland: ['Gotland', false, "unknown", 'CC BY-SA 3.0', "https://commons.wikimedia.org/wiki/File:Flag_of_Gotland.svg"],
+  gastrikland: ['Gästrikland', true, "Marmelad", 'CC BY-SA 2.5', "https://commons.wikimedia.org/wiki/File:G%C3%A4strikland_vapen.svg"],
+  halland: ['Halland', true, "Lokal_Profil", 'CC BY-SA 2.5', "https://commons.wikimedia.org/wiki/File:Halland_vapen.svg"],
+  halsingland: ['Hälsingland', false, "Kaiser Torikka", 'Public domain', "https://commons.wikimedia.org/wiki/File:Flag_of_H%C3%A4lsingland.svg"],
+  harjedalen: ['Härjedalen', false, "Lokal_Profil", 'Public domain', "https://commons.wikimedia.org/wiki/File:Flag_of_H%C3%A4rjedalen.svg"],
+  jamtland: ['Jämtland', true, "Marmelad", 'CC BY-SA 2.5', "https://commons.wikimedia.org/wiki/File:J%C3%A4mtland_vapen.svg"],
+  lappland: ['Lappland', false, "Shorepine", 'CC BY-SA 4.0', "https://commons.wikimedia.org/wiki/File:Flag_of_Lapland.svg"],
+  medelpad: ['Medelpad', true, "Lokal_Profil", 'CC BY-SA 2.5', "https://commons.wikimedia.org/wiki/File:Medelpad_vapen.svg"],
+  norrbotten: ['Norrbotten', true, "Lokal_Profil", 'CC BY-SA 2.5', "https://commons.wikimedia.org/wiki/File:Norrbotten_vapen.svg"],
+  narke: ['Närke', true, "Lokal_Profil", 'CC BY-SA 2.5', "https://commons.wikimedia.org/wiki/File:N%C3%A4rke_vapen.svg"],
+  skane: ['Skåne', false, "Jon Harald Søby", 'Public domain', "https://commons.wikimedia.org/wiki/File:Flag_of_Sk%C3%A5ne.svg"],
+  smaland: ['Småland', false, "Daniel78", 'Public domain', "https://commons.wikimedia.org/wiki/File:Flag_of_Sm%C3%A5land.svg"],
+  sodermanland: ['Södermanland', true, "Lokal_Profil", 'CC BY-SA 2.5', "https://commons.wikimedia.org/wiki/File:S%C3%B6dermanland_vapen.svg"],
+  uppland: ['Uppland', true, "Lokal_Profil", 'CC BY-SA 2.5', "https://commons.wikimedia.org/wiki/File:Uppland_vapen.svg"],
+  varmland: ['Värmland', true, "Lokal_Profil", 'CC BY-SA 2.5', "https://commons.wikimedia.org/wiki/File:V%C3%A4rmland_vapen.svg"],
+  vasterbotten: ['Västerbotten', true, "Lokal_Profil", 'CC BY-SA 2.5', "https://commons.wikimedia.org/wiki/File:V%C3%A4sterbotten_vapen.svg"],
+  vastergotland: ['Västergötland', true, "Lokal Profil", 'CC BY-SA 2.5', "https://commons.wikimedia.org/wiki/File:V%C3%A4sterg%C3%B6tland_vapen.svg"],
+  vastmanland: ['Västmanland', true, "Lokal_Profil", 'CC BY-SA 2.5', "https://commons.wikimedia.org/wiki/File:V%C3%A4stmanland_vapen.svg"],
+  angermanland: ['Ångermanland', true, "Lokal_Profil", 'CC BY-SA 2.5', "https://commons.wikimedia.org/wiki/File:%C3%85ngermanland_vapen.svg"],
+  oland: ['Öland', true, "Lokal_Profil", 'CC BY-SA 2.5', "https://commons.wikimedia.org/wiki/File:%C3%96land_vapen.svg"],
+  ostergotland: ['Östergötland', false, "Zscout370 at English Wikipedia", 'Public domain', "https://commons.wikimedia.org/wiki/File:Unofficial_flag_of_%C3%96sterg%C3%B6tland.svg"]
+};
+// Coats of arms become banners of arms: the shield's field cropped to the flag rectangle (outline and point trimmed).
+const ARMS_CROP = '6 8 239 179';
+const fold = t => t.normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase(); // "Skåne" matches "skane"
+const flagOf = f => typeof f !== 'string' ? '' : f.startsWith('ls-') ? (LANDSKAP[f.slice(3)] ? f : '')
+  : FLAG_EGGS[f] || /^[a-z]{2}(-[a-z]{2,4})?$/.test(f) ? f : ''; // mirrors players.js
+// The artwork for a (valid, non-empty) flag code, filling a w×h box.
+function flagArt(flag, w, h) {
+  if (FLAG_EGGS[flag]) return `<use href="#flag-${flag}" width="${w}" height="${h}"/>`;
+  if (flag.startsWith('ls-')) {
+    const slug = flag.slice(3), src = `/assets/flags/se/${slug}.svg`;
+    return LANDSKAP[slug][1]
+      ? `<svg width="${w}" height="${h}" viewBox="${ARMS_CROP}" preserveAspectRatio="xMidYMid slice"><image href="${src}" width="251" height="304"/></svg>`
+      : `<image href="${src}" width="${w}" height="${h}" preserveAspectRatio="xMidYMid slice"/>`;
+  }
+  return `<image href="${FLAG_CDN}flags/4x3/${flag}.svg" width="${w}" height="${h}" preserveAspectRatio="none"/>`;
+}
+// The flag at the masthead, in ship coordinates; '' is the default pink pennant.
+function mastFlag(flag) {
+  flag = flagOf(flag);
+  if (!flag) return `<path class="sh-flag" d="M203 4 192 8 203 12Z"/>`;
+  // The ship sails right, so its wind streams flags aft (left) and we see their reverse side: mirrored.
+  // Drawn at 0,0 in a group pinned to the masthead, so the wave (skew/scale about the hoist) stays on the pole.
+  const art = flagArt(flag, 11.5, 8.6);
+  return `<g transform="translate(202.5 3.5) scale(-1 1)"><g class="sh-wave-flag">${art}</g></g>`;
+}
+function shipBody(f, key = '', look = {}, mine = false) {
+  const n = f > 0 ? Math.max(1, Math.round(Math.min(f, 1) * SLOTS)) : 0, over = overflow(f);
+  let cargo = '';
+  for (let i = 0; i < n; i++) cargo += bunch(slotX(i), slotY(i), i);
+  // Overfull: a pyramid of 6, 5, 4 bunches above the rails
+  for (let t = 0, left = over, k = HOLD.cols - 1; left > 0; t++, k--) {
+    const m = Math.min(k, left), x0 = HOLD.x + (HOLD.cols - k) * HOLD.w / 2;
+    for (let c = 0; c < m; c++) cargo += bunch(x0 + c * HOLD.w, deckAt(x0 + c * HOLD.w + HOLD.w / 2) + SINK - HOLD.bh - (HOLD.rows + t) * HOLD.h, 50 + t * 7 + c);
+    left -= m;
+  }
+  // Funnel smoke, individual per ship: heavier loads puff more, bigger and darker
+  const srnd = rng(key + '|smoke'), puffs = 5 + Math.round(Math.min(f, 1.2) * 2.5), beat = 2.8 + srnd() * 1.4;
+  let smoke = '';
+  for (let i = 0; i < puffs; i++) {
+    const t = beat + srnd() * 0.8, d = -(i / puffs) * t - srnd() * 0.4;
+    smoke += `<circle class="puff" cx="${(34 + srnd() * 2).toFixed(1)}" cy="2" r="${(3 + srnd() + Math.min(f, 1.2)).toFixed(1)}" style="--t:${t.toFixed(2)}s;--d:${d.toFixed(2)}s;--dx:${(-16 - srnd() * 20).toFixed(0)}px;--dy:${(-24 - srnd() * 16).toFixed(0)}px;--s:${(2.8 + srnd() * 2).toFixed(2)};--o:${(0.6 + srnd() * 0.15 + Math.min(f, 1) * 0.15).toFixed(2)}"/>`;
+  }
+  const sink = (-6 + Math.min(f, 1) * 42 + Math.min(Math.max(f - 1, 0), 0.6) * 10).toFixed(1), tilt = over ? 1.8 : 0;
+  const ports = [44, 64, 84, 104, 124, 144, 164, 184].map(x => `<circle class="sh-port" cx="${x}" cy="64" r="2.4"/>`).join('');
+  const ship = `<g transform="translate(0 ${sink}) rotate(${tilt} 110 80)"><g class="sh-bob">
+    <path class="sh-mast" d="M128 50V12M128 16 158 26"/>
+    <rect class="sh-cabin" x="16" y="22" width="40" height="34" rx="3"/>
+    <rect class="sh-win" x="21" y="28" width="30" height="6" rx="2"/><rect class="sh-win" x="21" y="39" width="30" height="5" rx="2"/>
+    <path class="sh-funnel" d="M25 22 27 2H43L45 22Z"/><rect class="sh-band" x="26.5" y="7" width="17" height="5"/>${smoke}
+    ${cargo}
+    <path class="sh-mast" d="M203 54V3"/>${mastFlag(look.flag)}
+    <path class="sh-hull" d="M6 52 212 45 200 82H22Z"/><path class="sh-keel" d="M22 82H200L192 100H30Z"/><path class="sh-stripe" d="M22 82H200"/>${ports}
+    ${mine ? '<rect class="flag-hit" x="182" y="-12" width="38" height="36" onclick="openFlags(event)"/>' : ''}</g></g>`;
+  // Overfull ships shed a random handful of bananas into the sea around them
+  const rnd = rng(key + '|' + Math.round(f * GOAL));
+  const floats = over ? 1 + Math.floor(rnd() * (2 + over / 2)) : 0;
+  let spill = '';
+  for (let i = 0; i < floats; i++) {
+    const w = 13 + rnd() * 7, x = rnd() * (214 - w), y = 98 + rnd() * 13, a = Math.round(rnd() * 140 - 70);
+    spill += `<g class="sh-float" style="animation-delay:${(-rnd() * 3).toFixed(2)}s;animation-duration:${(2.6 + rnd() * 1.6).toFixed(2)}s"><use href="#nana" x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${w.toFixed(1)}" height="${(w / 2).toFixed(1)}" transform="rotate(${a} ${(x + w / 2).toFixed(1)} ${(y + w / 4).toFixed(1)})"/></g>`;
+  }
+  return { ship, spill };
+}
+// Hull colours players pick on the home screen; keys match HULLS in server.js.
+const HULLS = { navy: ['Navy', '#1D4E89'], coral: ['Coral', '#E0505B'], mango: ['Mango', '#EE8A1E'], hibiscus: ['Hibiscus', '#D63A85'],
+  palm: ['Palm green', '#2A9457'], turquoise: ['Turquoise', '#0E97A5'], purple: ['Purple', '#6A4C93'], charcoal: ['Charcoal', '#33414E'] };
+// Cabin colours players can pick; keys match CABINS in players.js.
+const CABINS = { white: ['White', '#FFFFFF'], sand: ['Sand', '#F6DFB0'], sunshine: ['Sunshine', '#FFE873'], mint: ['Mint', '#BFF0D4'],
+  sky: ['Sky', '#BDE4FF'], pink: ['Flamingo', '#FFC4DA'] };
+// A ship's look: hull and cabin colour (CSS variables on its <svg>) and the flag at its masthead.
+const look = p => ({ hull: p.hull, cabin: p.cabin, flag: p.flag });
+const myLook = () => look(S);
+const lookOfId = id => look(pl(id));
+const lookStyle = l => {
+  const v = [HULLS[l.hull] && `--hull:${HULLS[l.hull][1]}`, CABINS[l.cabin] && `--cabin:${CABINS[l.cabin][1]}`].filter(Boolean);
+  return v.length ? ` style="${v.join(';')}"` : '';
+};
+function shipSVG(fill, label, key, look = {}, mine) {
+  const f = Math.max(0, Number(fill) || 0), { ship, spill } = shipBody(f, key, look, mine);
+  const a11y = label ? `role="img" aria-label="${esc(label)}"` : 'aria-hidden="true"';
+  return `<svg class="shipsvg" viewBox="0 -18 220 138" ${a11y}${lookStyle(look)}>${waves(88, 220, 120, 'sh-sea2')}${ship}${waves(93, 220, 120, 'sh-sea sh-wave')}${spill}</svg>`;
+}
+const tile = (fill, still, key, look, mine) => `<span class="tile${still ? ' still' : ''}">${shipSVG(fill, '', key, look, mine)}</span>`;
+// A gull: two wings pivoting at the body. The tips sweep up and down for a few beats, then it glides.
+// SMIL animates the path shape (so Safari does too); reduced motion gets a still gull.
+function bird(x, y, w, cycle, offset, glide = 9, glideDelay = 0) {
+  const shape = (tip, arc) => `M${x} ${(y - tip).toFixed(1)}Q${x + w} ${(y - arc).toFixed(1)} ${x + 2 * w} ${y}Q${x + 3 * w} ${(y - arc).toFixed(1)} ${x + 4 * w} ${(y - tip).toFixed(1)}`;
+  const up = shape(1.3 * w, 1.0 * w), down = shape(-0.7 * w, 0.1 * w), held = shape(0.3 * w, 0.55 * w);
+  const frames = [[0, held], [.08, up], [.18, down], [.28, up], [.38, down], [.48, up], [.56, held], [1, held]];
+  const flap = matchMedia('(prefers-reduced-motion: reduce)').matches ? ''
+    : `<animate attributeName="d" dur="${cycle}s" begin="${offset}s" repeatCount="indefinite" calcMode="spline"
+        keyTimes="${frames.map(f => f[0]).join(';')}" values="${frames.map(f => f[1]).join(';')}"
+        keySplines="${Array(frames.length - 1).fill('.45 0 .55 1').join(';')}"/>`;
+  return `<g class="hs-birdfly" style="animation-duration:${glide}s;animation-delay:${glideDelay}s"><path class="hs-bird" d="${held}">${flap}</path></g>`;
+}
+function heroScene(fill = 0.75, key = 'hero', look = {}, mine) {
+  const { ship, spill } = shipBody(fill, key, look, mine), place = 'transform="translate(10 52) scale(1.1)"';
+  const fronds = ['c10-12 26-12 36-2c-12-4-24-2-36 2z', 'c-6-14-20-18-32-12c12 0 24 4 32 12z', 'c-14-2-26 6-30 18c8-10 18-14 30-18z', 'c14-2 26 6 30 18c-8-10-18-14-30-18z', 'c2-14 12-22 24-22c-10 4-18 12-24 22z'];
+  return `<svg class="scene" viewBox="0 0 360 196" aria-hidden="true"${lookStyle(look)}>
+    <g class="hs-day"><circle class="hs-heat" cx="300" cy="40" r="24"/><circle class="hs-heat" style="animation-delay:-2.25s" cx="300" cy="40" r="24"/><circle class="hs-glow" cx="300" cy="40" r="36"/><circle class="hs-sun" cx="300" cy="40" r="22"/></g>
+    <g class="hs-night"><mask id="moon-${key}"><rect x="260" y="0" width="80" height="80" fill="#fff"/><circle cx="311" cy="32" r="19" fill="#000"/></mask>
+      <circle class="hs-moonglow" cx="300" cy="40" r="32"/>
+      <g mask="url(#moon-${key})"><circle class="hs-moon" cx="300" cy="40" r="20"/><circle class="hs-crater" cx="291" cy="46" r="3"/><circle class="hs-crater" cx="294" cy="34" r="1.8"/></g>
+      ${[[40, 18, 0], [118, 40, 1.1], [205, 12, 2.3], [250, 60, .6], [26, 70, 1.8], [168, 22, 2.9], [338, 82, .3]].map(([x, y, d]) =>
+        `<circle class="hs-star" cx="${x}" cy="${y}" r="1.3" style="animation-delay:-${d}s"/>`).join('')}</g>
+    <g class="hs-cloud"><ellipse cx="62" cy="34" rx="26" ry="8"/><ellipse cx="78" cy="28" rx="15" ry="9"/><ellipse cx="200" cy="20" rx="18" ry="5"/></g>
+    ${bird(146, 46, 4.5, 3.4, 0)}${bird(178, 33, 3.4, 4.1, -1.7, 11, -4)}
+    ${waves(146, 360, 196, 'sh-sea2')}
+    <ellipse class="hs-sand" cx="336" cy="150" rx="50" ry="11"/>
+    <g class="hs-sway"><path class="hs-trunk" d="M336 148C333 126 328 106 318 92"/>
+    <g class="hs-crown">${fronds.map(d => `<path class="hs-palm" d="M318 92${d}"/>`).join('')}</g>
+    <circle class="hs-nut" cx="316" cy="96" r="2.6"/><circle class="hs-nut" cx="321" cy="95" r="2.6"/></g>
+    <g ${place}>${ship}</g>${waves(156, 360, 196, 'sh-sea sh-wave')}<g ${place}>${spill}</g></svg>`;
+}
+
 // ---------- rooms ----------
 function createRoom() {
   if (!S.nick.trim()) { S.error = 'Pick a name first.'; return render(); }
-  act(async () => { const { code } = await api('create', { nick: S.nick }); connect(code); });
+  act(async () => { const { code } = await api('create', { nick: S.nick, ...myLook() }); connect(code); });
 }
 function enterRoom(code, silent) {
   code = String(code || '').trim().toUpperCase();
   if (!/^[A-Z]{4}$/.test(code)) { if (!silent) { S.error = 'Room codes are 4 letters.'; render(); } return; }
   if (!silent && !S.nick.trim()) { S.error = 'Pick a name first.'; return render(); }
   act(async () => {
-    try { await api('join', { code, nick: S.nick }); connect(code); }
+    try { await api('join', { code, nick: S.nick, ...myLook() }); connect(code); }
     catch (e) { ls.del('pb_code'); if (!silent) throw e; }
   });
 }
@@ -148,12 +564,39 @@ function connect(code) {
   if (S.es) S.es.close();
   S.code = code; ls.set('pb_code', code); ls.set('pb_nick', S.nick);
   S.es = new EventSource('/events?room=' + code + '&token=' + token());
-  S.es.onmessage = ev => { S.room = JSON.parse(ev.data); onChange(); };
-  S.es.onerror = () => { if (S.es && S.es.readyState === EventSource.CLOSED) { dropRoom(); S.error = 'That room is gone (the server may have restarted). Create a new one.'; render(); } };
+  S.es.onopen = () => { if (S.reconnecting) { S.reconnecting = false; render(); } };
+  S.es.onmessage = ev => { S.reconnecting = false; S.room = JSON.parse(ev.data); onChange(); };
+  S.es.onerror = () => {
+    if (!S.es) return;
+    if (!S.reconnecting) { S.reconnecting = true; if (S.room) render(); } // the browser retries on its own while CONNECTING
+    if (S.es.readyState === EventSource.CLOSED) { S.es.close(); S.es = null; reconnect(code); }
+  };
 }
-function dropRoom() { if (S.es) S.es.close(); S.es = null; ls.del('pb_code'); S.code = null; S.room = null; S.sheetFor = null; S.bidDraft = ''; }
+// Rooms survive server restarts and deploys, so a dropped connection is retried (rejoining with the same
+// player token) for about a minute. Only a room the server no longer has ends the game.
+function reconnect(code, attempt = 0) {
+  setTimeout(async () => {
+    if (S.code !== code) return; // left in the meantime
+    try { await api('join', { code, nick: S.nick, ...myLook() }); connect(code); }
+    catch (e) {
+      if (/no room/i.test(e.message) || attempt >= 7) { dropRoom(); S.reconnecting = false; S.error = 'That room is gone. Create a new one.'; render(); }
+      else reconnect(code, attempt + 1);
+    }
+  }, Math.min(15000, 1000 * 2 ** attempt));
+}
+function dropRoom() { if (S.es) S.es.close(); S.es = null; S.reconnecting = false; ls.del('pb_code'); S.code = null; S.room = null; S.sheetFor = null; S.bidDraft = ''; loadScores(); loadRivals(); }
 function leaveRoom() { api('leave').catch(() => {}); dropRoom(); render(); }
 const startGame = () => act(() => api('start'));
+// The phone's share sheet where there is one; otherwise copy the link. The link pre-fills the code (?join=ABCD).
+async function shareInvite() {
+  const url = location.origin + '/?join=' + S.code;
+  if (navigator.share) { try { await navigator.share({ title: 'Puerto Banana', text: `Join my Puerto Banana room! Code: ${S.code}`, url }); } catch (e) {} return; }
+  copyText(url, 'Invite link copied');
+}
+async function copyText(text, done) {
+  try { await navigator.clipboard.writeText(text); S.copied = done; render(); setTimeout(() => { S.copied = ''; render(); }, 2500); }
+  catch (e) { S.error = "Couldn't copy. The room code is " + S.code + '.'; render(); }
+}
 const backToLobby = () => act(() => api('lobby'));
 const skipMissing = () => act(() => api('skip'));
 function lockBid() {
@@ -164,11 +607,14 @@ function lockBid() {
 
 function onChange() {
   const r = S.room;
+  if (r.status === 'over' && S.lastStatus !== 'over') setTimeout(() => { loadScores(); loadRivals(); }, 600);
+  if (r.status === 'over' && Object.keys(r.taunts || {}).length) loadTaunts(); // the server saves the result just after the last round
+  S.lastStatus = r.status;
   if (r.status === 'lobby' || (r.status === 'playing' && !r.lastResult)) S.seen = 0;
   if (r.lastResult && r.lastResult.round > S.seen && S.sheetFor == null) S.sheetFor = r.lastResult.round;
   render();
 }
-function closeSheet() { S.seen = S.sheetFor; S.sheetFor = null; S.bidDraft = ''; S.strokes = []; S.read = null; render(); }
+function closeSheet() { S.seen = S.sheetFor; S.sheetFor = null; S.bidDraft = ''; render(); }
 
 // ---------- helpers ----------
 const nickOf = id => ((S.room.players.find(p => p.id === id)) || {}).nick || 'Someone';
@@ -177,52 +623,127 @@ const inGame = () => S.room.order.includes(S.room.me);
 
 // ---------- rendering ----------
 function render() {
-  if (S.drawing) { S.pendingRender = true; return; }
   const active = document.activeElement && document.activeElement.id;
   const caret = active && document.activeElement.selectionStart;
   app.innerHTML = view();
-  const slot = document.getElementById('padslot');
-  if (slot) { slot.appendChild(pad()); redrawPad(); }
+  maybeCelebrate();
   if (active) { const el = document.getElementById(active); if (el) { el.focus(); try { el.setSelectionRange(caret, caret); } catch (e) {} } }
 }
 function view() {
-  if (!S.code || !S.room) return homeView();
+  if (!S.code || !S.room) return homeView() + flagSheetView();
   const body = S.room.status === 'lobby' ? lobbyView() : S.room.status === 'over' ? overView() : gameView();
   return `<div class="topbar"><span class="muted small">Room <span class="code">${esc(S.code)}</span></span><button class="link" onclick="leaveRoom()">Leave</button></div>`
-    + body + (S.error ? `<p class="err">${esc(S.error)}</p>` : '') + sheetView();
+    + (S.reconnecting ? `<p class="reconnecting" role="status">Reconnecting to the room<span class="dots"><i>.</i><i>.</i><i>.</i></span></p>` : '')
+    + body + (S.error ? `<p class="err">${esc(S.error)}</p>` : '') + sheetView() + flagSheetView();
 }
 function homeView() {
-  return `<h1>Puerto Banana</h1>
-  <p class="muted">Bid blind for the banana container. Win it and you pay the runner-up the gap. First to ${GOAL} bananas wins.</p>
-  <div class="stack" style="margin-top:22px">
-    <div><label for="nick">Your name</label><input id="nick" class="text" maxlength="20" value="${esc(S.nick)}" oninput="S.nick=this.value" autocomplete="nickname"></div>
-    <button class="primary" style="width:100%" onclick="createRoom()" ${S.busy?'disabled':''}>Create a room</button>
+  return `<header class="harbor">
+    <h1>Puerto Banana</h1>
+    ${heroScene(0.75, 'hero', myLook(), true)}
+    <p class="harbor-foot">Bid blind for the banana cargo. Win it and you pay the runner-up the gap. First to ${GOAL} bananas wins.</p>
+  </header>
+  <div class="stack">
+    <div><label for="nick">Your name</label><input id="nick" class="text" maxlength="20" value="${esc(S.nick)}" oninput="S.nick=this.value;ls.set('pb_nick',this.value)" onchange="loadRivals()" autocomplete="nickname"></div>
+    <div><span class="label" id="hull-l">Hull colour</span>
+    <div class="swatches" role="radiogroup" aria-labelledby="hull-l">${Object.entries(HULLS).map(([k, [name, c]]) =>
+      `<button id="hull-${k}" class="swatch" role="radio" aria-checked="${S.hull === k}" aria-label="${name}" style="--c:${c}" onclick="pickHull('${k}')"></button>`).join('')}</div></div>
+    <div><span class="label" id="cabin-l">Cabin colour</span>
+    <div class="swatches" style="--cols:6;--gap:4px" role="radiogroup" aria-labelledby="cabin-l">${Object.entries(CABINS).map(([k, [name, c]]) =>
+      `<button id="cabin-${k}" class="swatch" role="radio" aria-checked="${S.cabin === k}" aria-label="${name}" style="--c:${c}" onclick="pickCabin('${k}')"></button>`).join('')}</div></div>
   </div>
   <div class="divider"></div>
   <label for="join">Join with a code</label>
   <div class="row"><input id="join" class="text code grow" maxlength="4" value="${esc(S.joinCode)}" oninput="S.joinCode=this.value" placeholder="ABCD" autocapitalize="characters">
   <button onclick="enterRoom(S.joinCode)" ${S.busy?'disabled':''}>Join</button></div>
+  <p class="or">or start your own</p>
+  <button class="primary wide" onclick="createRoom()" ${S.busy?'disabled':''}>Create a room</button>
   ${S.error ? `<p class="err" style="margin-top:12px">${esc(S.error)}</p>` : ''}
-  <details><summary>How a round works</summary><div class="small" style="margin-top:8px">
-  <p>The container holds as many bananas as the richest player. Everyone secretly bids any number, even more than they own.</p>
-  <p>Highest bid takes the container, then pays the second-highest the difference between their bids. Tied for highest? They split the container and pay nothing.</p>
-  <p>Can't afford the payment? With 3+ players you lose your whole stock and the next-highest bidder wins instead. With 2 players you just drop out of that auction.</p></div></details>`;
+  <div class="divider"></div>
+  ${bongoSays(`<p>Every round a <b>banana cargo</b> is up for auction, as big as the richest captain's stash. Everyone bids <b>in secret</b>, even more than they own.</p>
+  <p>The highest bid takes the cargo, then pays the runner-up the <b>gap</b> between their bids. A tie for highest? They split it and pay nothing.</p>
+  <p>Can't pay? With 3+ captains you lose your whole stash and the next bidder wins; with 2 you just sit that auction out. First to <b>${GOAL} bananas</b> wins!</p>`, 'happy', 'Ahoy, captain! Here is how it works')}
+  <div class="divider"></div>
+  ${rivalsView()}
+  <div class="divider"></div>
+  ${logView()}`;
 }
+// Each line takes its captain's hull colour; a clash gets the first colour nobody in the chart uses.
+function rivalColors(players) {
+  const used = new Set(), out = {};
+  for (const p of players) {
+    const k = HULLS[p.hull] && !used.has(p.hull) ? p.hull : Object.keys(HULLS).find(h => !used.has(h)) || 'navy';
+    used.add(k); out[p.key] = HULLS[k][1];
+  }
+  return out;
+}
+function rivalsChart(d, colors) {
+  const W = 340, H = 200, L = 34, R = 330, T = 16, B = 172, n = d.games.length;
+  const X = i => L + (n > 1 ? i * (R - L) / (n - 1) : (R - L) / 2), Y = r => T + (1 - r) * (B - T);
+  const day = iso => new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
+  let s = [0, 0.5, 1].map(r => `<line class="rv-grid" x1="${L}" x2="${R}" y1="${Y(r)}" y2="${Y(r)}"/>`
+    + `<text class="rv-tick" x="${L - 6}" y="${Y(r) + 4}" text-anchor="end">${r * 100}%</text>`).join('');
+  s += `<text class="rv-tick" x="${L}" y="${H - 6}">${esc(day(d.games[0]))}</text>`
+    + `<text class="rv-tick" x="${R}" y="${H - 6}" text-anchor="end">${esc(day(d.games[n - 1]))}</text>`;
+  for (const p of d.players.slice().reverse()) { // leader drawn last, on top
+    if (!p.points.length) continue;
+    const cls = 'rv-line' + (p.key === d.me ? ' rv-me' : '') + (S.rivalHi && S.rivalHi !== p.key ? ' rv-faded' : '');
+    const path = p.points.map(([i, r], k) => `${k ? 'L' : 'M'}${X(i).toFixed(1)} ${Y(r).toFixed(1)}`).join('');
+    const [li, lr] = p.points[p.points.length - 1];
+    s += `<g class="${cls}" style="--c:${colors[p.key]}"><path d="${path}"/><circle cx="${X(li).toFixed(1)}" cy="${Y(lr).toFixed(1)}" r="4.5"/></g>`;
+  }
+  const lead = d.players[0];
+  return `<svg class="rv-chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Win rate chart. ${esc(lead.name)} leads with ${Math.round(lead.won / lead.played * 100)}% of ${lead.played} games won.">${s}</svg>`;
+}
+function rivalsView() {
+  const d = S.rivals;
+  let body;
+  if (d === null) body = `<p class="muted">Charting the rivalry…</p>`;
+  else if (d === 'error') body = `<p class="muted">The rivalry chart can't be read right now. You can still play.</p>`;
+  else if (!d.players.length) body = `<p class="muted">No voyages logged yet. Finish a game to start the chart.</p>`;
+  else {
+    const colors = rivalColors(d.players), anyLine = d.players.some(p => p.points.length);
+    // Chips toggle by index: names may contain quotes, so they never go inside onclick.
+    body = `<div class="card">${anyLine ? rivalsChart(d, colors) : `<p class="muted small">Lines appear from each captain's 3rd game.</p>`}
+      <ul class="rv-legend">${d.players.map((p, i) => `<li><button class="rv-chip" aria-pressed="${S.rivalHi === p.key}" onclick="toggleRival(${i})">
+        <span class="rv-dot" style="background:${colors[p.key]}"></span><span class="rv-name">${esc(p.name)}${p.key === d.me ? ' (you)' : ''}</span>
+        <span class="rv-stat">${p.won} of ${p.played} won · ${Math.round(p.won / p.played * 100)}%</span></button></li>`).join('')}</ul></div>`;
+  }
+  const title = d && d !== 'error' && d.mode === 'active' ? 'Most active captains' : 'You and your rivals';
+  return `<section class="rivals" aria-labelledby="rv-h"><h2 id="rv-h">Rivals</h2><p class="muted small">${title} · win rate game by game</p><div aria-live="polite">${body}</div></section>`;
+}
+function logView() {
+  const sc = S.scores;
+  let body;
+  if (sc === null) body = `<p class="muted">Reading the harbour log…</p>`;
+  else if (sc === 'error') body = `<p class="muted">The harbour log can't be read right now. You can still play; check back later.</p>`;
+  else if (!sc.length) body = `<p class="muted">No voyages logged yet. Win a game to be the first name here.</p>`;
+  else body = `<ol>${sc.map((e, i) => `<li><span class="rank">${i + 1}</span><span class="who">${esc(e.name)}</span><span class="score">${esc(e.score)} 🍌</span><span class="when">${esc(fmtDate(e.completedAt))}</span></li>`).join('')}</ol>`;
+  return `<section class="log" aria-labelledby="log-h"><h2 id="log-h">Harbour log</h2><p class="muted small">The 20 biggest winning hauls.</p><div aria-live="polite">${body}</div></section>`;
+}
+function fmtDate(iso) { const d = new Date(iso); return isNaN(d) ? '' : d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }); }
 function lobbyView() {
   const ps = S.room.players, n = ps.length;
   return `<h2>Waiting at the dock</h2>
-  <p class="muted">Tell friends to join with code <b class="code">${esc(S.code)}</b>.</p>
-  <div class="card"><ul class="players">${ps.map((p, i) => `<li><span class="name">${esc(p.nick)}${p.id===S.room.me?' (you)':''}</span><span class="status">${i>=MAX_PLAYERS?'watching':'ready'}</span></li>`).join('')}</ul></div>
-  <div style="margin-top:16px"><button class="primary" style="width:100%" onclick="startGame()" ${n<2||S.busy?'disabled':''}>${n<2?'Need at least 2 players':'Start game with '+Math.min(n,MAX_PLAYERS)}</button></div>`;
+  <div class="invite"><span class="invite-label">Room code to share</span>
+    <button class="invite-code" onclick="copyText(S.code, 'Code copied')" aria-label="Room code ${esc(S.code.split('').join(' '))}. Tap to copy">${esc(S.code)}</button>
+    <p class="small">Friends open Puerto Banana and join with this code.</p>
+    <div class="invite-actions"><button class="share" onclick="shareInvite()">${navigator.share ? 'Share invite' : 'Copy invite link'}</button>
+    <button class="share" onclick="copyText(S.code, 'Code copied')">Copy code</button></div>
+    ${S.copied ? `<p class="small copied" role="status">${esc(S.copied)}</p>` : ''}</div>
+  <div class="card"><ul class="players">${ps.map((p, i) => `<li>${tile(0, true, p.id, look(p))}<span class="name">${esc(p.nick)}${p.id===S.room.me?' (you)':''}</span><span class="status">${i>=MAX_PLAYERS?'watching':p.id===S.room.hostId?'host · ready':'ready'}</span></li>`).join('')}</ul></div>
+  <div style="margin-top:16px">${S.room.isHost
+    ? `<button class="primary wide" onclick="startGame()" ${n<2||S.busy?'disabled':''}>${n<2?'Need at least 2 players':'Start game with '+Math.min(n,MAX_PLAYERS)}</button>`
+    : `<p class="waiting" role="status">Waiting for ${esc(nickOf(S.room.hostId))} to start the game<span class="dots"><i>.</i><i>.</i><i>.</i></span></p>`}</div>`;
 }
 function playersList(withStatus) {
   const r = S.room;
   const ids = r.order.slice().sort((a, b) => r.inventories[b] - r.inventories[a]);
   return `<ul class="players">${ids.map(id => {
     const inv = r.inventories[id];
-    const st = withStatus ? (pl(id).locked ? `<span class="status ok">Bid locked</span>` : `<span class="status">Thinking…</span>`) : '';
-    return `<li><span class="name">${esc(nickOf(id))}${id===r.me?' (you)':''}</span><span class="inv">${inv}</span>${st}<span></span>
-      <span class="bar"><i style="width:${Math.min(100, inv/GOAL*100)}%"></i></span></li>`;
+    const taunt = withStatus ? '' : tauntFor(id);
+    const st = withStatus ? (pl(id).locked ? `<span class="status ok">Bid locked</span>` : `<span class="status">Thinking…</span>`)
+      : taunt ? `<span class="status taunt">“${esc(taunt)}”</span>` : '';
+    return `<li class="${id===r.me?'me':''}">${tile(inv / GOAL, true, id, lookOfId(id))}<span class="name">${esc(nickOf(id))}${id===r.me?' (you)':''}</span><span class="inv">${inv}</span>${st}</li>`;
   }).join('')}</ul>`;
 }
 function gameView() {
@@ -230,98 +751,76 @@ function gameView() {
   const waiting = r.order.filter(id => !pl(id).locked).length;
   let action;
   if (!inGame()) action = `<p class="muted">You're watching this game.</p>`;
-  else if (r.myBid !== null) action = `<div class="card locked"><div class="muted small">Your bid is sealed</div><div class="num">${r.myBid}</div>
+  else if (r.myBid !== null) action = `<div class="card locked"><div class="muted small">Your bid is sealed and lashed down</div><div class="num">${r.myBid}</div>
     <div class="muted small">Waiting for ${waiting} more</div></div>`;
-  else if (S.mode === 'draw') action = `${tabs()}
-    <div class="pad" id="padslot">${S.strokes.length ? '' : '<div class="hint">Write your bid here</div>'}</div>
-    <div class="reads"><span class="muted small">Reads as</span>
-      <span class="num ${S.read && S.read.unsure ? 'unsure' : ''}">${S.read ? esc(S.read.text) : '–'}</span>
-      <button onclick="undoStroke()" ${S.strokes.length?'':'disabled'}>Undo</button><button onclick="clearPad()" ${S.strokes.length?'':'disabled'}>Clear</button></div>
-    ${S.read && S.read.unsure ? `<p class="small muted" style="margin:6px 0 0">Not sure about that. Rewrite it, or switch to Type to fix it.</p>` : ''}
-    <button class="primary" style="width:100%;margin-top:12px" onclick="lockBid()" ${S.busy||!S.bidDraft?'disabled':''}>Lock in ${S.bidDraft ? esc(S.bidDraft) : 'bid'}</button>`;
-  else action = `${tabs()}<label for="bid" class="sr">Your secret bid</label>
+  else action = `<label for="bid">Your secret bid</label>
     <div class="bidbox"><button aria-label="Lower bid" onclick="nudge(-1)">−</button>
     <input id="bid" inputmode="numeric" pattern="[0-9]*" value="${esc(S.bidDraft)}" placeholder="0" oninput="S.bidDraft=this.value.replace(/\\D/g,'')">
     <button aria-label="Raise bid" onclick="nudge(1)">+</button></div>
-    <button class="primary" style="width:100%;margin-top:12px" onclick="lockBid()" ${S.busy?'disabled':''}>Lock in bid</button>`;
+    <button class="primary wide" style="margin-top:12px" onclick="lockBid()" ${S.busy?'disabled':''}>Lock in bid</button>`;
   const skip = r.isHost && waiting > 0 && waiting < r.order.length
     ? `<button class="link" onclick="skipMissing()">Someone gone? Count missing bids as 0</button>` : '';
-  return `<div class="container"><span class="plate">Round ${r.round}</span>
-    <div class="num">${r.pot} 🍌</div><div class="sub">up for auction</div></div>
-    ${inGame() ? `<p style="margin:14px 0 4px">You have <b>${r.inventories[r.me]}</b> bananas.</p>` : ''}
+  const mine = r.inventories[r.me];
+  return `<div class="potcard"><span class="plate">Round ${r.round}</span>
+    <div class="num">${r.pot} 🍌</div><div class="sub">up for auction this round</div></div>
+    ${inGame() ? `<div class="myship" role="img" aria-label="Your ship: ${mine} bananas, ${cargoWord(mine / GOAL).toLowerCase()}">${heroScene(mine / GOAL, r.me, lookOfId(r.me), true)}
+    <div class="myship-foot"><span>Your ship<br><b>${cargoWord(mine / GOAL)}</b></span><span class="num">${mine} 🍌</span></div></div>` : ''}
     <div style="margin:12px 0 18px">${action}</div>
     <div class="card">${playersList(true)}</div>${skip}
     ${historyView()}`;
 }
-function tabs() {
-  const b = (m, l) => `<button aria-pressed="${S.mode===m}" onclick="setMode('${m}')">${l}</button>`;
-  return `<div class="tabs" role="group" aria-label="How to enter your bid">${b('type','⌨️ Type')}${b('draw','✍️ Draw')}</div>`;
-}
-function setMode(m) { S.mode = m; ls.set('pb_mode', m); render(); }
-
-// ---------- scratchpad ----------
-let padEl = null;
-function pad() {
-  if (padEl) return padEl;
-  padEl = document.createElement('canvas');
-  padEl.setAttribute('aria-label', 'Scratchpad: write your bid with your finger');
-  let cur = null;
-  const pt = e => { const r = padEl.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
-  padEl.addEventListener('pointerdown', e => {
-    e.preventDefault(); padEl.setPointerCapture(e.pointerId);
-    clearTimeout(S.readTimer); S.drawing = true; cur = [pt(e)]; S.strokes.push(cur);
-    const hint = padEl.parentNode && padEl.parentNode.querySelector('.hint'); if (hint) hint.remove();
-    redrawPad();
-  });
-  padEl.addEventListener('pointermove', e => {
-    if (!cur) return;
-    const evs = e.getCoalescedEvents ? e.getCoalescedEvents() : [e];
-    for (const ev of evs) cur.push(pt(ev));
-    redrawPad();
-  });
-  const end = () => {
-    if (!cur) return; cur = null; S.drawing = false;
-    clearTimeout(S.readTimer); S.readTimer = setTimeout(readPad, 350);
-    if (S.pendingRender) { S.pendingRender = false; render(); }
-  };
-  padEl.addEventListener('pointerup', end); padEl.addEventListener('pointercancel', end);
-  return padEl;
-}
-function redrawPad() {
-  if (!padEl || !padEl.isConnected) return;
-  const dpr = window.devicePixelRatio || 1, r = padEl.getBoundingClientRect();
-  if (padEl.width !== Math.round(r.width * dpr)) { padEl.width = Math.round(r.width * dpr); padEl.height = Math.round(r.height * dpr); }
-  const ctx = padEl.getContext('2d');
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, r.width, r.height);
-  ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--ink');
-  ctx.lineWidth = 7; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-  for (const st of S.strokes) {
-    ctx.beginPath(); st.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y));
-    if (st.length === 1) ctx.lineTo(st[0][0] + 0.1, st[0][1]);
-    ctx.stroke();
-  }
-}
-function readPad() {
-  if (!S.strokes.length) { S.read = null; S.bidDraft = ''; return render(); }
-  try {
-    const r = Digits.recognize(S.strokes);
-    S.read = { text: r.text, unsure: r.digits.some(d => d.confidence < 0.6) };
-    S.bidDraft = String(parseInt(r.text, 10));
-  } catch (e) { S.read = { text: '?', unsure: true }; S.bidDraft = ''; }
-  render();
-}
-function undoStroke() { S.strokes.pop(); readPad(); }
-function clearPad() { S.strokes = []; S.read = null; S.bidDraft = ''; render(); }
-
 function nudge(d) { S.bidDraft = String(Math.max(0, (parseInt(S.bidDraft, 10) || 0) + d)); render(); }
 function overView() {
   const r = S.room, w = r.winners || [];
-  return `<div class="card winner"><div class="muted">King of the bananas</div>
+  return `<div class="card winner">${tile(Math.max(1.6, r.inventories[w[0]] / GOAL), false, w[0], lookOfId(w[0]))}<div class="muted">King of the bananas</div>
     <div class="num">${w.map(id => esc(nickOf(id))).join(' & ')}</div>
     <div class="muted">${r.inventories[w[0]]} bananas after ${r.round - 1} rounds</div></div>
+    ${tauntFor(r.me) ? `<div class="taunt-me" role="status">${bongoSays(`${flagThumb(flagOf(pl(r.me).flag))}<b>${esc(nickOf(r.me))}</b>, ${r.inventories[r.me]} ${r.inventories[r.me] === 1 ? 'banana' : 'bananas'}. ${esc(tauntFor(r.me))}`, 'smug', 'Ha ha ha!')}</div>` : ''}
     <div class="card" style="margin-top:14px">${playersList(false)}</div>
-    <button class="primary" style="width:100%;margin-top:16px" onclick="backToLobby()">Back to the lobby</button>
+    <button class="primary wide" style="margin-top:16px" onclick="backToLobby()">Back to the lobby</button>
     ${historyView()}`;
+}
+// ---------- Captain Bongo, the mascot ----------
+// A sailor monkey who explains the rules, calls each round and delivers taunts. mood: 'happy' | 'wide' | 'smug'.
+const BONGO_EYES = {
+  happy: '<path d="M45 52q5-6 10 0M65 52q5-6 10 0" stroke="#2B1A0C" stroke-width="3" fill="none" stroke-linecap="round"/>',
+  wide: '<circle cx="49" cy="52" r="5" fill="#fff"/><circle cx="71" cy="52" r="5" fill="#fff"/><circle cx="50" cy="53" r="2.6" fill="#2B1A0C"/><circle cx="72" cy="53" r="2.6" fill="#2B1A0C"/>',
+  smug: '<path d="M43 50h12M65 50h12" stroke="#2B1A0C" stroke-width="3" stroke-linecap="round"/><circle cx="51" cy="54" r="2.4" fill="#2B1A0C"/><circle cx="73" cy="54" r="2.4" fill="#2B1A0C"/>',
+};
+function bongo(mood = 'happy') {
+  const mouth = mood === 'smug' ? '<path d="M46 72q14 14 28 0Z" fill="#7A2E1F"/><path d="M48 73h24" stroke="#fff" stroke-width="2.5"/>'
+    : '<ellipse class="bongo-talk" cx="60" cy="75" rx="7" ry="5" fill="#7A2E1F"/>';
+  const banana = mood === 'smug' ? '' : `<path d="M28 112c-10-6-14-18-8-26" stroke="#8B5A2B" stroke-width="8" fill="none" stroke-linecap="round"/>
+    <path d="M8 74c2 10 12 14 22 8 1-2 0-3-2-3-6 3-13 1-16-6-1-1-3-1-4 1Z" fill="#FFD60A" stroke="#C98E00" stroke-width="1.2"/>`;
+  return `<svg class="bongo" viewBox="0 0 120 150" aria-hidden="true"><g class="bongo-bob">
+    <path d="M60 148c-26 0-36-14-34-34 2-18 14-26 34-26s32 8 34 26c2 20-8 34-34 34Z" fill="#8B5A2B"/>
+    <path d="M60 140c-14 0-20-8-19-20 1-10 8-15 19-15s18 5 19 15c1 12-5 20-19 20Z" fill="#F2D2A9"/>
+    <path d="M90 118c10-2 18 4 20 14" stroke="#8B5A2B" stroke-width="7" fill="none" stroke-linecap="round"/>${banana}
+    <circle cx="24" cy="58" r="13" fill="#8B5A2B"/><circle cx="24" cy="58" r="7" fill="#F2D2A9"/>
+    <circle cx="96" cy="58" r="13" fill="#8B5A2B"/><circle cx="96" cy="58" r="7" fill="#F2D2A9"/>
+    <circle cx="60" cy="56" r="34" fill="#8B5A2B"/>
+    <path d="M60 86c-18 0-27-9-27-22 0-9 6-14 13-14 6 0 9 4 14 4s8-4 14-4c7 0 13 5 13 14 0 13-9 22-27 22Z" fill="#F2D2A9"/>
+    ${BONGO_EYES[mood] || BONGO_EYES.happy}<ellipse cx="60" cy="66" rx="4" ry="2.6" fill="#5B3A1A"/>${mouth}
+    <path d="M28 34c4-16 60-16 64 0Z" fill="#fff" stroke="#D3ECEA" stroke-width="1.5"/>
+    <rect x="27" y="30" width="66" height="8" rx="3" fill="#0582B8"/><circle cx="60" cy="16" r="4" fill="#FF3E8A"/>
+    <path d="M44 34h8M66 34h8" stroke="#FFD60A" stroke-width="2"/></g></svg>`;
+}
+// Bongo with a speech bubble; html is already escaped by the caller.
+const bongoSays = (html, mood, title) => `<div class="bongo-says"><div class="bubble">${title ? `<p class="bubble-title">${title}</p>` : ''}${html}</div>${bongo(mood)}</div>`;
+
+// ---------- loser taunts ----------
+// The server picks a number for each loser who ended with 10 bananas or fewer; it indexes that
+// player's flag's taunts in assets/taunts.json (loaded only when a game ends), so every screen agrees.
+async function loadTaunts() {
+  if (S.tauntBook) return;
+  try { const r = await fetch('/assets/taunts.json'); if (!r.ok) throw new Error(); S.tauntBook = await r.json(); render(); }
+  catch (e) { S.tauntBook = null; }
+}
+function tauntFor(id) {
+  const n = S.room && S.room.taunts ? S.room.taunts[id] : undefined;
+  if (n === undefined || !S.tauntBook) return '';
+  const list = S.tauntBook[flagOf(pl(id).flag) || 'pennant'] || S.tauntBook.pennant || [];
+  return list.length ? list[n % list.length] : '';
 }
 function historyView() {
   const h = (S.room.history || []).slice().reverse();
@@ -329,17 +828,106 @@ function historyView() {
   return `<details><summary>Earlier rounds</summary><div class="hist">${h.map(x =>
     `<div><b>Round ${x.round}</b>, ${x.pot} 🍌: ${S.room.order.map(id => esc(nickOf(id)) + ' ' + x.bids[id]).join(', ')}</div>`).join('')}</div></details>`;
 }
-function stepText(s) {
-  const n = id => `<b>${esc(nickOf(id))}</b>`;
+// Round results in plain sentences: who won, who gains what, who pays whom. "You" for the viewer.
+const bn = n => `${n} banana${n === 1 ? '' : 's'}`;
+function stepLines(s) {
+  const me = id => id === S.room.me;
+  const n = id => me(id) ? '<b>You</b>' : `<b>${esc(nickOf(id))}</b>`;
+  const to = id => me(id) ? '<b>you</b>' : `<b>${esc(nickOf(id))}</b>`;
+  const v = (id, verb, third = verb + 's') => me(id) ? verb : third;
+  const and = (ids, f = n) => ids.map((id, i) => i ? to(id) : f(id)).join(' and ');
   switch (s.t) {
-    case 'win': return `${n(s.id)} bid highest (${s.bid}) and takes the ${s.gain} bananas.` +
-      (s.premium ? ` Pays ${s.premium} (${s.bid} − ${s.second}) to ${s.to.map(n).join(' and ')}${s.to.length > 1 ? `, ${s.share} each` : ''}.` : '');
-    case 'tie': return `${s.ids.map(n).join(' and ')} tied at ${s.bid} and split the container, ${s.share} each.`;
-    case 'bust': return s.keeps ? `${n(s.id)} bid ${s.bid} but couldn't pay ${s.premium}. Out of this auction.`
-      : `${n(s.id)} bid ${s.bid} but couldn't pay ${s.premium}. Loses all ${s.lost} bananas.`;
-    case 'last': return `${n(s.id)} is the last bidder standing and takes all ${s.gain}.`;
-    default: return 'Nobody took the container.';
+    case 'win': return [
+      `${n(s.id)} ${v(s.id, 'win')} the auction with the highest bid, ${s.bid}.`,
+      `${n(s.id)} ${v(s.id, 'gain')} the ${bn(s.gain)} up for auction.`,
+      s.premium
+        ? `${n(s.id)} ${v(s.id, 'pay')} ${bn(s.premium)} to ${s.to.map(to).join(' and ')}${s.to.length > 1 ? `, ${s.share} each` : ''}: the gap between ${s.bid} and the next bid, ${s.second}.`
+        : `${n(s.id)} ${v(s.id, 'pay')} nothing: the next bid was also ${s.second}.`];
+    case 'tie': return [
+      `${and(s.ids)} tied with the highest bid, ${s.bid}.`,
+      `They split the auction: each gains ${bn(s.share)}. Nobody pays.`];
+    case 'bust': return [
+      `${n(s.id)} ${v(s.id, 'bid')} ${s.bid} but can't pay the ${bn(s.premium)} owed.`,
+      s.keeps ? `${n(s.id)} ${v(s.id, 'drop', 'drops')} out of this auction and ${v(s.id, 'keep')} ${me(s.id) ? 'your' : 'their'} bananas.`
+        : `${n(s.id)} ${v(s.id, 'lose')} all ${bn(s.lost)}.`];
+    case 'last': return [`${n(s.id)} ${v(s.id, 'are', 'is')} the last bidder left and ${v(s.id, 'gain')} all ${bn(s.gain)}.`];
+    default: return ['Nobody won the auction.'];
   }
+}
+// ---------- victory show (visual only; never touches scores) ----------
+// Torpedo battle pacing (seconds): first shot after START, one shot every GAP, each torpedo runs TRAVEL,
+// a hit ship takes SINK to go under, and the panel lingers LINGER after the last one before the party.
+const BATTLE = { start: 1.2, gap: 1.3, travel: 1.4, sink: 2.6, linger: 1.5 };
+const PARTY_COLORS = ['#FFD60A', '#FF3E8A', '#3FD0E0', '#FF9F1C', '#2BB673', '#FFFFFF'];
+const rand = (lo, hi) => lo + Math.random() * (hi - lo);
+function maybeCelebrate() {
+  const r = S.room;
+  if (!r || r.status !== 'over' || S.sheetFor != null) return;
+  const key = r.code + ':' + (r.history || []).length;
+  if (S.celebrated === key) return;
+  S.celebrated = key;
+  celebrate(r);
+}
+function celebrate(r) {
+  document.getElementById('party')?.remove();
+  const party = document.createElement('div');
+  party.id = 'party'; party.setAttribute('aria-hidden', 'true');
+  document.body.appendChild(party);
+  const rivals = r.order.filter(id => !r.winners.includes(id));
+  const torpedo = r.torpedo && rivals.length > 0;
+  const names = ids => ids.map(id => esc(nickOf(id))).join(' and ');
+  const sankLine = `💥 Torpedoes sank ${names(rivals)}!`;
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    party.innerHTML = `<div class="party-banner">🎉 ${names(r.winners)} ${r.winners.length > 1 ? 'win' : 'wins'}!${torpedo ? '<br>' + sankLine : ''}</div>`;
+    return setTimeout(() => party.remove(), 5000);
+  }
+  let t = 0;
+  if (torpedo) { party.insertAdjacentHTML('beforeend', battleView(r, rivals, sankLine)); t = BATTLE.start + (rivals.length - 1) * BATTLE.gap + BATTLE.travel + BATTLE.sink + BATTLE.linger; }
+  setTimeout(() => {
+    party.querySelector('.battle')?.remove();
+    party.insertAdjacentHTML('beforeend', rainView() + fireworksView());
+  }, t * 1000);
+  setTimeout(() => party.remove(), (t + 7) * 1000);
+}
+function rainView() {
+  let h = '';
+  for (let i = 0; i < 46; i++) {
+    const w = rand(26, 52), r0 = rand(-90, 90);
+    h += `<svg class="drop" viewBox="0 0 26 12" style="--x:${rand(-4, 98).toFixed(1)}vw;--w:${w.toFixed(0)}px;--t:${rand(2.4, 4.4).toFixed(2)}s;--d:${rand(0, 2.2).toFixed(2)}s;--r0:${r0.toFixed(0)}deg;--r1:${(r0 + rand(-540, 540)).toFixed(0)}deg"><use href="#nana"/></svg>`;
+  }
+  return h;
+}
+function fireworksView() {
+  let h = '';
+  for (let b = 0; b < 7; b++) {
+    const c = PARTY_COLORS[b % PARTY_COLORS.length], d = (b * 0.55 + rand(0, 0.3)).toFixed(2), len = rand(60, 110).toFixed(0);
+    h += `<div class="burst" style="--x:${rand(12, 88).toFixed(0)}%;--y:${rand(10, 45).toFixed(0)}%">`;
+    for (let i = 0; i < 14; i++) h += `<i style="--a:${(i * 360 / 14).toFixed(0)}deg;--c:${c};--d:${d}s;--len:${len}px"></i>`;
+    h += '</div>';
+  }
+  return h;
+}
+// The winner's ship (left) torpedoes each rival (right) in turn; hit ships tip over and sink.
+function battleView(r, rivals, line) {
+  const W = 360, sea = 150, win = r.winners[0];
+  const s = Math.min(0.42, 180 / (rivals.length * 220)), gap = (W - 150) / rivals.length;
+  let rivalsSvg = '', shots = '';
+  rivals.forEach((id, i) => {
+    const x = 150 + i * gap + (gap - 220 * s) / 2, cx = x + 110 * s, hit = BATTLE.start + i * BATTLE.gap + BATTLE.travel;
+    rivalsSvg += `<g transform="translate(${x.toFixed(1)} ${(sea - 92 * s).toFixed(1)}) scale(${s.toFixed(3)})"${lookStyle(lookOfId(id))}>
+      <g class="sinking" style="--d:${hit.toFixed(2)}s;--t:${BATTLE.sink}s">${shipBody(r.inventories[id] / GOAL, 'sunk' + id, lookOfId(id)).ship}</g></g>`;
+    shots += `<g class="torp" style="--d:${(hit - BATTLE.travel).toFixed(2)}s;--t:${BATTLE.travel}s;--dx:${(cx - 118).toFixed(0)}px"><path d="M100 ${sea + 5}h14" stroke="#fff" stroke-width="2" opacity=".8"/>
+      <rect x="112" y="${sea + 3}" width="12" height="4" rx="2" fill="#22313F"/></g>
+      <circle class="boom" style="--d:${hit.toFixed(2)}s" cx="${cx.toFixed(0)}" cy="${sea - 4}" r="16" fill="#FF9F1C"/>
+      <circle class="boom" style="--d:${(hit + 0.1).toFixed(2)}s" cx="${cx.toFixed(0)}" cy="${sea - 4}" r="9" fill="#FFD60A"/>
+      ${[0, 1, 2].map(k => `<circle class="bubble" style="--d:${(hit + 1 + k * 0.35).toFixed(2)}s" cx="${(cx - 6 + k * 6).toFixed(0)}" cy="${sea + 10}" r="${2 + k % 2}" fill="#fff" opacity="0"/>`).join('')}
+      <use class="flotsam" style="--d:${(hit + BATTLE.sink * 0.8).toFixed(2)}s" href="#nana" x="${(cx - 9).toFixed(0)}" y="${sea + 6}" width="18" height="9"/>`;
+  });
+  const wb = shipBody(0.85, 'battle' + win, lookOfId(win)).ship; // drawn riding high so the attacker reads clearly
+  return `<div class="battle"><svg viewBox="0 84 ${W} 106" style="display:block;width:100%">
+    ${waves(sea - 4, W, 190, 'sh-sea2')}
+    <g transform="translate(4 ${(sea - 92 * 0.62).toFixed(1)}) scale(0.62)"${lookStyle(lookOfId(win))}>${wb}</g>${rivalsSvg}
+    ${waves(sea + 1, W, 190, 'sh-sea sh-wave')}${shots}</svg><p>${line}</p></div>`;
 }
 function sheetView() {
   const r = S.room.lastResult;
@@ -347,17 +935,101 @@ function sheetView() {
   const ids = S.room.order.slice().sort((a, b) => r.bids[b] - r.bids[a]);
   const top = r.bids[ids[0]];
   return `<div class="sheet-bg" onclick="if(event.target===this)closeSheet()"><div class="sheet" role="dialog" aria-label="Round results">
-    <h2>Round ${r.round} bids</h2>
-    <ul class="reveal">${ids.map((id, i) => { const d = r.after[id] - r.before[id];
-      return `<li class="${r.bids[id]===top?'top':''}" style="animation-delay:${i*0.12}s"><span><b>${esc(nickOf(id))}</b><br><span class="delta ${d>0?'up':d<0?'down':''}">${d>0?'+':''}${d} → ${r.after[id]}</span></span><span class="num">${r.bids[id]}</span></li>`; }).join('')}</ul>
-    <ul class="steps">${r.steps.map(s => `<li>${stepText(s)}</li>`).join('')}</ul>
-    <button class="primary" style="width:100%" onclick="closeSheet()">${S.room.status==='over'?'See the winner':'Next round'}</button></div></div>`;
+    <h2>Round ${r.round} results</h2>
+    ${bongoSays(r.steps.flatMap(stepLines).map(l => `<p>${l}</p>`).join(''), 'wide')}
+    <ul class="reveal">${ids.map((id, i) => { const b = r.before[id], a = r.after[id], d = a - b;
+      return `<li class="${r.bids[id]===top?'top':''}" style="animation-delay:${i*0.12}s">${tile(a / GOAL, true, id, lookOfId(id))}
+        <span class="who"><b>${esc(nickOf(id))}${id===S.room.me?' (you)':''}</b>
+        <span class="small">Bananas ${b} → <b>${a}</b> <span class="delta ${d>0?'up':d<0?'down':''}">(${d>0?'+'+d:d<0?'−'+(-d):'no change'})</span></span></span>
+        <span class="bid"><span class="small muted">Bid</span><span class="num">${r.bids[id]}</span></span></li>`; }).join('')}</ul>
+    <button class="primary wide" onclick="closeSheet()">${S.room.status==='over'?'See the winner':'Next round'}</button></div></div>`;
 }
-document.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.id === 'bid') lockBid(); if (e.key === 'Escape' && S.sheetFor != null) closeSheet(); });
+// ---------- flag picker sheet ----------
+async function loadCountries() {
+  try {
+    const r = await fetch(FLAG_CDN + 'country.json');
+    if (!r.ok) throw new Error();
+    S.countries = (await r.json()).filter(c => c.iso || FLAG_EXTRAS.includes(c.code))
+      .map(c => ({ code: c.code, name: c.name })).sort((a, b) => a.name.localeCompare(b.name));
+  } catch (e) { S.countries = 'error'; }
+  if (S.flagSheet) fillFlags();
+}
+function openFlags(e) {
+  if (e) e.stopPropagation();
+  S.flagSheet = true; S.flagQuery = '';
+  if (!Array.isArray(S.countries)) { S.countries = null; loadCountries(); }
+  render();
+}
+function closeFlags() { S.flagSheet = false; render(); }
+const flagThumb = k => `<svg viewBox="0 0 40 30" aria-hidden="true">${k ? flagArt(k, 40, 30) : '<path d="M4 4 36 15 4 26Z" fill="var(--hibiscus)"/>'}</svg>`;
+// Pirate is the visible teaser; the other easter eggs only surface when you search their words.
+function flagItems() {
+  const q = S.flagQuery.trim().toLowerCase();
+  const eggs = Object.entries(FLAG_EGGS).filter(([k, [, words]]) => k === 'pirate' || (q.length >= 3 && words.some(w => w.startsWith(q) || q.startsWith(w))));
+  const cs = Array.isArray(S.countries) ? S.countries.filter(c => !q || c.name.toLowerCase().includes(q) || c.code === q) : [];
+  const provinceWords = ['landskap', 'province', 'sverige', 'sweden'];
+  const ls = Object.entries(LANDSKAP).filter(([slug, [name]]) => !q || fold(name).includes(fold(q)) || provinceWords.some(w => w.startsWith(q) && q.length >= 3));
+  const btn = ([k, name]) => `<button class="flagbtn" aria-pressed="${S.flag === k}" onclick="pickFlag('${k}')">${flagThumb(k)}<span>${esc(name)}</span></button>`;
+  const head = t => `<p class="flaghead">${t}</p>`;
+  const note = S.countries === null ? `<p class="muted small">Unrolling the flag locker…</p>`
+    : S.countries === 'error' ? `<p class="muted small">The country flags can't be loaded right now.</p>`
+    : !cs.length && q && !eggs.some(([, [, words]]) => words.some(w => w.startsWith(q) || q.startsWith(w))) ? `<p class="muted small">No flag matches "${esc(S.flagQuery)}".</p>` : '';
+  return [['', 'Pennant'], ...eggs.map(([k, [name]]) => [k, name])].map(btn).join('')
+    + (ls.length ? head("Sweden's provinces") + ls.map(([slug, [name]]) => btn(['ls-' + slug, name])).join('') : '')
+    + (cs.length ? head('Countries and regions') + cs.map(c => btn([c.code, c.name])).join('') : '')
+    + (ls.length && !cs.length && note.includes('No flag') ? '' : note);
+}
+function fillFlags() { const el = document.getElementById('flaglist'); if (el) el.innerHTML = flagItems(); }
+function flagSheetView() {
+  if (!S.flagSheet) return '';
+  return `<div class="sheet-bg" onclick="if(event.target===this)closeFlags()"><div class="sheet" role="dialog" aria-label="Choose your ship's flag">
+    <div class="topbar"><h2>Raise your flag</h2><button class="link" onclick="closeFlags()">Done</button></div>
+    <input id="flagq" class="text" type="search" placeholder="Search flags: Sweden, se…" value="${esc(S.flagQuery)}" oninput="S.flagQuery=this.value;fillFlags()" autocomplete="off">
+    <div class="flaggrid" id="flaglist">${flagItems()}</div>
+    <details class="credits"><summary>Flag credits</summary><p class="small">Country flags: flag-icons (MIT). Province flags and banners of arms from Wikimedia Commons:</p>
+    <ul class="small">${Object.values(LANDSKAP).map(([name, , author, licence, src]) => `<li>${esc(name)}: <a href="${esc(src)}" target="_blank" rel="noopener">${esc(author)}</a>, ${esc(licence)}</li>`).join('')}</ul></details></div></div>`;
+}
+function pickFlag(k) {
+  S.flag = flagOf(k); ls.set('pb_flag', S.flag);
+  if (S.code) api('join', { code: S.code, nick: S.nick, ...myLook() }).catch(() => {}); // opponents see it too
+  S.flagSheet = false; // tapping a flag is the choice; no Done needed
+  render();
+  if (FLAG_EGGS[S.flag]) document.querySelectorAll('.harbor .scene, .myship .scene').forEach(el => { el.classList.add('wiggle'); setTimeout(() => el.classList.remove('wiggle'), 1300); });
+}
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && e.target.id === 'bid') lockBid();
+  if (e.key === 'Escape') { if (S.flagSheet) closeFlags(); else if (S.sheetFor != null) closeSheet(); }
+});
 
-S.nick = ls.get('pb_nick') || ''; S.mode = ls.get('pb_mode') === 'draw' ? 'draw' : 'type';
+// #og-card: the 1200×630 social preview, drawn from the game's own artwork.
+// Regenerate assets/og.png with the server running:
+//   "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless --hide-scrollbars --window-size=1200,630 \
+//     --virtual-time-budget=3000 --screenshot=assets/og.png "http://localhost:8080/#og-card"
+function ogCard() {
+  document.body.classList.add('og');
+  // The scene is 1100px wide (scale 1100/360) from x=120; the full-width sea behind it uses the same scale,
+  // levels and wave phase so the two meet without a seam.
+  const k = 1100 / 360, top = 630 + 40 - 196 * k;
+  const sea = `<svg class="og-sea" viewBox="0 0 ${(1200 / k).toFixed(2)} ${(630 / k).toFixed(2)}" aria-hidden="true"><g transform="translate(${(120 / k % 30 - 30).toFixed(2)} 0)">
+    ${waves(top / k + 146, 1200 / k + 30, 630 / k, 'sh-sea2')}${waves(top / k + 156, 1200 / k + 30, 630 / k, 'sh-sea sh-wave')}</g></svg>`;
+  return `<div class="ogcard">${sea}<div class="og-text"><h1>Puerto<br>Banana</h1><p>Bid blind for banana cargo with your friends. First to 200 wins.</p></div>
+    ${heroScene(1.15, 'og-card', { hull: 'coral', cabin: 'white', flag: 'pirate' })}</div>`;
+}
+S.nick = ls.get('pb_nick') || '';
+S.hull = HULLS[ls.get('pb_hull')] ? ls.get('pb_hull') : 'navy';
+S.flag = flagOf(ls.get('pb_flag'));
+function pickHull(k) { S.hull = k; ls.set('pb_hull', k); render(); }
+S.cabin = CABINS[ls.get('pb_cabin')] ? ls.get('pb_cabin') : 'white';
+function pickCabin(k) { S.cabin = k; ls.set('pb_cabin', k); render(); }
+if (location.hash === '#og-card') app.innerHTML = ogCard(); else {
 render();
-const saved = ls.get('pb_code'); if (saved) enterRoom(saved, true);
+loadScores();
+loadRivals();
+}
+// Some apps glue the share text onto the link (?join=RZLG Join my…): the code is the first four letters.
+const invited = ((new URLSearchParams(location.search).get('join') || '').match(/^[a-z]{4}(?![a-z])/i) || [''])[0].toUpperCase();
+if (/^[A-Z]{4}$/.test(invited)) { S.joinCode = invited; history.replaceState(null, '', location.pathname); render(); } // from a shared invite link
+const saved = ls.get('pb_code'); if (saved && !S.joinCode && location.hash !== '#og-card') enterRoom(saved, true);
 </script>
 </body>
 </html>

@@ -4,16 +4,54 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const { resolveAuction } = require('./engine');
+const { createLeaderboardStore } = require('./leaderboard-store');
+const { createGamesStore } = require('./games-store');
+const { computeRivals } = require('./rivals');
+const { createJsonFileStore } = require('./json-file-store');
 
 const PORT = process.env.PORT || 8080;
 const GOAL = 200, START = 10, MAX_PLAYERS = 6;
+const { hullOf, cabinOf, flagOf } = require('./players'); // hull keys; the client maps each to a colour
+const TAUNT_MAX = 10; // a loser ending with this many bananas or fewer gets taunted (by their flag, client-side)
+const TORPEDO_ODDS = 0.2; // share of finished games where the winner's victory show torpedoes the rivals (visual only)
+let random = Math.random;  // swappable in tests
 const rooms = new Map();          // code -> room
 const streams = new Map();        // code -> Set<{res, token}>
-const STATIC = {
-  '/': ['index.html', 'text/html; charset=utf-8'],
-  '/digits.js': ['digits.js', 'text/javascript; charset=utf-8'],
-};
-const FILES = Object.fromEntries(Object.entries(STATIC).map(([u, [f, t]]) => [u, { body: fs.readFileSync(path.join(__dirname, f)), type: t }]));
+const INDEX = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8');
+const HOME = 'https://puerto-banana.fly.dev';
+// The home page with its social-preview tags filled in. Links must be absolute, so they use the address the
+// page was requested on (only if it looks like a plain host); an invite link (?join=ABCD) names the room.
+function indexFor(req, url) {
+  const host = /^[a-z0-9.-]+(:\d{1,5})?$/i.test(req.headers.host || '') ? req.headers.host : '';
+  const proto = req.headers['x-forwarded-proto'] === 'https' || !/^(localhost|127\.|\[::1\])/.test(host) ? 'https' : 'http';
+  const origin = host ? `${proto}://${host}` : HOME;
+  // Some apps glue the share text onto the link (?join=RZLG Join my…), so the code is the first four letters.
+  const code = ((url.searchParams.get('join') || '').match(/^[a-z]{4}(?![a-z])/i) || [''])[0].toUpperCase();
+  const fill = {
+    ORIGIN: origin,
+    URL: origin + (code ? `/?join=${code}` : '/'),
+    TITLE: code ? `Join my Puerto Banana room: ${code}` : 'Puerto Banana: bid blind for banana cargo',
+    DESC: code ? `You're invited aboard! Pick a name, join room ${code} and bid blind for bananas. First to 200 wins.`
+      : 'A blind-bid banana auction for 2-6 friends, each on their own phone. Win the cargo, pay the runner-up the gap. First to 200 bananas wins.',
+  };
+  return INDEX.replace(/%%(ORIGIN|URL|TITLE|DESC)%%/g, (_, k) => fill[k]);
+}
+// Static files: only assets/<lowercase path>.(svg|png|ico|json), never anything outside that folder.
+const ASSETS = path.join(__dirname, 'assets');
+const TYPES = { svg: 'image/svg+xml', png: 'image/png', ico: 'image/x-icon', json: 'application/json; charset=utf-8' };
+function serveAsset(res, pathname) {
+  const m = /^\/assets\/([a-z0-9_-]+(?:\/[a-z0-9_-]+)*)\.(svg|png|ico|json)$/.exec(pathname);
+  if (!m) return false;
+  const file = path.join(ASSETS, `${m[1]}.${m[2]}`);
+  if (!file.startsWith(ASSETS + path.sep)) return false;
+  let body;
+  try { body = fs.readFileSync(file); } catch (e) { return false; }
+  res.writeHead(200, { 'content-type': TYPES[m[2]], 'cache-control': 'public, max-age=86400',
+    // An SVG opened directly is a document: allow its own styles, never scripts or outside loads.
+    'content-security-policy': "default-src 'none'; style-src 'unsafe-inline'; img-src data:", 'x-content-type-options': 'nosniff' });
+  res.end(body);
+  return true;
+}
 
 const rid = n => crypto.randomBytes(n).toString('hex');
 function newCode() {
@@ -30,23 +68,30 @@ function view(room, token) {
   room.order.forEach(t => { inventories[room.players[t].id] = room.inventories[t]; });
   return {
     code: room.code, status: room.status, round: room.round, pot: room.pot,
-    me: me ? me.id : null, isHost: room.hostToken === token,
+    me: me ? me.id : null, isHost: room.hostToken === token, hostId: room.players[room.hostToken]?.id ?? null,
     players: Object.values(room.players).sort((a, b) => a.joinedAt - b.joinedAt)
-      .map(p => ({ id: p.id, nick: p.nick, locked: room.bids[p.token] !== undefined })),
+      .map(p => ({ id: p.id, nick: p.nick, hull: p.hull, cabin: p.cabin, flag: p.flag, locked: room.bids[p.token] !== undefined })),
     order, inventories,
     myBid: room.bids[token] ?? null,
-    lastResult: room.lastResult, history: room.history, winners: room.winners,
+    lastResult: room.lastResult, history: room.history, winners: room.winners, torpedo: !!room.torpedo, taunts: room.taunts || {},
   };
 }
 
+// Rooms are saved to rooms.json (on the volume) shortly after every change, so games survive restarts and deploys.
+let scheduleSave = () => {};
+const ROOM_TTL = 12 * 3600e3;
+const cleanRoom = r => r && typeof r === 'object' && /^[A-Z]{4}$/.test(r.code) && typeof r.hostToken === 'string'
+  && r.players && typeof r.players === 'object' && Number.isFinite(r.touched) ? r : null;
+
 function broadcast(room) {
   room.touched = Date.now();
+  scheduleSave();
   for (const s of streams.get(room.code) || []) {
     s.res.write(`data: ${JSON.stringify(view(room, s.token))}\n\n`);
   }
 }
 
-function resolveRound(room) {
+function resolveRound(room, stores) {
   const ids = t => room.players[t].id;
   const bids = {}; room.order.forEach(t => { bids[t] = room.bids[t] ?? 0; });
   const { inv, steps } = resolveAuction(room.inventories, bids, room.pot, room.order);
@@ -62,47 +107,68 @@ function resolveRound(room) {
   if (room.order.some(t => inv[t] >= GOAL)) {
     room.status = 'over';
     room.winners = room.order.filter(t => inv[t] === top).map(ids);
+    room.torpedo = random() < TORPEDO_ODDS; // rolled once, so every player sees the same show
+    // One taunt pick per low-scoring loser; the client maps it onto that flag's taunts (pick % count)
+    room.taunts = Object.fromEntries(room.order.filter(t => inv[t] <= TAUNT_MAX && !room.winners.includes(ids(t)))
+      .map(t => [ids(t), Math.floor(random() * 1000)]));
+    recordGame(room, stores);
   }
+}
+
+// Called on the transition to 'over', from server-owned state only; once per game.
+// The harbour log and the game history save independently: one failing never blocks the other.
+function recordGame(room, stores) {
+  if (room.scoresRecorded || !stores) return;
+  room.scoresRecorded = true; // set before the async writes so nothing can record twice
+  const completedAt = new Date().toISOString();
+  const players = room.order.map(t => ({ name: room.players[t].nick, score: room.inventories[t],
+    won: room.winners.includes(room.players[t].id), hull: room.players[t].hull }));
+  stores.scores.record(players.filter(p => p.won).map(({ name, score }) => ({ name, score, completedAt })))
+    .catch(e => stores.scores.logger.error(`[highscores] room ${room.code} result NOT saved:`, e.message));
+  stores.games.record({ completedAt, players })
+    .catch(e => stores.games.logger.error(`[games] room ${room.code} result NOT saved:`, e.message));
 }
 
 const actions = {
   create(b, token) {
     const code = newCode();
-    rooms.set(code, { code, hostToken: token, status: 'lobby', players: {}, order: [], inventories: {}, bids: {}, round: 0, pot: 0, lastResult: null, history: [], winners: [], touched: Date.now() });
+    rooms.set(code, { code, hostToken: token, status: 'lobby', players: {}, order: [], inventories: {}, bids: {}, round: 0, pot: 0, lastResult: null, history: [], winners: [], scoresRecorded: false, touched: Date.now() });
     return actions.join({ ...b, code }, token);
   },
   join(b, token) {
     const room = rooms.get(String(b.code || '').toUpperCase());
     if (!room) throw new Error('No room with that code.');
     const nick = String(b.nick || '').trim().slice(0, 20) || 'Player';
-    if (!room.players[token]) room.players[token] = { token, id: rid(4), nick, joinedAt: Date.now() };
-    else room.players[token].nick = nick;
+    const hull = hullOf(b.hull), cabin = cabinOf(b.cabin), flag = flagOf(b.flag);
+    if (!room.players[token]) room.players[token] = { token, id: rid(4), nick, hull, cabin, flag, joinedAt: Date.now() };
+    else Object.assign(room.players[token], { nick, hull, cabin, flag });
     broadcast(room); return { code: room.code };
   },
   start(b, token, room) {
+    if (room.hostToken !== token) throw new Error('Only the host can start the game.');
     if (room.status !== 'lobby') throw new Error('Game already running.');
     const ts = Object.values(room.players).sort((a, b) => a.joinedAt - b.joinedAt).map(p => p.token).slice(0, MAX_PLAYERS);
     if (ts.length < 2) throw new Error('Need at least 2 players.');
-    Object.assign(room, { status: 'playing', order: ts, inventories: Object.fromEntries(ts.map(t => [t, START])), bids: {}, round: 1, pot: START, lastResult: null, history: [], winners: [] });
+    Object.assign(room, { status: 'playing', order: ts, inventories: Object.fromEntries(ts.map(t => [t, START])), bids: {}, round: 1, pot: START, lastResult: null, history: [], winners: [], torpedo: false, taunts: {}, scoresRecorded: false });
     broadcast(room);
   },
-  bid(b, token, room) {
+  bid(b, token, room, stores) {
     if (room.status !== 'playing' || !room.order.includes(token)) throw new Error('You are not in this game.');
     if (room.bids[token] !== undefined) throw new Error('Bid already locked.');
     const bid = Number(b.bid);
     if (!Number.isInteger(bid) || bid < 0 || bid > 1e9) throw new Error('Bid a whole number, 0 or more.');
     room.bids[token] = bid;
-    if (room.order.every(t => room.bids[t] !== undefined)) resolveRound(room);
+    if (room.order.every(t => room.bids[t] !== undefined)) resolveRound(room, stores);
     broadcast(room);
   },
-  skip(b, token, room) {
+  skip(b, token, room, stores) {
     if (room.hostToken !== token) throw new Error('Only the host can do that.');
     if (room.status !== 'playing') return;
     room.order.forEach(t => { if (room.bids[t] === undefined) room.bids[t] = 0; });
-    resolveRound(room); broadcast(room);
+    resolveRound(room, stores); broadcast(room);
   },
   lobby(b, token, room) {
-    Object.assign(room, { status: 'lobby', order: [], bids: {}, round: 0, lastResult: null, history: [], winners: [] });
+    Object.assign(room, { status: 'lobby', order: [], bids: {}, round: 0, lastResult: null, history: [], winners: [], torpedo: false, taunts: {} });
     broadcast(room);
   },
   leave(b, token, room) {
@@ -118,43 +184,80 @@ function readBody(req) {
 }
 const json = (res, code, obj) => { res.writeHead(code, { 'content-type': 'application/json' }); res.end(JSON.stringify(obj)); };
 
-http.createServer(async (req, res) => {
-  const url = new URL(req.url, 'http://x');
-  if (req.method === 'GET' && FILES[url.pathname]) {
-    const f = FILES[url.pathname];
-    res.writeHead(200, { 'content-type': f.type, 'cache-control': url.pathname === '/' ? 'no-cache' : 'public, max-age=3600' });
-    return res.end(f.body);
-  }
-  if (req.method === 'GET' && url.pathname === '/healthz') return json(res, 200, { ok: true, rooms: rooms.size });
-  if (req.method === 'GET' && url.pathname === '/events') {
-    const room = rooms.get(String(url.searchParams.get('room') || '').toUpperCase());
-    const token = String(url.searchParams.get('token') || '');
-    if (!room || !room.players[token]) { res.writeHead(404); return res.end(); }
-    res.writeHead(200, { 'content-type': 'text/event-stream', 'cache-control': 'no-cache', connection: 'keep-alive', 'x-accel-buffering': 'no' });
-    const s = { res, token };
-    if (!streams.has(room.code)) streams.set(room.code, new Set());
-    streams.get(room.code).add(s);
-    res.write(`data: ${JSON.stringify(view(room, token))}\n\n`);
-    const ping = setInterval(() => res.write(': ping\n\n'), 20000);
-    req.on('close', () => { clearInterval(ping); streams.get(room.code)?.delete(s); });
-    return;
-  }
-  if (req.method === 'POST' && url.pathname === '/api') {
-    try {
-      const b = await readBody(req);
-      const token = String(b.token || '');
-      if (!/^[a-f0-9]{32}$/.test(token)) throw new Error('Bad session.');
-      const fn = actions[b.action]; if (!fn) throw new Error('Unknown action.');
-      let room = null;
-      if (!['create', 'join'].includes(b.action)) {
-        room = rooms.get(String(b.code || '').toUpperCase());
-        if (!room || !room.players[token]) throw new Error('Room not found.');
-      }
-      return json(res, 200, fn(b, token, room) || { ok: true });
-    } catch (e) { return json(res, 400, { error: e.message }); }
-  }
-  res.writeHead(404); res.end();
-}).listen(PORT, '0.0.0.0', () => console.log('Puerto Banana on :' + PORT));
+function createServer({ dataDir = process.env.DATA_DIR || '/data', logger = console, random: rnd } = {}) {
+  random = rnd || Math.random;
+  const stores = { scores: createLeaderboardStore({ dataDir, logger }), games: createGamesStore({ dataDir, logger }) };
+  // This server owns the rooms: start from what the last one saved, minus rooms idle past their TTL.
+  const roomStore = createJsonFileStore({ dataDir, file: 'rooms.json', label: 'rooms', clean: cleanRoom, logger,
+    unavailableMessage: 'Room storage is unavailable.' });
+  rooms.clear(); streams.clear();
+  const roomsReady = roomStore.ready.then(() => {
+    const cut = Date.now() - ROOM_TTL;
+    for (const r of roomStore.rows()) if (r.touched >= cut) rooms.set(r.code, r);
+  });
+  let saveTimer = null;
+  const flush = async () => {
+    clearTimeout(saveTimer); saveTimer = null;
+    await roomsReady;
+    if (!roomStore.available) return;
+    await roomStore.update(() => [...rooms.values()]).catch(e => logger.error('[rooms] save failed:', e.message));
+  };
+  scheduleSave = () => { if (!saveTimer) saveTimer = setTimeout(flush, 250); };
+  const server = http.createServer(async (req, res) => {
+    await roomsReady;
+    const url = new URL(req.url, 'http://x');
+    if (req.method === 'GET' && url.pathname === '/') { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' }); return res.end(indexFor(req, url)); }
+    if (req.method === 'GET' && url.pathname.startsWith('/assets/') && serveAsset(res, url.pathname)) return;
+    if (req.method === 'GET' && url.pathname === '/healthz') return json(res, 200, { ok: true, rooms: rooms.size });
+    if (req.method === 'GET' && url.pathname === '/api/highscores') {
+      await stores.scores.ready;
+      return stores.scores.available ? json(res, 200, stores.scores.list()) : json(res, 503, { error: 'Highscores unavailable.' });
+    }
+    if (req.method === 'GET' && url.pathname === '/api/rivals') {
+      await stores.games.ready;
+      if (!stores.games.available) return json(res, 503, { error: 'Game history unavailable.' });
+      return json(res, 200, computeRivals(stores.games.list(), url.searchParams.get('name') || ''));
+    }
+    if (req.method === 'GET' && url.pathname === '/events') {
+      const room = rooms.get(String(url.searchParams.get('room') || '').toUpperCase());
+      const token = String(url.searchParams.get('token') || '');
+      if (!room || !room.players[token]) { res.writeHead(404); return res.end(); }
+      res.writeHead(200, { 'content-type': 'text/event-stream', 'cache-control': 'no-cache', connection: 'keep-alive', 'x-accel-buffering': 'no' });
+      const s = { res, token };
+      if (!streams.has(room.code)) streams.set(room.code, new Set());
+      streams.get(room.code).add(s);
+      res.write(`data: ${JSON.stringify(view(room, token))}\n\n`);
+      const ping = setInterval(() => res.write(': ping\n\n'), 20000);
+      req.on('close', () => { clearInterval(ping); streams.get(room.code)?.delete(s); });
+      return;
+    }
+    if (req.method === 'POST' && url.pathname === '/api') {
+      try {
+        const b = await readBody(req);
+        const token = String(b.token || '');
+        if (!/^[a-f0-9]{32}$/.test(token)) throw new Error('Bad session.');
+        const fn = actions[b.action]; if (!fn) throw new Error('Unknown action.');
+        let room = null;
+        if (!['create', 'join'].includes(b.action)) {
+          room = rooms.get(String(b.code || '').toUpperCase());
+          if (!room || !room.players[token]) throw new Error('Room not found.');
+        }
+        return json(res, 200, fn(b, token, room, stores) || { ok: true });
+      } catch (e) { return json(res, 400, { error: e.message }); }
+    }
+    res.writeHead(404); res.end();
+  });
+  server.stores = stores;
+  server.flush = flush; // save rooms now (on shutdown, and in tests)
+  return server;
+}
 
 // Forget rooms idle for 12 hours.
-setInterval(() => { const cut = Date.now() - 12 * 3600e3; for (const [c, r] of rooms) if (r.touched < cut) rooms.delete(c); }, 3600e3);
+setInterval(() => { const cut = Date.now() - ROOM_TTL; let gone = false; for (const [c, r] of rooms) if (r.touched < cut) { rooms.delete(c); gone = true; } if (gone) scheduleSave(); }, 3600e3).unref();
+
+if (require.main === module) {
+  const server = createServer().listen(PORT, '0.0.0.0', () => console.log('Puerto Banana on :' + PORT));
+  // Fly sends SIGINT/SIGTERM before stopping a machine (deploys, idle stops): save the rooms first.
+  for (const sig of ['SIGINT', 'SIGTERM']) process.on(sig, () => server.flush().finally(() => process.exit(0)));
+}
+module.exports = { createServer };

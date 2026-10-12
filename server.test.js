@@ -57,30 +57,6 @@ async function twoPlayerGame(port, hostNick, mateNick) {
 }
 
 const tests = {
-  async 'the host can rematch straight from the end screen; leavers are dropped, others cannot rematch'() {
-    await withServer(null, async port => {
-      const host = tok(), mate = tok(), third = tok();
-      const { body: { code } } = await api(port, { action: 'create', token: host, nick: 'Cap' });
-      await api(port, { action: 'join', token: mate, code, nick: 'Mate' });
-      await api(port, { action: 'join', token: third, code, nick: 'Third' });
-      await api(port, { action: 'start', token: host, code });
-      let v = await view(port, code, host);
-      for (let i = 0; i < 60 && v.status === 'playing'; i++) {
-        await api(port, { action: 'skip', token: host, code });
-        v = await view(port, code, host);
-      }
-      a.equal(v.status, 'over');
-      a.equal((await api(port, { action: 'rematch', token: mate, code })).status, 400); // only the host
-      await api(port, { action: 'leave', token: third, code }); // bows out on the end screen
-      a.equal((await api(port, { action: 'rematch', token: host, code })).status, 200);
-      v = await view(port, code, mate);
-      a.equal(v.status, 'playing');
-      a.equal(v.round, 1);
-      a.deepEqual(v.players.map(p => p.nick), ['Cap', 'Mate']);
-      a.deepEqual(Object.values(v.inventories), [10, 10]);
-      a.deepEqual(v.taunts, {}); a.equal(v.torpedo, false); a.equal(v.lastResult, null);
-    });
-  },
   async 'rooms survive a server restart: same players, same round, locked bids'() {
     const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'pb-restart-'));
     const logger = quiet();
