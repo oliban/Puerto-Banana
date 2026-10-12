@@ -787,7 +787,7 @@ function reconnect(code, attempt = 0) {
     }
   }, Math.min(15000, 1000 * 2 ** attempt));
 }
-function dropRoom() { if (S.es) S.es.close(); S.es = null; S.reconnecting = false; ls.del('pb_code'); S.code = null; S.room = null; S.sheetFor = null; S.bidDraft = ''; loadScores(); loadRivals(); }
+function dropRoom() { if (S.es) S.es.close(); S.es = null; S.reconnecting = false; ls.del('pb_code'); S.code = null; S.room = null; S.sheetFor = null; S.targeting = null; S.shopSheet = null; S.bidDraft = ''; loadScores(); loadRivals(); }
 function leaveRoom() { api('leave').catch(() => {}); dropRoom(); render(); }
 const startGame = () => act(() => api('start'));
 // The phone's share sheet where there is one; otherwise copy the link. The link pre-fills the code (?join=ABCD).

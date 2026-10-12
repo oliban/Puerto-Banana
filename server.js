@@ -88,9 +88,10 @@ let walletsRef = null; // the server's wallet store, for view()
 function view(room, token) {
   ensureShop(room);
   const me = room.players[token];
-  const order = room.order.map(t => room.players[t].id);
+  const present = room.order.filter(t => room.players[t]); // leavers can still sit in order on the end screen
+  const order = present.map(t => room.players[t].id);
   const inventories = {};
-  room.order.forEach(t => { inventories[room.players[t].id] = room.inventories[t]; });
+  present.forEach(t => { inventories[room.players[t].id] = room.inventories[t]; });
   return {
     code: room.code, status: room.status, round: room.round, pot: room.pot,
     me: me ? me.id : null, isHost: room.hostToken === token, hostId: room.players[room.hostToken]?.id ?? null,
@@ -232,7 +233,7 @@ const actions = {
   },
   buy(b, token, room, stores) {
     ensureShop(room);
-    const item = CATALOG[b.item];
+    const item = Object.hasOwn(CATALOG, b.item) ? CATALOG[b.item] : null;
     if (!item) throw new Error('Unknown item.');
     if (!room.shop) throw new Error('The shop is off in this room.');
     if (!stores.wallets.available) throw new Error('The shop is closed right now.');

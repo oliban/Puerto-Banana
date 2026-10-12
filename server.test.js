@@ -481,6 +481,7 @@ const tests = {
       srv.rooms().get(g.code).market = ['shark'];
       a.equal((await buy(g.mate, 'gulls', cap)).body.error, 'Not for sale this game: check back next game!');
       a.equal((await buy(g.host, 'nonsense', bo)).body.error, 'Unknown item.');
+      for (const k of ['constructor', '__proto__', 'toString']) a.equal((await buy(g.host, k, bo)).body.error, 'Unknown item.');
     });
   },
   async 'the third sabotage on one ship is refused and keeps its credits'() {
@@ -574,6 +575,32 @@ const tests = {
       a.deepEqual(off.players.find(p => p.nick === 'Cap').bling, []);
       a.equal((await api(port, { action: 'buy', token: g.host, code: g.code, item: 'gold' })).body.error, 'The shop is off in this room.');
       a.equal((await api(port, { action: 'wear', token: g.host, code: g.code, item: 'parrot', on: false })).body.error, 'The shop is off in this room.');
+    });
+  },
+  async 'leaving from the end screen keeps the room working for everyone left'() {
+    await withServer(null, async (port, _l, _d, srv) => {
+      const g = await shopGame(port);
+      let v;
+      for (let i = 0; i < 60; i++) {
+        await api(port, { action: 'skip', token: g.host, code: g.code });
+        v = await view(port, g.code, g.host);
+        if (v.status === 'over') break;
+      }
+      a.equal(v.status, 'over');
+      const stream = await new Promise(ok => { const req = http.get({ port, path: `/events?room=${g.code}&token=${g.host}` }, res => { res.on('data', () => {}); ok(req); }); });
+      try {
+        a.equal((await api(port, { action: 'leave', token: g.third, code: g.code })).status, 200);
+        const after = await view(port, g.code, g.host);
+        a.equal(after.order.length, 2);
+        a.equal(Object.keys(after.inventories).length, 2);
+        a.equal((await api(port, { action: 'emote', token: g.mate, code: g.code, kind: 'honk' })).status, 200);
+        openMarket(srv, g.code);
+        give(srv, g.host, 50);
+        const bo = after.players.find(p => p.nick === 'Bo').id;
+        const r = await api(port, { action: 'buy', token: g.host, code: g.code, item: 'cake', target: bo });
+        a.equal(r.status, 200);
+        a.ok((await view(port, g.code, g.mate)).effects.some(e => e.kind === 'cake' && e.target === bo));
+      } finally { stream.destroy(); }
     });
   },
   async 'emotes are free with a 10 s cooldown and fade from the view'() {
