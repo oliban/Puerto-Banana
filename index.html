@@ -157,47 +157,68 @@ body.og .puff{display:none} /* smoke would drift over the tagline */
   50%{opacity:calc(var(--o) * .75);transform:translate(calc(var(--dx) * .35),calc(var(--dy) * .6)) scale(calc(var(--s) * .6))}
   100%{fill:var(--smoke-light);opacity:0;transform:translate(var(--dx),var(--dy)) scale(var(--s))}}
 .still .puff{display:none}
-/* Ship effects (shop): drawn in shipBody; purely decorative, so they never catch taps (the flag stays tappable) */
+/* Ship effects (shop): drawn in shipBody; purely decorative, so they never catch taps (the flag stays tappable).
+   One-shot animations start --age seconds in (set per effect from when this browser first drew it), so a re-render
+   resumes them, and once they're over the settled end state shows instead of replaying. */
 .fxl{pointer-events:none}
 @keyframes fxpop{from{opacity:0;transform:scale(.3)}}
-.flame{fill:#FF9F1C;transform-box:fill-box;transform-origin:50% 100%;animation:flicker .5s ease-in-out var(--d) infinite alternate}
+.flame{fill:#FF9F1C;transform-box:fill-box;transform-origin:50% 100%;animation:flicker .5s ease-in-out infinite alternate}
 @keyframes flicker{to{transform:scaleY(1.25) skewX(4deg);fill:#FFD60A}}
-.puff.burnt{--smoke-dark:#1b1b1b;--smoke-light:#555}
-.puff.rainbow{animation-name:puff,rainbowsmoke}
-@keyframes rainbowsmoke{0%{fill:#FF3E8A}33%{fill:#FFD60A}66%{fill:#3FD0E0}100%{fill:#2BB673}}
-.tentacles path{fill:none;stroke:#9B59B6;stroke-width:7;stroke-linecap:round;transform-box:fill-box;transform-origin:50% 100%;animation:tentacle 1.4s ease-in-out infinite alternate}
-@keyframes tentacle{to{transform:rotate(8deg)}}
+.puff.burnt{--smoke-dark:#111;--smoke-light:#4a4a4a}
+.puff.rainbow{filter:none}
+.smoketint{display:none}
+.still .smoketint{display:inline}
+.tent{transform-box:fill-box;transform-origin:50% 100%;animation:tentacle 1.6s ease-in-out infinite alternate}
+@keyframes tentacle{from{transform:rotate(-4deg)}to{transform:rotate(5deg)}}
+.tent-edge{fill:none;stroke:#3E1652;stroke-width:14;stroke-linecap:round}
+.tent-arm{fill:none;stroke:#9B4FC4;stroke-width:11;stroke-linecap:round}
+.tent-sucker{fill:none;stroke:#F0D4FA;stroke-width:3.6;stroke-linecap:round;stroke-dasharray:0 8}
 .sh-bob.rocked{animation:rock 1.1s ease-in-out infinite}
 @keyframes rock{25%{transform:rotate(-4deg)}75%{transform:rotate(4deg)}}
 .raincloud ellipse{fill:#5B6675}
-.drip{stroke:#9CC7E8;stroke-width:2;stroke-linecap:round;animation:drip .6s linear var(--d) infinite}
+.drip{stroke:#9CC7E8;stroke-width:2;stroke-linecap:round;animation:drip .6s linear infinite}
 @keyframes drip{from{transform:translateY(-4px);opacity:1}to{transform:translateY(14px);opacity:0}}
-.gullsteal{animation:steal 3s ease-in var(--d) both}
-@keyframes steal{to{transform:translate(-90px,-50px)}}
-.sharkfin{animation:shark 6s linear infinite}
-@keyframes shark{to{transform:translateX(220px)}}
-.spray{fill:none;stroke:#9EDCF5;stroke-width:6;stroke-linecap:round;stroke-dasharray:4 6;animation:once 1.6s ease-out both}
-.umbrella{transform-box:fill-box;transform-origin:50% 100%;animation:fxpop .4s ease-out both}
-.bubblepop{fill:rgba(160,220,255,.25);stroke:#9EDCF5;stroke-width:2;transform-box:fill-box;transform-origin:center;animation:bubblepop 1.2s ease-out both}
-@keyframes bubblepop{70%{transform:scale(1);opacity:1}100%{transform:scale(1.3);opacity:0}}
-@keyframes once{from{opacity:0}20%{opacity:1}to{opacity:0}}
+.gw{fill:#fff;stroke:#4A5868;stroke-width:1.1;stroke-linejoin:round} .gt{fill:#2E3A46}
+.gullraid{animation:gullraid 4.5s ease-in-out infinite}
+@keyframes gullraid{0%{transform:translate(50px,-50px);opacity:0}15%{opacity:1}30%,45%{transform:translate(0,0)}85%{opacity:1}100%{transform:translate(-110px,-80px);opacity:0}}
+.sharkswim{transform-box:fill-box;transform-origin:center;animation:swim 7s linear infinite}
+@keyframes swim{0%{transform:translateX(-10px) scaleX(1)}46%{transform:translateX(160px) scaleX(1)}50%{transform:translateX(160px) scaleX(-1)}96%{transform:translateX(-10px) scaleX(-1)}100%{transform:translateX(-10px) scaleX(1)}}
+.wake{fill:none;stroke:#fff;stroke-width:2.5;stroke-linecap:round;opacity:.9}
+.blk{animation:blk 4s linear both}
+@keyframes blk{0%{opacity:0}8%{opacity:1}85%{opacity:1}100%{opacity:0}}
+.jet{fill:none;stroke:#5CC0F0;stroke-width:6;stroke-linecap:round;stroke-dasharray:10 6;animation:jet .5s linear infinite}
+@keyframes jet{to{stroke-dashoffset:-16}}
+.soot{fill:#4a4a4a;opacity:0;transform-box:fill-box;transform-origin:center;animation:soot 1.2s ease-out infinite}
+@keyframes soot{0%{opacity:.85;transform:scale(.4)}100%{opacity:0;transform:translate(-6px,-14px) scale(1.7)}}
+.umbrella{transform-box:fill-box;transform-origin:50% 100%;animation:umbrella 4s ease-out both}
+@keyframes umbrella{0%{opacity:0;transform:scale(.3)}10%{opacity:1;transform:scale(1)}85%{opacity:1}100%{opacity:0}}
+.bub{fill:rgba(160,220,255,.22);stroke:#9EDCF5;stroke-width:2.5} .bubshine{fill:none;stroke:#fff;stroke-width:3;stroke-linecap:round;opacity:.8}
+.bubblepop{transform-box:fill-box;transform-origin:center;animation:bubble 4s ease-out both}
+@keyframes bubble{0%{opacity:0;transform:scale(.2)}12%{opacity:1;transform:scale(1)}88%{opacity:1;transform:scale(1)}94%{opacity:.7;transform:scale(1.12)}100%{opacity:0;transform:scale(1.3)}}
 .giftpop{transform-box:fill-box;transform-origin:50% 100%;animation:fxpop .5s ease-out both}
-.petal{animation:petal 3s ease-in var(--d) infinite}
+.candle{transform-box:fill-box;transform-origin:50% 100%;animation:flicker .4s ease-in-out infinite alternate}
+.petal{animation:petal 3s ease-in infinite}
 @keyframes petal{from{transform:translateY(0);opacity:1}to{transform:translate(-20px,46px);opacity:0}}
-.bottlebob{animation:bottle 3s ease-in-out infinite alternate}
-@keyframes bottle{from{transform:translateX(0)}to{transform:translateX(-24px) translateY(-1px)}}
+.bottlebob{transform-box:fill-box;transform-origin:center;animation:bottle 1.8s ease-in-out infinite alternate}
+@keyframes bottle{from{transform:translateY(1px) rotate(-8deg)}to{transform:translateY(-4px) rotate(8deg)}}
 .teddywave{transform-box:fill-box;transform-origin:50% 100%;animation:wave 1.2s ease-in-out infinite alternate}
 @keyframes wave{to{transform:rotate(-12deg)}}
-.confetti{animation:confetti 1.4s ease-out var(--d) both}
-@keyframes confetti{to{transform:translate(var(--x),-30px) rotate(160deg);opacity:0}}
-.minifw{opacity:0;transform-box:fill-box;transform-origin:center;animation:minifw 1.8s ease-out var(--d) infinite}
-@keyframes minifw{0%{opacity:0;transform:scale(.3)}20%{opacity:1}100%{opacity:0;transform:scale(1.2)}}
+.confetti{opacity:0;animation:confetti 1.4s ease-out both}
+@keyframes confetti{from{opacity:1}to{transform:translate(var(--x),-36px) rotate(160deg);opacity:0}}
+.minifw{opacity:0;transform-box:fill-box;transform-origin:center;animation:minifw 2.2s ease-out infinite}
+@keyframes minifw{0%{opacity:0;transform:scale(.3)}15%{opacity:1}100%{opacity:0;transform:scale(1.15)}}
 .sparkle{transform-box:fill-box;transform-origin:center;animation:sparkle 1.4s ease-in-out infinite}
-@keyframes sparkle{50%{transform:scale(.4) rotate(45deg);opacity:.4}}
-.disco{fill:var(--c);animation:disco .8s ease-in-out var(--d) infinite alternate}
-@keyframes disco{to{opacity:.25}}
+@keyframes sparkle{50%{transform:scale(.3) rotate(45deg);opacity:.3}}
+.glint{animation:glint 2.4s ease-in-out infinite}
+@keyframes glint{0%,60%,100%{opacity:0}75%{opacity:1}}
+.disco{fill:var(--c);stroke:#fff;stroke-width:1;animation:disco .8s ease-in-out infinite alternate}
+@keyframes disco{to{opacity:.3}}
+.discorays{transform-box:fill-box;transform-origin:center;animation:spin 3s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
 .parrotbob{transform-box:fill-box;transform-origin:50% 100%;animation:wave 2s ease-in-out infinite alternate}
 .emote{transform-box:fill-box;transform-origin:50% 100%;animation:fxpop .3s ease-out both}
+/* After the shorthands above, so it wins: per-item stagger (--d) minus the effect's age */
+.fxl *{animation-delay:calc(var(--d,0s) - var(--age,0s))}
 /* Sun: a breathing glow and warm rings rippling outward */
 .hs-glow{transform-box:fill-box;transform-origin:center;animation:breathe 4.5s ease-in-out infinite}
 @keyframes breathe{50%{transform:scale(1.12);opacity:.38}}
@@ -383,8 +404,8 @@ summary{cursor:pointer;font-weight:600;color:var(--muted);min-height:44px;displa
 .party-banner{position:absolute;left:50%;top:16px;transform:translateX(-50%);width:min(92vw,420px);background:var(--surface);color:var(--ink);
   border-radius:16px;padding:12px 16px;font-weight:800;text-align:center;box-shadow:0 6px 24px rgba(0,0,0,.25)}
 @media (prefers-reduced-motion:reduce){.reveal li,.sh-bob,.sh-wave,.sh-float,.sh-wave-flag,.wiggle,.hs-sway,.hs-crown,.hs-birdfly,.hs-glow,.hs-star,.bongo-bob,.bongo-talk,.players li.aim{animation:none}.hs-heat{display:none}.puff{display:none}
-  .flame,.tentacles path,.sh-bob.rocked,.drip,.gullsteal,.sharkfin,.petal,.bottlebob,.teddywave,.confetti,.minifw,.sparkle,.disco,.parrotbob,
-  .spray,.umbrella,.bubblepop,.giftpop,.emote{animation:none}.minifw{opacity:1}}
+  .flame,.tent,.sh-bob.rocked,.drip,.gullraid,.sharkswim,.petal,.bottlebob,.teddywave,.confetti,.minifw,.sparkle,.glint,.disco,.discorays,.parrotbob,
+  .jet,.soot,.blk,.umbrella,.bubblepop,.giftpop,.candle,.emote{animation:none}.minifw,.glint{opacity:1}.soot{opacity:.6}.confetti{opacity:0}.smoketint{display:inline}}
 </style>
 </head>
 <body>
@@ -573,48 +594,70 @@ function shipBody(f, key = '', look = {}, mine = false) {
     left -= m;
   }
   // Shop effects and bling (purely visual). Victory/storm scenes may pass a look without them.
-  const fx = look.fx || { sab: [], blocked: [], gifts: [], emote: null }, bling = look.bling || [];
-  const has = k => fx.sab.includes(k), gift = k => fx.gifts.includes(k);
-  const puffCls = `puff${has('bomb') ? ' burnt' : ''}${bling.includes('rainbow') ? ' rainbow' : ''}`;
+  const fx = look.fx || { sab: [], blocked: [], gifts: [], emote: null, age: {} }, bling = look.bling || [];
+  const has = k => fx.sab.includes(k), gift = k => fx.gifts.includes(k), blocked = k => fx.blocked.includes(k);
+  // Each effect's art sits in a group carrying its age, so one-shot animations resume rather than replay on re-render
+  const aged = (k, art, at = '') => `<g${at} style="--age:${((fx.age || {})[k] ?? 99).toFixed(2)}s">${art}</g>`;
+  const burnt = has('bomb'), rainbow = !burnt && bling.includes('rainbow');
+  const RB = ['#FF3E8A', '#FF9F1C', '#FFD60A', '#2BB673', '#3FD0E0', '#8E5BD8'];
   // Funnel smoke, individual per ship: heavier loads puff more, bigger and darker
   const srnd = rng(key + '|smoke'), puffs = 5 + Math.round(Math.min(f, 1.2) * 2.5), beat = 2.8 + srnd() * 1.4;
   let smoke = '';
   for (let i = 0; i < puffs; i++) {
     const t = beat + srnd() * 0.8, d = -(i / puffs) * t - srnd() * 0.4;
-    smoke += `<circle class="${puffCls}" cx="${(34 + srnd() * 2).toFixed(1)}" cy="2" r="${(3 + srnd() + Math.min(f, 1.2)).toFixed(1)}" style="--t:${t.toFixed(2)}s;--d:${d.toFixed(2)}s;--dx:${(-16 - srnd() * 20).toFixed(0)}px;--dy:${(-24 - srnd() * 16).toFixed(0)}px;--s:${(2.8 + srnd() * 2).toFixed(2)};--o:${(0.6 + srnd() * 0.15 + Math.min(f, 1) * 0.15).toFixed(2)}"/>`;
+    smoke += `<circle class="puff${burnt ? ' burnt' : rainbow ? ' rainbow' : ''}" cx="${(34 + srnd() * 2).toFixed(1)}" cy="2" r="${(3 + srnd() + Math.min(f, 1.2)).toFixed(1)}" style="--t:${t.toFixed(2)}s;--d:${d.toFixed(2)}s;--dx:${(-16 - srnd() * 20).toFixed(0)}px;--dy:${(-24 - srnd() * 16).toFixed(0)}px;--s:${(2.8 + srnd() * 2).toFixed(2)};--o:${rainbow ? '.9' : (0.6 + srnd() * 0.15 + Math.min(f, 1) * 0.15).toFixed(2)}${rainbow ? `;--smoke-dark:${RB[i % 6]};--smoke-light:${RB[(i + 2) % 6]}` : ''}"/>`;
   }
+  // Still tiles and reduced motion hide the puffs, so a burnt or rainbow ship gets a small static plume instead
+  const tint = burnt ? ['#1b1b1b', '#333', '#4a4a4a'] : rainbow ? ['#FF3E8A', '#FFD60A', '#3FD0E0'] : null;
+  if (tint) smoke += `<g class="smoketint">${[[35, -3, 5.5], [28, -11, 7], [18, -17, 8]].map(([x, y, r], i) => `<circle cx="${x}" cy="${y}" r="${r}" fill="${tint[i]}" opacity=".9"/>`).join('')}</g>`;
   const sink = (-6 + Math.min(f, 1) * 42 + Math.min(Math.max(f - 1, 0), 0.6) * 10).toFixed(1), tilt = over ? 1.8 : 0;
-  // On deck, behind the hull (drawn right after the cargo): gifts and the parrot on the cargo mast (top at 128,12)
-  const deckArt = (gift('bouquet') ? `<g class="giftpop"><path d="M150 50l4-10 4 10Z" fill="#2A9457"/>${[[150, 38], [155, 35], [160, 38]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="3.5" fill="#E0505B"/>`).join('')}</g>${[0, 1, 2, 3].map(i => `<circle class="petal" style="--d:${i * .6}s" cx="${130 + i * 18}" cy="10" r="2.2" fill="#FF6B8A"/>`).join('')}` : '')
-    + (gift('cake') ? `<g class="giftpop"><rect x="118" y="40" width="22" height="10" rx="2" fill="#FFC4DA"/><rect x="121" y="34" width="16" height="7" rx="2" fill="#fff"/>${[124, 129, 134].map(x => `<path d="M${x} 34v-4" stroke="#FFD60A" stroke-width="1.6"/>`).join('')}</g>` : '')
-    + (gift('teddy') ? `<g class="teddywave"><circle cx="51" cy="18" r="6" fill="#B07A45"/><circle cx="46" cy="13" r="2.4" fill="#B07A45"/><circle cx="56" cy="13" r="2.4" fill="#B07A45"/><circle cx="51" cy="19" r="2.2" fill="#E9C9A0"/></g>` : '')
-    + (gift('giftbox') ? `<g class="giftpop"><rect x="100" y="38" width="16" height="12" fill="#3FD0E0"/><path d="M108 38v12M100 44h16" stroke="#FF3E8A" stroke-width="2"/></g>${[0, 1, 2, 3, 4, 5].map(i => `<rect class="confetti" style="--d:${(i * .2).toFixed(1)}s;--x:${(i - 2.5) * 12}px" x="107" y="36" width="3" height="3" fill="${['#FF3E8A', '#FFD60A', '#3FD0E0'][i % 3]}"/>`).join('')}` : '')
-    + (gift('diamond') ? `<g class="diamond"><path d="M170 46l6-8h10l6 8-11 12Z" fill="#BDE4FF" stroke="#5FA8D3"/><path class="sparkle" d="M186 30l1.5 4 4 1.5-4 1.5-1.5 4-1.5-4-4-1.5 4-1.5Z" fill="#fff"/></g>` : '')
-    + (bling.includes('parrot') ? `<g class="parrotbob"><path d="M125 12c-4-6 1-11 6-9 3 1 3 5 1 7l-3 2Z" fill="#E0505B"/><path d="M131 5l4 1-3 2Z" fill="#FFD60A"/><circle cx="129" cy="5" r=".9" fill="#111"/></g>` : '');
-  // In front of the hull: disco lights, the lei on the bow, fire on deck, thieving gulls and one-shot blocks
-  const frontArt = (bling.includes('disco') ? [50, 80, 110, 140, 170].map((x, i) => `<circle class="disco" style="--d:${(i * .15).toFixed(2)}s;--c:${['#FF3E8A', '#FFD60A', '#3FD0E0', '#2BB673', '#FF9F1C'][i]}" cx="${x}" cy="56" r="3.4"/>`).join('') : '')
-    + (gift('lei') ? `<path class="giftpop" d="M196 50q-6 16-18 14" stroke="#FF3E8A" stroke-width="5" stroke-dasharray="1 5" stroke-linecap="round" fill="none"/>` : '')
+  // On deck, behind the hull (drawn right after the cargo, in front of it), each in its own spot so three gifts
+  // never stack: cake 60-100, gift box 104-134, bouquet 139-165, diamond 162-198, teddy on the cabin roof,
+  // and the parrot perched where the boom meets the cargo mast (128,16).
+  const deckArt = (gift('cake') ? aged('cake', `<g class="giftpop"><rect x="60" y="34" width="40" height="15" rx="3" fill="#FFC4DA" stroke="#D6457A" stroke-width="1.2"/><rect x="66" y="21" width="28" height="14" rx="3" fill="#fff" stroke="#D6457A" stroke-width="1.2"/><path d="M60 38q5 5 10 0t10 0 10 0 10 0" stroke="#fff" stroke-width="2.5" fill="none"/><circle cx="80" cy="34" r="2.6" fill="#E0505B"/>${[72, 80, 88].map(x => `<rect x="${x - 1.3}" y="13" width="2.6" height="8" fill="#3FD0E0"/><ellipse class="candle" cx="${x}" cy="10" rx="2" ry="3.2" fill="#FFB020"/>`).join('')}</g>`) : '')
+    + (gift('giftbox') ? aged('giftbox', `<g class="giftpop"><rect x="104" y="25" width="30" height="24" rx="2" fill="#3FD0E0" stroke="#1E8C99" stroke-width="1.2"/><rect x="102" y="20" width="34" height="7" rx="2" fill="#6FE6F2" stroke="#1E8C99" stroke-width="1.2"/><path d="M119 20v29" stroke="#FF3E8A" stroke-width="5"/><path d="M119 20c-10-10-17-2-8 1M119 20c10-10 17-2 8 1" stroke="#FF3E8A" stroke-width="3" fill="none"/></g>${Array.from({ length: 10 }, (_, i) => `<rect class="confetti" style="--d:${(i * .08).toFixed(2)}s;--x:${(i - 4.5) * 9}px" x="117" y="14" width="4" height="4" fill="${RB[i % 6]}"/>`).join('')}`) : '')
+    + (gift('bouquet') ? aged('bouquet', `<g class="giftpop"><path d="M145 22l-7-5M163 22l7-5" stroke="#2A9457" stroke-width="3" stroke-linecap="round"/><path d="M142 20 151 48h3L164 20Z" fill="#FFF3B0" stroke="#C9A227" stroke-width="1.2"/>${[[143, 18, '#E0505B'], [152, 12, '#FF6B8A'], [162, 18, '#E0505B'], [147, 8, '#FFD60A'], [158, 7, '#FF9F1C']].map(([x, y, c]) => `<circle cx="${x}" cy="${y}" r="5.2" fill="${c}"/><circle cx="${x}" cy="${y}" r="1.8" fill="#fff"/>`).join('')}</g>${[0, 1, 2, 3].map(i => `<circle class="petal" style="--d:${i * .7}s" cx="${136 + i * 9}" cy="12" r="2.6" fill="#FF6B8A"/>`).join('')}`) : '')
+    + (gift('diamond') ? aged('diamond', `<g class="giftpop"><path d="M162 22l9-12h18l9 12-18 26Z" fill="#BDE4FF" stroke="#3B88C4" stroke-width="1.5"/><path d="M162 22h36M171 10l4 12 5-12 5 12 4-12M175 22l5 26 5-26" stroke="#3B88C4" stroke-width="1" fill="none"/><path class="glint" d="M168 19l7-7" stroke="#fff" stroke-width="3" stroke-linecap="round"/></g>${[[200, 6, 0], [160, 6, .5], [196, 32, 1]].map(([x, y, d]) => `<path class="sparkle" style="--d:${d}s" d="M${x} ${y - 6}l1.8 4.2 4.2 1.8-4.2 1.8-1.8 4.2-1.8-4.2-4.2-1.8 4.2-1.8Z" fill="#fff" stroke="#9ED0F5" stroke-width=".6"/>`).join('')}`) : '')
+    + (gift('teddy') ? aged('teddy', `<g class="teddywave"><circle cx="43" cy="8" r="3.6" fill="#B07A45"/><circle cx="57" cy="8" r="3.6" fill="#B07A45"/><circle cx="50" cy="14" r="8.5" fill="#B07A45"/><circle cx="50" cy="17" r="3.4" fill="#E9C9A0"/><circle cx="47" cy="12" r="1.1" fill="#111"/><circle cx="53" cy="12" r="1.1" fill="#111"/><circle cx="50" cy="16" r="1.2" fill="#111"/></g>`) : '')
+    + (bling.includes('parrot') ? `<g transform="translate(0 4)"><g class="parrotbob"><path d="M124 8l-6 18 4 1 6-14Z" fill="#1F6FD1"/><ellipse cx="128" cy="2" rx="6.5" ry="10" fill="#E0505B"/><path d="M124-3q-4 8 1 14l5-4Z" fill="#FFD60A"/><path d="M125 7l-3 6 5-3Z" fill="#1F6FD1"/><circle cx="131" cy="-9" r="6" fill="#E0505B"/><circle cx="133" cy="-10" r="2.2" fill="#fff"/><circle cx="133.6" cy="-10" r="1" fill="#111"/><path d="M136-11q6 1 3 7l-3-3Z" fill="#FFD60A" stroke="#5B4214" stroke-width=".6"/><path d="M125 12h6" stroke="#5B4214" stroke-width="1.6" stroke-linecap="round"/></g></g>` : '');
+  // In front of the hull: lei and disco lights on the rail, fire on deck, kraken arms gripping the hull,
+  // thieving gulls over the cargo and the hose / bubble blocks
+  const rail = x => deckAt(x) + 1;
+  let lei = '';
+  for (let x0 = 12, i = 0; x0 < 196; x0 += 23.5) {
+    const x1 = x0 + 23.5, y0 = rail(x0), y1 = rail(x1), cx = (x0 + x1) / 2, cy = (y0 + y1) / 2 + 12;
+    lei += `<path d="M${x0} ${y0.toFixed(1)}Q${cx} ${cy.toFixed(1)} ${x1} ${y1.toFixed(1)}" stroke="#2BB673" stroke-width="1.5" fill="none"/>`;
+    for (const t of [.2, .5, .8]) {
+      const bx = (1 - t) ** 2 * x0 + 2 * t * (1 - t) * cx + t * t * x1, by = (1 - t) ** 2 * y0 + 2 * t * (1 - t) * cy + t * t * y1;
+      lei += `<circle cx="${bx.toFixed(1)}" cy="${by.toFixed(1)}" r="3.8" fill="${['#FF3E8A', '#FFD60A', '#FF9F1C', '#fff'][i++ % 4]}"/><circle cx="${bx.toFixed(1)}" cy="${by.toFixed(1)}" r="1.2" fill="#E0505B"/>`;
+    }
+  }
+  const cargoTop = (n ? slotY(n - 1) : deckAt(140) - 4) - (over ? Math.ceil(over / 6) * HOLD.h : 0);
+  const GULL = `<path class="gw" d="M-1-2Q-9-16-21-12Q-11-8-3 1Z"/><path class="gt" d="M-21-12Q-17-15-13-14L-15-10Z"/><path class="gw" d="M1-2Q9-16 21-12Q11-8 3 1Z"/><path class="gt" d="M21-12Q17-15 13-14L15-10Z"/><ellipse class="gw" cx="0" cy="0" rx="8" ry="4.5"/><circle class="gw" cx="8" cy="-3" r="3.6"/><path d="M11-3.5l5 1.2-5 1.2Z" fill="#FF9F1C"/><circle cx="9" cy="-4" r=".9" fill="#111"/><use href="#nana" x="-8" y="3" width="18" height="9"/>`;
+  const TENT = ['M6 112C-8 86 0 62 14 48c7-7 17-2 12 7', 'M74 114C62 88 76 64 86 42c5-11 18-11 17 1', 'M150 116C138 90 160 70 152 28c-2-11 9-15 13-6', 'M214 110C228 86 216 62 204 50c-6-6-15-1-10 7'];
+  const frontArt = (gift('lei') ? aged('lei', `<g class="giftpop">${lei}</g>`) : '')
+    + (bling.includes('disco') ? `<path d="M12 ${rail(12) + 4}${[33, 54, 75, 96, 117, 138, 159, 180, 201].map(x => `Q${x - 10.5} ${(rail(x) + 9).toFixed(1)} ${x} ${(rail(x) + 4).toFixed(1)}`).join('')}" stroke="#2E3A46" stroke-width="1" fill="none"/>${[12, 33, 54, 75, 96, 117, 138, 159, 180, 201].map((x, i) => `<circle class="disco" style="--d:${(i * .13).toFixed(2)}s;--c:${RB[i % 6]}" cx="${x}" cy="${(rail(x) + 5).toFixed(1)}" r="4.6"/>`).join('')}<path d="M158 26v5" stroke="#5B6675" stroke-width="1.4"/><circle cx="158" cy="39" r="8.5" fill="#C9D3DD" stroke="#7D8A97"/><path d="M150 36h16M150 42h16M158 30.5v17M153 32q-3 7 0 14M163 32q3 7 0 14" stroke="#8A97A4" stroke-width=".8" fill="none"/><g class="discorays">${[0, 60, 120, 180, 240, 300].map((a, i) => { const c = Math.cos(a * Math.PI / 180), s = Math.sin(a * Math.PI / 180); return `<path d="M${(158 + c * 11).toFixed(1)} ${(39 + s * 11).toFixed(1)}L${(158 + c * 18).toFixed(1)} ${(39 + s * 18).toFixed(1)}" stroke="${RB[i]}" stroke-width="2.4" stroke-linecap="round"/>`; }).join('')}</g>` : '')
     + (has('bomb') ? `<g class="fire">${[96, 122, 148].map((x, i) => `<path class="flame" style="--d:${(i * .2).toFixed(1)}s" d="M${x} ${(deckAt(x + 4) + 1).toFixed(1)}c-6-8 0-14 4-22 2 8 10 12 4 22Z"/>`).join('')}</g>` : '')
-    + (has('gulls') ? [0, 1, 2].map(i => `<g class="gullsteal" style="--d:${i * .5}s"><path d="M${120 + i * 20} 20q5-6 10 0q5-6 10 0" stroke="#4A5868" stroke-width="2" fill="none"/><use href="#nana" x="${123 + i * 20}" y="21" width="14" height="7"/></g>`).join('') : '')
-    + (fx.blocked.includes('hose') ? `<path class="spray" d="M10 30q60-40 120 10"/>` : '')
-    + (fx.blocked.includes('bubble') ? `<circle class="bubblepop" cx="110" cy="50" r="70"/>` : '');
+    + (has('kraken') ? aged('kraken', TENT.map((d, i) => `<g class="tent" style="--d:${(-i * .35).toFixed(2)}s"><path class="tent-edge" d="${d}"/><path class="tent-arm" d="${d}"/><path class="tent-sucker" d="${d}"/></g>`).join('')) : '')
+    + (has('gulls') ? aged('gulls', [[96, 0], [140, .9], [176, 1.8]].map(([x, d]) => `<g transform="translate(${x} ${(cargoTop - 4).toFixed(1)}) scale(1.25)"><g class="gullraid" style="--d:${d}s">${GULL}</g></g>`).join('')) : '')
+    + (blocked('hose') ? aged('hose', `<g class="blk"><path d="M58 50c-7 0-8-9-1-9s10 3 5 7" stroke="#2A9457" stroke-width="3.5" fill="none"/><path d="M62 45l6-7" stroke="#2A9457" stroke-width="4.5" stroke-linecap="round"/><path class="jet" d="M68 38Q100-4 134 34"/><circle cx="140" cy="40" r="8" fill="#1b1b1b"/><path d="M144 33q4-5 8-3" stroke="#8B5A2B" stroke-width="2" fill="none"/>${[[146, 28, 6, 0], [137, 26, 5, .4], [151, 23, 4, .8]].map(([x, y, r, d]) => `<circle class="soot" style="--d:${d}s" cx="${x}" cy="${y}" r="${r}"/>`).join('')}</g>`) : '')
+    + (blocked('bubble') ? aged('bubble', `<g class="bubblepop"><circle class="bub" cx="110" cy="50" r="70"/><path class="bubshine" d="M62 24a58 58 0 0 1 36-30"/></g>`) : '');
   // In the scene, not riding with the ship (so they stay in the sea and the sky however deep it sits):
-  // tentacles and a shark fin in the water, a message in a bottle, a rain cloud, an umbrella, fireworks and emotes
+  // a circling shark and a message in a bottle at the waterline, a rain cloud, an umbrella, fireworks and emotes
   const emoteText = fx.emote && { honk: '📯 HONK!', ha: 'Ha!', oops: 'Oops', ouch: 'Ouch' }[fx.emote];
-  const sceneArt = (has('kraken') ? `<g class="tentacles"><path d="M18 108c-10-20 6-30-4-50"/><path d="M40 108c-6-16 8-22 0-40"/><path d="M196 108c10-18-6-28 6-46"/></g>` : '')
-    + (has('shark') ? `<g class="sharkfin"><path d="M0 104l8-14 6 14Z" fill="#4A5868"/></g>` : '')
-    + (gift('bottle') ? `<g class="bottlebob"><rect x="186" y="99" width="12" height="5" rx="2" fill="#9ED9C4"/><rect x="196" y="100" width="3" height="3" fill="#8B5A2B"/></g>` : '')
+  const sceneArt = (has('shark') ? aged('shark', `<g class="sharkswim"><path class="wake" d="M4 104q-10-3-22 0"/><path d="M6 104Q18 92 20 66Q32 88 48 104Z" fill="#5A6B7D" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/><path class="wake" d="M48 104q6-3 11-1"/></g>`) : '')
+    + (gift('bottle') ? aged('bottle', `<g class="giftpop"><g class="bottlebob"><rect x="150" y="97" width="30" height="12" rx="6" fill="#9ED9C4" fill-opacity=".92" stroke="#3F8F7E" stroke-width="1.4"/><rect x="179" y="100" width="9" height="6" rx="1.5" fill="#9ED9C4" stroke="#3F8F7E" stroke-width="1.2"/><rect x="187" y="100.5" width="5" height="5" rx="1" fill="#8B5A2B"/><rect x="155" y="100" width="18" height="6" rx="1" fill="#FFF6D6" stroke="#C9A227" stroke-width=".6"/><path d="M154 99.5h18" stroke="#fff" stroke-width="1.2" stroke-linecap="round" opacity=".8"/></g></g>`) : '')
     + (has('cloud') ? `<g class="raincloud"><ellipse cx="110" cy="2" rx="40" ry="10"/><ellipse cx="94" cy="-4" rx="18" ry="10"/><ellipse cx="124" cy="-5" rx="22" ry="12"/>${[80, 96, 112, 128, 144].map((x, i) => `<path class="drip" style="--d:${(i * .13).toFixed(2)}s" d="M${x} 12l-3 10"/>`).join('')}</g>` : '')
-    + (fx.blocked.includes('umbrella') ? `<g class="umbrella"><path d="M80 14a30 18 0 0 1 60 0Z" fill="#FF3E8A"/><path d="M110 14v26" stroke="#5B4214" stroke-width="2"/></g>` : '')
-    + (gift('fireworks') ? [[70, 6, '#FF3E8A'], [150, 0, '#FFD60A']].map(([x, y, c], i) => `<g class="minifw" style="--d:${i * .7}s">${[0, 45, 90, 135, 180, 225, 270, 315].map(a => `<path d="M${x} ${y}l${(Math.cos(a * Math.PI / 180) * 12).toFixed(1)} ${(Math.sin(a * Math.PI / 180) * 12).toFixed(1)}" stroke="${c}" stroke-width="2" stroke-linecap="round"/>`).join('')}</g>`).join('') : '')
-    + (emoteText ? `<g class="emote"><rect x="${fx.emote === 'honk' ? 60 : 80}" y="-16" width="${fx.emote === 'honk' ? 100 : 60}" height="22" rx="11" fill="#fff" stroke="#0B3954" stroke-width="1.5"/><text x="110" y="0" text-anchor="middle" font-size="12" font-weight="800" fill="#0B3954">${emoteText}</text></g>` : '');
+    + (blocked('umbrella') ? aged('umbrella', `<g class="umbrella"><path d="M80 14a30 18 0 0 1 60 0Z" fill="#FF3E8A"/><path d="M110 14v26" stroke="#5B4214" stroke-width="2"/></g>`) : '')
+    + (gift('fireworks') ? aged('fireworks', [[58, 4, '#FF3E8A', '#FFD60A'], [162, -2, '#3FD0E0', '#FF9F1C']].map(([x, y, c, c2], i) => `<g class="minifw" style="--d:${i * .9}s">${Array.from({ length: 12 }, (_, k) => { const a = k * Math.PI / 6, cs = Math.cos(a), sn = Math.sin(a); return `<path d="M${(x + cs * 5).toFixed(1)} ${(y + sn * 5).toFixed(1)}L${(x + cs * 19).toFixed(1)} ${(y + sn * 19).toFixed(1)}" stroke="${k % 2 ? c2 : c}" stroke-width="2.6" stroke-linecap="round"/><circle cx="${(x + cs * 23).toFixed(1)}" cy="${(y + sn * 23).toFixed(1)}" r="2" fill="${k % 2 ? c : c2}"/>`; }).join('')}<circle cx="${x}" cy="${y}" r="3" fill="#fff"/></g>`).join('')) : '')
+    + (emoteText ? aged('emote', `<g class="emote"><rect x="${fx.emote === 'honk' ? 60 : 80}" y="-16" width="${fx.emote === 'honk' ? 100 : 60}" height="22" rx="11" fill="#fff" stroke="#0B3954" stroke-width="1.5"/><text x="110" y="0" text-anchor="middle" font-size="12" font-weight="800" fill="#0B3954">${emoteText}</text></g>`) : '');
   const ports = [44, 64, 84, 104, 124, 144, 164, 184].map(x => `<circle class="sh-port" cx="${x}" cy="64" r="2.4"/>`).join('');
   const ship = `<g transform="translate(0 ${sink}) rotate(${tilt} 110 80)"><g class="sh-bob${has('kraken') ? ' rocked' : ''}">
     <path class="sh-mast" d="M128 50V12M128 16 158 26"/>
     <rect class="sh-cabin" x="16" y="22" width="40" height="34" rx="3"/>
     <rect class="sh-win" x="21" y="28" width="30" height="6" rx="2"/><rect class="sh-win" x="21" y="39" width="30" height="5" rx="2"/>
     <path class="sh-funnel" d="M25 22 27 2H43L45 22Z"/><rect class="sh-band" x="26.5" y="7" width="17" height="5"/>${smoke}
-    ${cargo}${deckArt}
+    ${cargo}${deckArt ? `<g class="fxl">${deckArt}</g>` : ''}
     <path class="sh-mast" d="M203 54V3"/>${mastFlag(look.flag)}
     <path class="sh-hull" d="M6 52 212 45 200 82H22Z"/><path class="sh-keel" d="M22 82H200L192 100H30Z"/><path class="sh-stripe" d="M22 82H200"/>${ports}${frontArt ? `<g class="fxl">${frontArt}</g>` : ''}
     ${mine ? '<rect class="flag-hit" x="182" y="-12" width="38" height="36" onclick="openFlags(event)"/>' : ''}</g></g>`;
@@ -635,14 +678,25 @@ const HULLS = { navy: ['Navy', '#1D4E89'], coral: ['Coral', '#E0505B'], mango: [
 // Cabin colours players can pick; keys match CABINS in players.js.
 const CABINS = { white: ['White', '#FFFFFF'], sand: ['Sand', '#F6DFB0'], sunshine: ['Sunshine', '#FFE873'], mint: ['Mint', '#BFF0D4'],
   sky: ['Sky', '#BDE4FF'], pink: ['Flamingo', '#FFC4DA'] };
+// When this browser first drew each effect, so an entrance animation plays once and later renders show it settled.
+// (Local time, not the server's `at`, so a skewed clock can't skip or stall them.)
+const fxFirstSeen = new Map();
+function fxAge(e) {
+  const k = `${e.kind}|${e.from}|${e.target || ''}|${e.at}`, now = Date.now();
+  if (!fxFirstSeen.has(k)) { if (fxFirstSeen.size > 300) fxFirstSeen.clear(); fxFirstSeen.set(k, now); }
+  return (now - fxFirstSeen.get(k)) / 1000;
+}
 // What is happening to one captain's ship right now, from the room's live effects (nothing when the shop is off).
+// `age` maps each drawn item (sabotage kind, blocking item, gift kind or 'emote') to seconds since it first showed.
 function fxFor(id) {
-  const out = { sab: [], blocked: [], gifts: [], emote: null };
+  const out = { sab: [], blocked: [], gifts: [], emote: null, age: {} };
   for (const e of (S.room && S.room.shop && S.room.effects) || []) {
-    if (e.kind === 'emote') { if (e.from === id) out.emote = e.emote; continue; }
+    if (e.kind === 'emote') { if (e.from === id) { out.emote = e.emote; out.age.emote = fxAge(e); } continue; }
     if (e.target !== id) continue;
     const kind = S.catalog && S.catalog.catalog[e.kind] && S.catalog.catalog[e.kind].kind;
+    const k = e.blocked || e.kind;
     if (e.blocked) out.blocked.push(e.blocked); else if (kind === 'gift') out.gifts.push(e.kind); else out.sab.push(e.kind);
+    out.age[k] = Math.min(out.age[k] ?? Infinity, fxAge(e));
   }
   return out;
 }
