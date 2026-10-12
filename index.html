@@ -222,12 +222,19 @@ body.og .puff{display:none} /* smoke would drift over the tagline */
 .bidbox input{width:100%;min-width:0;text-align:center;font-family:Bungee,sans-serif;font-size:2.2rem;border-radius:14px;border:2px solid var(--line);background:var(--surface);padding:6px 0}
 .bidbox input.unsure{border-color:var(--coral);color:var(--coral)}
 /* Bid scratchpad (handwritten digits, read by digits.js) */
-.pad{margin-top:10px;position:relative;background:var(--surface);border-radius:14px;box-shadow:inset 0 0 0 2px var(--line);overflow:hidden}
-.pad canvas{display:block;width:100%;height:160px;touch-action:none;cursor:crosshair}
+.pad{margin-bottom:8px;position:relative;background:var(--surface);border-radius:14px;box-shadow:inset 0 0 0 2px var(--line);overflow:hidden}
+.pad canvas{display:block;width:100%;height:130px;touch-action:none;cursor:crosshair}
 .pad .hint{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--muted);pointer-events:none;font-weight:600}
-.reads{display:flex;align-items:center;gap:10px;margin-top:8px}
-.reads .grow{flex:1}
-.reads button{padding:10px 14px}
+.pad .tools{position:absolute;top:6px;right:6px;display:flex;gap:6px;z-index:1}
+.pad .tools button{padding:6px 10px;font-size:.85rem}
+.pad .unsure-note{position:absolute;left:12px;right:12px;bottom:6px;margin:0;pointer-events:none}
+/* While you bid, the pot and your ship squeeze up so the pad and Lock in fit on a phone */
+.potline{display:flex;align-items:center;gap:10px;flex-wrap:wrap;border-radius:16px;background:var(--sea-deep);color:#fff;padding:8px 14px;box-shadow:0 3px 0 var(--line)}
+.potline .num{font-size:1.7rem;line-height:1}
+.myship.compact{margin-top:10px}
+.myship.compact .scene{height:120px}
+.myship.compact .myship-foot{padding:0 14px 8px}
+.myship.compact .myship-foot .num{font-size:1.5rem}
 /* A sealed bid is lashed down with rope */
 .locked{text-align:center;padding:20px 16px;border:3px dashed var(--mango)}
 .locked .num{font-size:2.6rem}
@@ -779,20 +786,21 @@ function gameView() {
   if (!inGame()) action = `<p class="muted">You're watching this game.</p>`;
   else if (r.myBid !== null) action = `<div class="card locked"><div class="muted small">Your bid is sealed and lashed down</div><div class="num">${r.myBid}</div>
     <div class="muted small">Waiting for ${waiting} more</div></div>`;
-  else action = `<label for="bid">Your secret bid</label>
+  else action = `<div class="pad" id="padslot">${S.strokes.length ? '' : '<div class="hint">Write your secret bid here</div>'}
+      <div class="tools"><button onclick="undoStroke()" ${S.strokes.length ? '' : 'disabled'}>Undo</button><button onclick="clearPad()" ${S.strokes.length ? '' : 'disabled'}>Clear</button></div>
+      ${S.read && S.read.unsure ? '<p class="unsure-note small err">Not sure about that. Rewrite it or fix the number.</p>' : ''}</div>
     <div class="bidbox"><button aria-label="Lower bid" onclick="nudge(-1)">−</button>
-    <input id="bid" class="${S.read && S.read.unsure ? 'unsure' : ''}" inputmode="numeric" pattern="[0-9]*" value="${esc(S.bidDraft)}" placeholder="0" oninput="typed(this.value)">
+    <input id="bid" aria-label="Your secret bid" class="${S.read && S.read.unsure ? 'unsure' : ''}" inputmode="numeric" pattern="[0-9]*" value="${esc(S.bidDraft)}" placeholder="0" oninput="typed(this.value)">
     <button aria-label="Raise bid" onclick="nudge(1)">+</button></div>
-    <div class="pad" id="padslot">${S.strokes.length ? '' : '<div class="hint">…or write your bid here</div>'}</div>
-    <div class="reads"><span class="grow small ${S.read && S.read.unsure ? 'err' : 'muted'}">${S.read && S.read.unsure ? 'Not sure about that. Rewrite it or fix the number above.' : ''}</span>
-      <button onclick="undoStroke()" ${S.strokes.length ? '' : 'disabled'}>Undo</button><button onclick="clearPad()" ${S.strokes.length ? '' : 'disabled'}>Clear</button></div>
-    <button class="primary wide" style="margin-top:12px" onclick="lockBid()" ${S.busy?'disabled':''}>Lock in ${S.bidDraft ? esc(S.bidDraft) : 'bid'}</button>`;
+    <button class="primary wide" style="margin-top:10px" onclick="lockBid()" ${S.busy?'disabled':''}>Lock in ${S.bidDraft ? esc(S.bidDraft) : 'bid'}</button>`;
   const skip = r.isHost && waiting > 0 && waiting < r.order.length
     ? `<button class="link" onclick="skipMissing()">Someone gone? Count missing bids as 0</button>` : '';
-  const mine = r.inventories[r.me];
-  return `<div class="potcard"><span class="plate">Round ${r.round}</span>
-    <div class="num">${r.pot} 🍌</div><div class="sub">up for auction this round</div></div>
-    ${inGame() ? `<div class="myship" role="img" aria-label="Your ship: ${mine} bananas, ${cargoWord(mine / GOAL).toLowerCase()}">${heroScene(mine / GOAL, r.me, lookOfId(r.me), true)}
+  const mine = r.inventories[r.me], bidding = inGame() && r.myBid === null;
+  const scene = heroScene(mine / GOAL, r.me, lookOfId(r.me), true);
+  return (bidding ? `<div class="potline"><span class="plate">Round ${r.round}</span><span class="num">${r.pot} 🍌</span><span class="sub">up for auction</span></div>`
+    : `<div class="potcard"><span class="plate">Round ${r.round}</span>
+    <div class="num">${r.pot} 🍌</div><div class="sub">up for auction this round</div></div>`) + `
+    ${inGame() ? `<div class="myship${bidding ? ' compact' : ''}" role="img" aria-label="Your ship: ${mine} bananas, ${cargoWord(mine / GOAL).toLowerCase()}">${bidding ? scene.replace('<svg ', '<svg preserveAspectRatio="xMidYMid slice" ') : scene}
     <div class="myship-foot"><span>Your ship<br><b>${cargoWord(mine / GOAL)}</b></span><span class="num">${mine} 🍌</span></div></div>` : ''}
     <div style="margin:12px 0 18px">${action}</div>
     <div class="card">${playersList(true)}</div>${skip}
