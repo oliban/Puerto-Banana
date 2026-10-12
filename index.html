@@ -102,6 +102,19 @@ label,.label{display:block;font-weight:600;margin:0 0 6px}
   50%{opacity:calc(var(--o) * .75);transform:translate(calc(var(--dx) * .35),calc(var(--dy) * .6)) scale(calc(var(--s) * .6))}
   100%{fill:var(--smoke-light);opacity:0;transform:translate(var(--dx),var(--dy)) scale(var(--s))}}
 .still .puff{display:none}
+/* Ship flags: a gentle wave on moving ships; the invisible tap target on your own ship opens the picker */
+.sh-wave-flag{transform-box:fill-box;transform-origin:left center;animation:flagwave 2.6s ease-in-out infinite}
+@keyframes flagwave{50%{transform:skewY(5deg) scaleX(.92)}}
+.still .sh-wave-flag{animation:none}
+.flag-hit{fill:transparent;cursor:pointer;pointer-events:all}
+.flaggrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:12px}
+.flagbtn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-height:80px;padding:8px 4px;font-size:.78rem;font-weight:600;line-height:1.2;text-align:center;box-shadow:inset 0 0 0 1px var(--line)}
+.flagbtn img,.flagbtn svg{width:44px;height:33px;border-radius:3px;box-shadow:0 0 0 1px var(--line);object-fit:cover}
+.flagbtn span{overflow:hidden;text-overflow:ellipsis;max-width:100%;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.flagbtn[aria-pressed="true"]{box-shadow:inset 0 0 0 3px var(--ink)}
+.flaggrid>p{grid-column:1/-1}
+.wiggle{animation:wiggle 1.2s ease-in-out}
+@keyframes wiggle{20%{transform:rotate(-2deg)}40%{transform:rotate(2deg)}60%{transform:rotate(-1.5deg)}80%{transform:rotate(1deg)}}
 @keyframes bob{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(1.5px) rotate(-.8deg)}}
 @keyframes drift{to{transform:translateX(-30px)}}
 @keyframes float{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-2px) rotate(8deg)}}
@@ -209,19 +222,24 @@ summary{cursor:pointer;font-weight:600;color:var(--muted);min-height:44px;displa
 @keyframes surface{from{transform:translateY(14px);opacity:0}to{transform:none;opacity:1}}
 .party-banner{position:absolute;left:50%;top:16px;transform:translateX(-50%);width:min(92vw,420px);background:var(--surface);color:var(--ink);
   border-radius:16px;padding:12px 16px;font-weight:800;text-align:center;box-shadow:0 6px 24px rgba(0,0,0,.25)}
-@media (prefers-reduced-motion:reduce){.reveal li,.sh-bob,.sh-wave,.sh-float{animation:none}.puff{display:none}}
+@media (prefers-reduced-motion:reduce){.reveal li,.sh-bob,.sh-wave,.sh-float,.sh-wave-flag,.wiggle{animation:none}.puff{display:none}}
 </style>
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs>
   <filter id="smokeblur" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="1.3"/></filter>
   <symbol id="nana" viewBox="0 0 26 12"><path class="nb" d="M2 3C6 10.5 18 11.5 23.5 3.5 22.8 2.6 21.7 2.5 21 3.2 16 8 8 7.8 4 2.4 3.3 1.8 2.3 2.1 2 3Z"/><path class="nb-tip" d="M22.5 3.4 24.6 1.2"/></symbol>
+  <symbol id="flag-pirate" viewBox="0 0 40 30"><rect width="40" height="30" fill="#111"/><circle cx="20" cy="12" r="6" fill="#fff"/><rect x="16.5" y="15" width="7" height="4" rx="1" fill="#fff"/><circle cx="17.7" cy="11.5" r="1.6" fill="#111"/><circle cx="22.3" cy="11.5" r="1.6" fill="#111"/><path d="M9 21 31 27M31 21 9 27" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/></symbol>
+  <symbol id="flag-banana" viewBox="0 0 40 30"><rect width="40" height="30" fill="#2BB673"/><rect y="10" width="40" height="10" fill="#FFD60A"/><path d="M9 12C13 24 28 25 33 12 31 11 30 11 29 12 25 19 15 19 12 11 11 10 9.5 11 9 12Z" fill="#FFD60A" stroke="#C98E00" stroke-width="1.2"/></symbol>
+  <symbol id="flag-rainbow" viewBox="0 0 40 30"><rect width="40" height="5" fill="#E40303"/><rect y="5" width="40" height="5" fill="#FF8C00"/><rect y="10" width="40" height="5" fill="#FFED00"/><rect y="15" width="40" height="5" fill="#008026"/><rect y="20" width="40" height="5" fill="#24408E"/><rect y="25" width="40" height="5" fill="#732982"/></symbol>
+  <symbol id="flag-chequered" viewBox="0 0 4 3"><rect width="4" height="3" fill="#fff"/><path d="M0 0h1v1H0zM2 0h1v1H2zM1 1h1v1H1zM3 1h1v1H3zM0 2h1v1H0zM2 2h1v1H2z" fill="#111"/></symbol>
+  <symbol id="flag-white" viewBox="0 0 40 30"><rect x=".5" y=".5" width="39" height="29" fill="#fff" stroke="#c9d3d9"/></symbol>
   <symbol id="bunch" viewBox="0 0 26 18"><use href="#nana" width="26" height="12"/><use href="#nana" x="1" y="3" width="25" height="12"/><use href="#nana" y="6" width="26" height="12"/></symbol>
 </defs></svg>
 <div id="app"><p class="muted">Loading the docks…</p></div>
 <script>
 const GOAL = 200, MAX_PLAYERS = 6;
-const S = { hull: 'navy', code: null, room: null, es: null, nick: '', joinCode: '', bidDraft: '', error: '', busy: false, sheetFor: null, seen: 0, scores: null, rivals: null, rivalHi: null };
+const S = { hull: 'navy', flag: '', flagSheet: false, flagQuery: '', countries: null, code: null, room: null, es: null, nick: '', joinCode: '', bidDraft: '', error: '', busy: false, sheetFor: null, seen: 0, scores: null, rivals: null, rivalHi: null };
 const app = document.getElementById('app');
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const ls = { get(k){try{return localStorage.getItem(k)}catch(e){return null}}, set(k,v){try{localStorage.setItem(k,v)}catch(e){}}, del(k){try{localStorage.removeItem(k)}catch(e){}} };
@@ -297,7 +315,25 @@ function rng(key) {
   for (const c of String(key)) h = Math.imul(h ^ c.charCodeAt(0), 2654435761);
   return () => { h = (h + 0x6D2B79F5) | 0; let t = Math.imul(h ^ (h >>> 15), 1 | h); t ^= t + Math.imul(t ^ (t >>> 7), 61 | t); return ((t ^ (t >>> 14)) >>> 0) / 2 ** 32; };
 }
-function shipBody(f, key = '') {
+// ---------- flags (secret: tap the flag on your own ship) ----------
+// Country flags come from the MIT-licensed flag-icons set on jsDelivr; easter eggs are drawn above in <defs>.
+const FLAG_CDN = 'https://cdn.jsdelivr.net/npm/flag-icons@7.5.0/';
+const FLAG_EGGS = { pirate: ['Jolly Roger', ['pirate', 'jolly', 'roger', 'skull']], banana: ['Banana Republic', ['banana']],
+  rainbow: ['Rainbow', ['rainbow', 'pride']], chequered: ['Chequered', ['chequered', 'checkered', 'race', 'finish']],
+  white: ['White flag', ['white', 'surrender']] };
+const FLAG_EXTRAS = ['eu', 'un', 'gb-eng', 'gb-sct', 'gb-wls', 'gb-nir']; // non-country flags worth offering
+const flagOf = f => FLAG_EGGS[f] || /^[a-z]{2}(-[a-z]{2,4})?$/.test(f || '') ? f : ''; // mirrors players.js
+const flagOfId = id => pl(id).flag;
+// The flag at the masthead, in ship coordinates; '' is the default pink pennant.
+function mastFlag(flag) {
+  flag = flagOf(flag);
+  if (!flag) return `<path class="sh-flag" d="M206 20 218 24 206 28Z"/>`;
+  // Drawn at 0,0 inside a group pinned to the masthead, so the wave (skew/scale about the left edge) stays on the pole.
+  const box = 'width="13" height="9.75"';
+  const art = FLAG_EGGS[flag] ? `<use href="#flag-${flag}" ${box}/>` : `<image href="${FLAG_CDN}flags/4x3/${flag}.svg" ${box} preserveAspectRatio="none"/>`;
+  return `<g transform="translate(206.5 19)"><g class="sh-wave-flag">${art}</g></g>`;
+}
+function shipBody(f, key = '', flag = '', mine = false) {
   const n = f > 0 ? Math.max(1, Math.round(Math.min(f, 1) * SLOTS)) : 0, over = overflow(f);
   let cargo = '';
   for (let i = 0; i < n; i++) cargo += bunch(slotX(i), slotY(i), i);
@@ -323,7 +359,7 @@ function shipBody(f, key = '') {
     <path class="sh-funnel" d="M25 22 27 2H43L45 22Z"/><rect class="sh-band" x="26.5" y="7" width="17" height="5"/>${smoke}
     ${cargo}
     <path class="sh-hull" d="M6 52 212 45 200 82H22Z"/><path class="sh-keel" d="M22 82H200L192 100H30Z"/><path class="sh-stripe" d="M22 82H200"/>${ports}
-    <path class="sh-mast" d="M206 46V24"/><path class="sh-flag" d="M206 24 218 28 206 32Z"/></g></g>`;
+    <path class="sh-mast" d="M206 46V19"/>${mastFlag(flag)}${mine ? '<rect class="flag-hit" x="186" y="0" width="34" height="40" onclick="openFlags(event)"/>' : ''}</g></g>`;
   // Overfull ships shed a random handful of bananas into the sea around them
   const rnd = rng(key + '|' + Math.round(f * GOAL));
   const floats = over ? 1 + Math.floor(rnd() * (2 + over / 2)) : 0;
@@ -339,14 +375,14 @@ const HULLS = { navy: ['Navy', '#1D4E89'], coral: ['Coral', '#E0505B'], mango: [
   palm: ['Palm green', '#2A9457'], turquoise: ['Turquoise', '#0E97A5'], purple: ['Purple', '#6A4C93'], charcoal: ['Charcoal', '#33414E'] };
 const hullStyle = hull => HULLS[hull] ? ` style="--hull:${HULLS[hull][1]}"` : '';
 const hullOfId = id => pl(id).hull;
-function shipSVG(fill, label, key, hull) {
-  const f = Math.max(0, Number(fill) || 0), { ship, spill } = shipBody(f, key);
+function shipSVG(fill, label, key, hull, flag, mine) {
+  const f = Math.max(0, Number(fill) || 0), { ship, spill } = shipBody(f, key, flag, mine);
   const a11y = label ? `role="img" aria-label="${esc(label)}"` : 'aria-hidden="true"';
   return `<svg class="shipsvg" viewBox="0 -18 220 138" ${a11y}${hullStyle(hull)}>${waves(88, 220, 120, 'sh-sea2')}${ship}${waves(93, 220, 120, 'sh-sea sh-wave')}${spill}</svg>`;
 }
-const tile = (fill, still, key, hull) => `<span class="tile${still ? ' still' : ''}">${shipSVG(fill, '', key, hull)}</span>`;
-function heroScene(fill = 0.75, key = 'hero', hull) {
-  const { ship, spill } = shipBody(fill, key), place = 'transform="translate(10 52) scale(1.1)"';
+const tile = (fill, still, key, hull, flag, mine) => `<span class="tile${still ? ' still' : ''}">${shipSVG(fill, '', key, hull, flag, mine)}</span>`;
+function heroScene(fill = 0.75, key = 'hero', hull, flag, mine) {
+  const { ship, spill } = shipBody(fill, key, flag, mine), place = 'transform="translate(10 52) scale(1.1)"';
   const fronds = ['c10-12 26-12 36-2c-12-4-24-2-36 2z', 'c-6-14-20-18-32-12c12 0 24 4 32 12z', 'c-14-2-26 6-30 18c8-10 18-14 30-18z', 'c14-2 26 6 30 18c-8-10-18-14-30-18z', 'c2-14 12-22 24-22c-10 4-18 12-24 22z'];
   return `<svg class="scene" viewBox="0 0 360 196" aria-hidden="true"${hullStyle(hull)}>
     <circle class="hs-glow" cx="300" cy="40" r="36"/><circle class="hs-sun" cx="300" cy="40" r="22"/>
@@ -363,14 +399,14 @@ function heroScene(fill = 0.75, key = 'hero', hull) {
 // ---------- rooms ----------
 function createRoom() {
   if (!S.nick.trim()) { S.error = 'Pick a name first.'; return render(); }
-  act(async () => { const { code } = await api('create', { nick: S.nick, hull: S.hull }); connect(code); });
+  act(async () => { const { code } = await api('create', { nick: S.nick, hull: S.hull, flag: S.flag }); connect(code); });
 }
 function enterRoom(code, silent) {
   code = String(code || '').trim().toUpperCase();
   if (!/^[A-Z]{4}$/.test(code)) { if (!silent) { S.error = 'Room codes are 4 letters.'; render(); } return; }
   if (!silent && !S.nick.trim()) { S.error = 'Pick a name first.'; return render(); }
   act(async () => {
-    try { await api('join', { code, nick: S.nick, hull: S.hull }); connect(code); }
+    try { await api('join', { code, nick: S.nick, hull: S.hull, flag: S.flag }); connect(code); }
     catch (e) { ls.del('pb_code'); if (!silent) throw e; }
   });
 }
@@ -416,15 +452,15 @@ function render() {
   if (active) { const el = document.getElementById(active); if (el) { el.focus(); try { el.setSelectionRange(caret, caret); } catch (e) {} } }
 }
 function view() {
-  if (!S.code || !S.room) return homeView();
+  if (!S.code || !S.room) return homeView() + flagSheetView();
   const body = S.room.status === 'lobby' ? lobbyView() : S.room.status === 'over' ? overView() : gameView();
   return `<div class="topbar"><span class="muted small">Room <span class="code">${esc(S.code)}</span></span><button class="link" onclick="leaveRoom()">Leave</button></div>`
-    + body + (S.error ? `<p class="err">${esc(S.error)}</p>` : '') + sheetView();
+    + body + (S.error ? `<p class="err">${esc(S.error)}</p>` : '') + sheetView() + flagSheetView();
 }
 function homeView() {
   return `<header class="harbor">
     <h1>Puerto Banana</h1>
-    ${heroScene(0.75, 'hero', S.hull)}
+    ${heroScene(0.75, 'hero', S.hull, S.flag, true)}
     <p class="harbor-foot">Bid blind for the banana cargo. Win it and you pay the runner-up the gap. First to ${GOAL} bananas wins.</p>
   </header>
   <div class="stack">
@@ -432,7 +468,7 @@ function homeView() {
     <div><span class="label" id="hull-l">Ship colour</span>
     <div class="hullpick"><div class="swatches" role="radiogroup" aria-labelledby="hull-l">${Object.entries(HULLS).map(([k, [name, c]]) =>
       `<button id="hull-${k}" class="swatch" role="radio" aria-checked="${S.hull === k}" aria-label="${name}" style="--c:${c}" onclick="pickHull('${k}')"></button>`).join('')}</div>
-    ${tile(0.5, false, 'preview', S.hull)}</div></div>
+    ${tile(0.5, false, 'preview', S.hull, S.flag, true)}</div></div>
   </div>
   <div class="divider"></div>
   <label for="join">Join with a code</label>
@@ -508,7 +544,7 @@ function lobbyView() {
   const ps = S.room.players, n = ps.length;
   return `<h2>Waiting at the dock</h2>
   <p class="muted">Tell friends to join with code <b class="code">${esc(S.code)}</b>.</p>
-  <div class="card"><ul class="players">${ps.map((p, i) => `<li>${tile(0, true, p.id, p.hull)}<span class="name">${esc(p.nick)}${p.id===S.room.me?' (you)':''}</span><span class="status">${i>=MAX_PLAYERS?'watching':'ready'}</span></li>`).join('')}</ul></div>
+  <div class="card"><ul class="players">${ps.map((p, i) => `<li>${tile(0, true, p.id, p.hull, p.flag)}<span class="name">${esc(p.nick)}${p.id===S.room.me?' (you)':''}</span><span class="status">${i>=MAX_PLAYERS?'watching':'ready'}</span></li>`).join('')}</ul></div>
   <div style="margin-top:16px"><button class="primary wide" onclick="startGame()" ${n<2||S.busy?'disabled':''}>${n<2?'Need at least 2 players':'Start game with '+Math.min(n,MAX_PLAYERS)}</button></div>`;
 }
 function playersList(withStatus) {
@@ -517,7 +553,7 @@ function playersList(withStatus) {
   return `<ul class="players">${ids.map(id => {
     const inv = r.inventories[id];
     const st = withStatus ? (pl(id).locked ? `<span class="status ok">Bid locked</span>` : `<span class="status">Thinking…</span>`) : '';
-    return `<li class="${id===r.me?'me':''}">${tile(inv / GOAL, true, id, hullOfId(id))}<span class="name">${esc(nickOf(id))}${id===r.me?' (you)':''}</span><span class="inv">${inv}</span>${st}</li>`;
+    return `<li class="${id===r.me?'me':''}">${tile(inv / GOAL, true, id, hullOfId(id), flagOfId(id))}<span class="name">${esc(nickOf(id))}${id===r.me?' (you)':''}</span><span class="inv">${inv}</span>${st}</li>`;
   }).join('')}</ul>`;
 }
 function gameView() {
@@ -537,7 +573,7 @@ function gameView() {
   const mine = r.inventories[r.me];
   return `<div class="potcard"><span class="plate">Round ${r.round}</span>
     <div class="num">${r.pot} 🍌</div><div class="sub">up for auction this round</div></div>
-    ${inGame() ? `<div class="myship" role="img" aria-label="Your ship: ${mine} bananas, ${cargoWord(mine / GOAL).toLowerCase()}">${heroScene(mine / GOAL, r.me, hullOfId(r.me))}
+    ${inGame() ? `<div class="myship" role="img" aria-label="Your ship: ${mine} bananas, ${cargoWord(mine / GOAL).toLowerCase()}">${heroScene(mine / GOAL, r.me, hullOfId(r.me), flagOfId(r.me), true)}
     <div class="myship-foot"><span>Your ship<br><b>${cargoWord(mine / GOAL)}</b></span><span class="num">${mine} 🍌</span></div></div>` : ''}
     <div style="margin:12px 0 18px">${action}</div>
     <div class="card">${playersList(true)}</div>${skip}
@@ -546,7 +582,7 @@ function gameView() {
 function nudge(d) { S.bidDraft = String(Math.max(0, (parseInt(S.bidDraft, 10) || 0) + d)); render(); }
 function overView() {
   const r = S.room, w = r.winners || [];
-  return `<div class="card winner">${tile(Math.max(1.6, r.inventories[w[0]] / GOAL), false, w[0], hullOfId(w[0]))}<div class="muted">King of the bananas</div>
+  return `<div class="card winner">${tile(Math.max(1.6, r.inventories[w[0]] / GOAL), false, w[0], hullOfId(w[0]), flagOfId(w[0]))}<div class="muted">King of the bananas</div>
     <div class="num">${w.map(id => esc(nickOf(id))).join(' & ')}</div>
     <div class="muted">${r.inventories[w[0]]} bananas after ${r.round - 1} rounds</div></div>
     <div class="card" style="margin-top:14px">${playersList(false)}</div>
@@ -643,7 +679,7 @@ function battleView(r, rivals, line) {
   rivals.forEach((id, i) => {
     const x = 150 + i * gap + (gap - 220 * s) / 2, cx = x + 110 * s, hit = 1.2 + i * 0.7 + 0.8;
     rivalsSvg += `<g transform="translate(${x.toFixed(1)} ${(sea - 92 * s).toFixed(1)}) scale(${s.toFixed(3)})"${hullStyle(hullOfId(id))}>
-      <g class="sinking" style="--d:${hit.toFixed(2)}s">${shipBody(r.inventories[id] / GOAL, 'sunk' + id).ship}</g></g>`;
+      <g class="sinking" style="--d:${hit.toFixed(2)}s">${shipBody(r.inventories[id] / GOAL, 'sunk' + id, flagOfId(id)).ship}</g></g>`;
     shots += `<g class="torp" style="--d:${(hit - 0.8).toFixed(2)}s;--dx:${(cx - 118).toFixed(0)}px"><path d="M100 ${sea + 5}h14" stroke="#fff" stroke-width="2" opacity=".8"/>
       <rect x="112" y="${sea + 3}" width="12" height="4" rx="2" fill="#22313F"/></g>
       <circle class="boom" style="--d:${hit.toFixed(2)}s" cx="${cx.toFixed(0)}" cy="${sea - 4}" r="16" fill="#FF9F1C"/>
@@ -651,7 +687,7 @@ function battleView(r, rivals, line) {
       ${[0, 1, 2].map(k => `<circle class="bubble" style="--d:${(hit + 0.6 + k * 0.2).toFixed(2)}s" cx="${(cx - 6 + k * 6).toFixed(0)}" cy="${sea + 10}" r="${2 + k % 2}" fill="#fff" opacity="0"/>`).join('')}
       <use class="flotsam" style="--d:${(hit + 1.2).toFixed(2)}s" href="#nana" x="${(cx - 9).toFixed(0)}" y="${sea + 6}" width="18" height="9"/>`;
   });
-  const wb = shipBody(0.85, 'battle' + win).ship; // drawn riding high so the attacker reads clearly
+  const wb = shipBody(0.85, 'battle' + win, flagOfId(win)).ship; // drawn riding high so the attacker reads clearly
   return `<div class="battle"><svg viewBox="0 84 ${W} 106" style="display:block;width:100%">
     ${waves(sea - 4, W, 190, 'sh-sea2')}
     <g transform="translate(4 ${(sea - 92 * 0.62).toFixed(1)}) scale(0.62)"${hullStyle(hullOfId(win))}>${wb}</g>${rivalsSvg}
@@ -666,16 +702,65 @@ function sheetView() {
     <h2>Round ${r.round} results</h2>
     <ul class="story">${r.steps.flatMap(stepLines).map(l => `<li>${l}</li>`).join('')}</ul>
     <ul class="reveal">${ids.map((id, i) => { const b = r.before[id], a = r.after[id], d = a - b;
-      return `<li class="${r.bids[id]===top?'top':''}" style="animation-delay:${i*0.12}s">${tile(a / GOAL, true, id, hullOfId(id))}
+      return `<li class="${r.bids[id]===top?'top':''}" style="animation-delay:${i*0.12}s">${tile(a / GOAL, true, id, hullOfId(id), flagOfId(id))}
         <span class="who"><b>${esc(nickOf(id))}${id===S.room.me?' (you)':''}</b>
         <span class="small">Bananas ${b} → <b>${a}</b> <span class="delta ${d>0?'up':d<0?'down':''}">(${d>0?'+'+d:d<0?'−'+(-d):'no change'})</span></span></span>
         <span class="bid"><span class="small muted">Bid</span><span class="num">${r.bids[id]}</span></span></li>`; }).join('')}</ul>
     <button class="primary wide" onclick="closeSheet()">${S.room.status==='over'?'See the winner':'Next round'}</button></div></div>`;
 }
-document.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.id === 'bid') lockBid(); if (e.key === 'Escape' && S.sheetFor != null) closeSheet(); });
+// ---------- flag picker sheet ----------
+async function loadCountries() {
+  try {
+    const r = await fetch(FLAG_CDN + 'country.json');
+    if (!r.ok) throw new Error();
+    S.countries = (await r.json()).filter(c => c.iso || FLAG_EXTRAS.includes(c.code))
+      .map(c => ({ code: c.code, name: c.name })).sort((a, b) => a.name.localeCompare(b.name));
+  } catch (e) { S.countries = 'error'; }
+  if (S.flagSheet) fillFlags();
+}
+function openFlags(e) {
+  if (e) e.stopPropagation();
+  S.flagSheet = true; S.flagQuery = '';
+  if (!Array.isArray(S.countries)) { S.countries = null; loadCountries(); }
+  render();
+}
+function closeFlags() { S.flagSheet = false; render(); }
+const flagThumb = k => FLAG_EGGS[k] ? `<svg viewBox="0 0 40 30" aria-hidden="true"><use href="#flag-${k}"/></svg>`
+  : k ? `<img src="${FLAG_CDN}flags/4x3/${k}.svg" alt="" loading="lazy">`
+  : `<svg viewBox="0 0 40 30" aria-hidden="true"><path d="M4 4 36 15 4 26Z" fill="var(--hibiscus)"/></svg>`;
+// Pirate is the visible teaser; the other easter eggs only surface when you search their words.
+function flagItems() {
+  const q = S.flagQuery.trim().toLowerCase();
+  const eggs = Object.entries(FLAG_EGGS).filter(([k, [, words]]) => k === 'pirate' || (q.length >= 3 && words.some(w => w.startsWith(q) || q.startsWith(w))));
+  const cs = Array.isArray(S.countries) ? S.countries.filter(c => !q || c.name.toLowerCase().includes(q) || c.code === q) : [];
+  const items = [['', 'Pennant'], ...eggs.map(([k, [name]]) => [k, name]), ...cs.map(c => [c.code, c.name])];
+  const note = S.countries === null ? `<p class="muted small">Unrolling the flag locker…</p>`
+    : S.countries === 'error' ? `<p class="muted small">The country flags can't be loaded right now.</p>`
+    : !cs.length && q && !eggs.some(([, [, words]]) => words.some(w => w.startsWith(q) || q.startsWith(w))) ? `<p class="muted small">No flag matches "${esc(S.flagQuery)}".</p>` : '';
+  return items.map(([k, name]) => `<button class="flagbtn" aria-pressed="${S.flag === k}" onclick="pickFlag('${k}')">${flagThumb(k)}<span>${esc(name)}</span></button>`).join('') + note;
+}
+function fillFlags() { const el = document.getElementById('flaglist'); if (el) el.innerHTML = flagItems(); }
+function flagSheetView() {
+  if (!S.flagSheet) return '';
+  return `<div class="sheet-bg" onclick="if(event.target===this)closeFlags()"><div class="sheet" role="dialog" aria-label="Choose your ship's flag">
+    <div class="topbar"><h2>Raise your flag</h2><button class="link" onclick="closeFlags()">Done</button></div>
+    <input id="flagq" class="text" type="search" placeholder="Search flags: Sweden, se…" value="${esc(S.flagQuery)}" oninput="S.flagQuery=this.value;fillFlags()" autocomplete="off">
+    <div class="flaggrid" id="flaglist">${flagItems()}</div></div></div>`;
+}
+function pickFlag(k) {
+  S.flag = flagOf(k); ls.set('pb_flag', S.flag);
+  if (S.code) api('join', { code: S.code, nick: S.nick, hull: S.hull, flag: S.flag }).catch(() => {}); // opponents see it too
+  render();
+  if (FLAG_EGGS[S.flag]) document.querySelectorAll('.harbor .scene, .myship .scene').forEach(el => { el.classList.add('wiggle'); setTimeout(() => el.classList.remove('wiggle'), 1300); });
+}
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && e.target.id === 'bid') lockBid();
+  if (e.key === 'Escape') { if (S.flagSheet) closeFlags(); else if (S.sheetFor != null) closeSheet(); }
+});
 
 S.nick = ls.get('pb_nick') || '';
 S.hull = HULLS[ls.get('pb_hull')] ? ls.get('pb_hull') : 'navy';
+S.flag = flagOf(ls.get('pb_flag'));
 function pickHull(k) { S.hull = k; ls.set('pb_hull', k); render(); }
 render();
 loadScores();

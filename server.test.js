@@ -57,6 +57,19 @@ async function twoPlayerGame(port, hostNick, mateNick) {
 }
 
 const tests = {
+  async 'players carry their flag; anything unknown falls back to the pennant'() {
+    await withServer(null, async port => {
+      const host = tok(), mate = tok(), third = tok();
+      const { body: { code } } = await api(port, { action: 'create', token: host, nick: 'Cap', flag: 'se' });
+      await api(port, { action: 'join', token: mate, code, nick: 'Mate', flag: 'pirate' });
+      await api(port, { action: 'join', token: third, code, nick: 'Odd', flag: '../x" onload="alert(1)' });
+      let v = await view(port, code, host);
+      a.deepEqual(v.players.map(p => [p.nick, p.flag]), [['Cap', 'se'], ['Mate', 'pirate'], ['Odd', '']]);
+      await api(port, { action: 'join', token: third, code, nick: 'Odd', flag: 'gb-sct' });
+      v = await view(port, code, host);
+      a.equal(v.players.find(p => p.nick === 'Odd').flag, 'gb-sct');
+    });
+  },
   async 'players carry their hull colour; unknown colours fall back to navy'() {
     await withServer(null, async port => {
       const host = tok(), mate = tok();

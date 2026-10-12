@@ -10,7 +10,7 @@ const { computeRivals } = require('./rivals');
 
 const PORT = process.env.PORT || 8080;
 const GOAL = 200, START = 10, MAX_PLAYERS = 6;
-const { hullOf } = require('./players'); // hull keys; the client maps each to a colour
+const { hullOf, flagOf } = require('./players'); // hull keys; the client maps each to a colour
 const TORPEDO_ODDS = 0.2; // share of finished games where the winner's victory show torpedoes the rivals (visual only)
 let random = Math.random;  // swappable in tests
 const rooms = new Map();          // code -> room
@@ -34,7 +34,7 @@ function view(room, token) {
     code: room.code, status: room.status, round: room.round, pot: room.pot,
     me: me ? me.id : null, isHost: room.hostToken === token,
     players: Object.values(room.players).sort((a, b) => a.joinedAt - b.joinedAt)
-      .map(p => ({ id: p.id, nick: p.nick, hull: p.hull, locked: room.bids[p.token] !== undefined })),
+      .map(p => ({ id: p.id, nick: p.nick, hull: p.hull, flag: p.flag, locked: room.bids[p.token] !== undefined })),
     order, inventories,
     myBid: room.bids[token] ?? null,
     lastResult: room.lastResult, history: room.history, winners: room.winners, torpedo: !!room.torpedo,
@@ -93,9 +93,9 @@ const actions = {
     const room = rooms.get(String(b.code || '').toUpperCase());
     if (!room) throw new Error('No room with that code.');
     const nick = String(b.nick || '').trim().slice(0, 20) || 'Player';
-    const hull = hullOf(b.hull);
-    if (!room.players[token]) room.players[token] = { token, id: rid(4), nick, hull, joinedAt: Date.now() };
-    else Object.assign(room.players[token], { nick, hull });
+    const hull = hullOf(b.hull), flag = flagOf(b.flag);
+    if (!room.players[token]) room.players[token] = { token, id: rid(4), nick, hull, flag, joinedAt: Date.now() };
+    else Object.assign(room.players[token], { nick, hull, flag });
     broadcast(room); return { code: room.code };
   },
   start(b, token, room) {
