@@ -96,10 +96,7 @@ label{display:block;font-weight:600;margin:0 0 6px}
 /* Home: a Caribbean bay */
 .harbor{border-radius:24px;overflow:hidden;background:linear-gradient(var(--sky-2),var(--sky) 70%);margin-bottom:18px;box-shadow:0 4px 0 var(--line)}
 .harbor h1{margin:0;padding:18px 16px 0;text-align:center;color:var(--ink);font-size:clamp(1.6rem,8.6vw,2.4rem);line-height:1.05;text-shadow:3px 3px 0 var(--banana),5px 5px 0 var(--mango)}
-.harbor-foot{background:var(--sea-deep);color:#fff;margin-top:-1px;padding:2px 16px 16px;font-size:.95rem}
-.fleet{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:12px 0 0}
-.fleet figure{margin:0}
-.fleet figcaption{text-align:center;font-weight:800;font-size:.78rem;margin-top:4px;letter-spacing:.02em}
+.harbor-foot{background:var(--sea-deep);color:#fff;margin:-1px 0 0;padding:2px 16px 16px;font-size:.95rem}
 
 /* The pot: the ship up for auction */
 .potcard{border-radius:20px;background:var(--sea-deep);color:#fff;padding:12px 18px 14px;box-shadow:0 4px 0 var(--line)}
@@ -136,8 +133,11 @@ label{display:block;font-weight:600;margin:0 0 6px}
 .reveal li.top{box-shadow:inset 0 0 0 3px var(--banana)}
 .delta{font-weight:800}
 .delta.up{color:var(--ok)} .delta.down{color:var(--coral)}
-.steps{margin:0 0 16px;padding-left:20px}
-.steps li{margin-bottom:6px}
+.story{list-style:none;margin:0 0 14px;padding:10px 14px;border-radius:14px;background:var(--surface);border-left:6px solid var(--banana)}
+.story li{padding:5px 0}
+.story li+li{border-top:1px solid var(--line)}
+.reveal li .who{display:flex;flex-direction:column}
+.reveal li .bid{display:flex;flex-direction:column;align-items:flex-end;line-height:1.1}
 @keyframes flip{from{transform:rotateX(90deg);opacity:0}to{transform:none;opacity:1}}
 .winner{text-align:center;padding:0 0 16px;overflow:hidden}
 .winner .tile{border-radius:0;margin-bottom:12px}
@@ -199,8 +199,8 @@ async function loadScores() {
 
 // ---------- cargo ships ----------
 // One ship drawing, loaded by fill: 0 = empty hold, 1 = full to the rails, >1 = piled high and spilling.
-// The hold takes 28 bunches (about 7 bananas each); a part-bunch shows as 1-3 loose bananas, so the
-// picture changes every couple of bananas from 0 to GOAL.
+// The hold takes 28 bunches (about 7 bananas each); the hull also sinks with every banana, so the
+// picture keeps changing from 0 to GOAL. Single bananas only ever float in the sea, never on deck.
 // Ship coordinates are 220 wide with the waterline near y 92. The load sets how deep it sits: empty rides
 // high on its red keel, at GOAL the rail is just above the water, overfull puts the deck awash.
 const HOLD = { x: 66, cols: 7, rows: 4, w: 19, h: 9, deck: 51, bh: 11 };
@@ -225,19 +225,15 @@ function rng(key) {
   return () => { h = (h + 0x6D2B79F5) | 0; let t = Math.imul(h ^ (h >>> 15), 1 | h); t ^= t + Math.imul(t ^ (t >>> 7), 61 | t); return ((t ^ (t >>> 14)) >>> 0) / 2 ** 32; };
 }
 function shipBody(f, key = '') {
-  const load = Math.min(f, 1) * SLOTS, n = Math.floor(load), over = overflow(f);
+  const n = f > 0 ? Math.max(1, Math.round(Math.min(f, 1) * SLOTS)) : 0, over = overflow(f);
   let cargo = '';
   for (let i = 0; i < n; i++) cargo += bunch(slotX(i), slotY(i), i);
-  // The part-bunch in the next slot: 1-3 loose bananas, so even 1 banana shows
-  const loose = n < SLOTS && load > n ? Math.max(1, Math.round((load - n) * 3)) : 0;
-  for (let j = 0; j < loose; j++) cargo += `<use href="#nana" x="${slotX(n) + j * 2}" y="${slotY(n) + 3 - j * 3}" width="17" height="8" transform="rotate(${wob(n + j) * 2} ${slotX(n) + 9} ${slotY(n) + 7})"/>`;
   // Overfull: a pyramid of 6, 5, 4 bunches above the rails
   for (let t = 0, left = over, k = HOLD.cols - 1; left > 0; t++, k--) {
     const m = Math.min(k, left), x0 = HOLD.x + (HOLD.cols - k) * HOLD.w / 2;
     for (let c = 0; c < m; c++) cargo += bunch(x0 + c * HOLD.w, HOLD.deck - HOLD.bh - (HOLD.rows + t) * HOLD.h, 50 + t * 7 + c);
     left -= m;
   }
-  if (over >= 6) cargo += `<use href="#nana" x="196" y="28" width="16" height="8" transform="rotate(55 204 32)"/>`;
   const sink = (-6 + Math.min(f, 1) * 42 + Math.min(Math.max(f - 1, 0), 0.6) * 10).toFixed(1), tilt = over ? 1.8 : 0;
   const ports = [44, 64, 84, 104, 124, 144, 164, 184].map(x => `<circle class="sh-port" cx="${x}" cy="64" r="2.4"/>`).join('');
   const ship = `<g transform="translate(0 ${sink}) rotate(${tilt} 110 80)"><g class="sh-bob">
@@ -253,7 +249,7 @@ function shipBody(f, key = '') {
   const floats = over ? 1 + Math.floor(rnd() * (2 + over / 2)) : 0;
   let spill = '';
   for (let i = 0; i < floats; i++) {
-    const w = 13 + rnd() * 7, x = rnd() * (214 - w), y = 95 + rnd() * 16, a = Math.round(rnd() * 140 - 70);
+    const w = 13 + rnd() * 7, x = rnd() * (214 - w), y = 98 + rnd() * 13, a = Math.round(rnd() * 140 - 70);
     spill += `<g class="sh-float" style="animation-delay:${(-rnd() * 3).toFixed(2)}s;animation-duration:${(2.6 + rnd() * 1.6).toFixed(2)}s"><use href="#nana" x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${w.toFixed(1)}" height="${(w / 2).toFixed(1)}" transform="rotate(${a} ${(x + w / 2).toFixed(1)} ${(y + w / 4).toFixed(1)})"/></g>`;
   }
   return { ship, spill };
@@ -340,13 +336,10 @@ function view() {
     + body + (S.error ? `<p class="err">${esc(S.error)}</p>` : '') + sheetView();
 }
 function homeView() {
-  const fleet = [0, 15, 45, 75, 100, 140, 200, 260]
-    .map(b => `<figure>${tile(b / GOAL, false, 'fleet' + b)}<figcaption>${b} 🍌</figcaption></figure>`).join('');
   return `<header class="harbor">
     <h1>Puerto Banana</h1>
     ${heroScene()}
-    <div class="harbor-foot"><p>Bid blind for the banana cargo. Win it and you pay the runner-up the gap. First to ${GOAL} bananas wins.</p>
-    <div class="fleet" aria-label="Your ship fills up as you collect bananas, from empty at 0 to overfull past ${GOAL}">${fleet}</div></div>
+    <p class="harbor-foot">Bid blind for the banana cargo. Win it and you pay the runner-up the gap. First to ${GOAL} bananas wins.</p>
   </header>
   <div class="stack">
     <div><label for="nick">Your name</label><input id="nick" class="text" maxlength="20" value="${esc(S.nick)}" oninput="S.nick=this.value;ls.set('pb_nick',this.value)" autocomplete="nickname"></div>
@@ -429,16 +422,30 @@ function historyView() {
   return `<details><summary>Earlier rounds</summary><div class="hist">${h.map(x =>
     `<div><b>Round ${x.round}</b>, ${x.pot} 🍌: ${S.room.order.map(id => esc(nickOf(id)) + ' ' + x.bids[id]).join(', ')}</div>`).join('')}</div></details>`;
 }
-function stepText(s) {
-  const n = id => `<b>${esc(nickOf(id))}</b>`;
+// Round results in plain sentences: who won, who gains what, who pays whom. "You" for the viewer.
+const bn = n => `${n} banana${n === 1 ? '' : 's'}`;
+function stepLines(s) {
+  const me = id => id === S.room.me;
+  const n = id => me(id) ? '<b>You</b>' : `<b>${esc(nickOf(id))}</b>`;
+  const to = id => me(id) ? '<b>you</b>' : `<b>${esc(nickOf(id))}</b>`;
+  const v = (id, verb, third = verb + 's') => me(id) ? verb : third;
+  const and = (ids, f = n) => ids.map((id, i) => i ? to(id) : f(id)).join(' and ');
   switch (s.t) {
-    case 'win': return `${n(s.id)} bid highest (${s.bid}) and takes the ${s.gain} bananas.` +
-      (s.premium ? ` Pays ${s.premium} (${s.bid} − ${s.second}) to ${s.to.map(n).join(' and ')}${s.to.length > 1 ? `, ${s.share} each` : ''}.` : '');
-    case 'tie': return `${s.ids.map(n).join(' and ')} tied at ${s.bid} and split the container, ${s.share} each.`;
-    case 'bust': return s.keeps ? `${n(s.id)} bid ${s.bid} but couldn't pay ${s.premium}. Out of this auction.`
-      : `${n(s.id)} bid ${s.bid} but couldn't pay ${s.premium}. Loses all ${s.lost} bananas.`;
-    case 'last': return `${n(s.id)} is the last bidder standing and takes all ${s.gain}.`;
-    default: return 'Nobody took the container.';
+    case 'win': return [
+      `${n(s.id)} ${v(s.id, 'win')} the auction with the highest bid, ${s.bid}.`,
+      `${n(s.id)} ${v(s.id, 'gain')} the ${bn(s.gain)} up for auction.`,
+      s.premium
+        ? `${n(s.id)} ${v(s.id, 'pay')} ${bn(s.premium)} to ${s.to.map(to).join(' and ')}${s.to.length > 1 ? `, ${s.share} each` : ''}: the gap between ${s.bid} and the next bid, ${s.second}.`
+        : `${n(s.id)} ${v(s.id, 'pay')} nothing: the next bid was also ${s.second}.`];
+    case 'tie': return [
+      `${and(s.ids)} tied with the highest bid, ${s.bid}.`,
+      `They split the auction: each gains ${bn(s.share)}. Nobody pays.`];
+    case 'bust': return [
+      `${n(s.id)} ${v(s.id, 'bid')} ${s.bid} but can't pay the ${bn(s.premium)} owed.`,
+      s.keeps ? `${n(s.id)} ${v(s.id, 'drop', 'drops')} out of this auction and ${v(s.id, 'keep')} ${me(s.id) ? 'your' : 'their'} bananas.`
+        : `${n(s.id)} ${v(s.id, 'lose')} all ${bn(s.lost)}.`];
+    case 'last': return [`${n(s.id)} ${v(s.id, 'are', 'is')} the last bidder left and ${v(s.id, 'gain')} all ${bn(s.gain)}.`];
+    default: return ['Nobody won the auction.'];
   }
 }
 function sheetView() {
@@ -447,10 +454,13 @@ function sheetView() {
   const ids = S.room.order.slice().sort((a, b) => r.bids[b] - r.bids[a]);
   const top = r.bids[ids[0]];
   return `<div class="sheet-bg" onclick="if(event.target===this)closeSheet()"><div class="sheet" role="dialog" aria-label="Round results">
-    <h2>Round ${r.round} bids</h2>
-    <ul class="reveal">${ids.map((id, i) => { const d = r.after[id] - r.before[id];
-      return `<li class="${r.bids[id]===top?'top':''}" style="animation-delay:${i*0.12}s">${tile(r.after[id] / GOAL, true, id)}<span class="who"><b>${esc(nickOf(id))}</b><br><span class="delta ${d>0?'up':d<0?'down':''}">${d>0?'+':''}${d} → ${r.after[id]}</span></span><span class="num">${r.bids[id]}</span></li>`; }).join('')}</ul>
-    <ul class="steps">${r.steps.map(s => `<li>${stepText(s)}</li>`).join('')}</ul>
+    <h2>Round ${r.round} results</h2>
+    <ul class="story">${r.steps.flatMap(stepLines).map(l => `<li>${l}</li>`).join('')}</ul>
+    <ul class="reveal">${ids.map((id, i) => { const b = r.before[id], a = r.after[id], d = a - b;
+      return `<li class="${r.bids[id]===top?'top':''}" style="animation-delay:${i*0.12}s">${tile(a / GOAL, true, id)}
+        <span class="who"><b>${esc(nickOf(id))}${id===S.room.me?' (you)':''}</b>
+        <span class="small">Bananas ${b} → <b>${a}</b> <span class="delta ${d>0?'up':d<0?'down':''}">(${d>0?'+'+d:d<0?'−'+(-d):'no change'})</span></span></span>
+        <span class="bid"><span class="small muted">Bid</span><span class="num">${r.bids[id]}</span></span></li>`; }).join('')}</ul>
     <button class="primary wide" onclick="closeSheet()">${S.room.status==='over'?'See the winner':'Next round'}</button></div></div>`;
 }
 document.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.id === 'bid') lockBid(); if (e.key === 'Escape' && S.sheetFor != null) closeSheet(); });
