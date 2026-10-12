@@ -107,6 +107,7 @@ body.og .puff{display:none} /* smoke would drift over the tagline */
 .invite-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .invite .share{background:var(--surface);color:var(--ink);box-shadow:0 3px 0 rgba(0,0,0,.15);padding:10px 8px}
 .invite .copied{margin:10px 0 0;font-weight:700}
+.reconnecting{margin:-4px 0 12px;padding:8px 12px;border-radius:12px;background:var(--banana);color:var(--banana-ink);font-weight:800;text-align:center}
 .waiting{text-align:center;font-weight:700;color:var(--muted);padding:12px 0;margin:0}
 .dots i{font-style:normal;animation:dot 1.4s infinite}.dots i:nth-child(2){animation-delay:.2s}.dots i:nth-child(3){animation-delay:.4s}
 @keyframes dot{0%,60%,100%{opacity:.2}30%{opacity:1}}
@@ -281,11 +282,11 @@ summary{cursor:pointer;font-weight:600;color:var(--muted);min-height:44px;displa
   background:linear-gradient(var(--sky-2),var(--sky));box-shadow:0 10px 40px rgba(0,0,0,.35);animation:pop .3s ease-out both}
 #party .battle p{margin:0;padding:8px 14px 12px;background:var(--sea-deep);color:#fff;font-weight:800;text-align:center}
 @keyframes pop{from{opacity:0;transform:translateX(-50%) scale(.9)}}
-.torp{animation:torp .8s ease-in var(--d) both}
+.torp{animation:torp var(--t,1.4s) ease-in var(--d) both}
 @keyframes torp{from{transform:translate(0,0);opacity:1}95%{opacity:1}to{transform:translate(var(--dx),0);opacity:0}}
-.boom{transform-box:fill-box;transform-origin:center;animation:boom .6s ease-out var(--d) both}
+.boom{transform-box:fill-box;transform-origin:center;animation:boom .9s ease-out var(--d) both}
 @keyframes boom{from{transform:scale(0);opacity:1}to{transform:scale(1.6);opacity:0}}
-.sinking{transform-box:fill-box;transform-origin:60% 100%;animation:sink 1.6s ease-in var(--d) both}
+.sinking{transform-box:fill-box;transform-origin:60% 100%;animation:sink var(--t,2.6s) ease-in var(--d) both}
 @keyframes sink{from{transform:none}25%{transform:rotate(-12deg)}to{transform:translateY(90px) rotate(-30deg)}}
 .bubble{animation:rise 1.4s ease-out var(--d) both}
 @keyframes rise{from{transform:translateY(0);opacity:0}20%{opacity:.9}to{transform:translateY(-26px);opacity:0}}
@@ -563,10 +564,27 @@ function connect(code) {
   if (S.es) S.es.close();
   S.code = code; ls.set('pb_code', code); ls.set('pb_nick', S.nick);
   S.es = new EventSource('/events?room=' + code + '&token=' + token());
-  S.es.onmessage = ev => { S.room = JSON.parse(ev.data); onChange(); };
-  S.es.onerror = () => { if (S.es && S.es.readyState === EventSource.CLOSED) { dropRoom(); S.error = 'That room is gone (the server may have restarted). Create a new one.'; render(); } };
+  S.es.onopen = () => { if (S.reconnecting) { S.reconnecting = false; render(); } };
+  S.es.onmessage = ev => { S.reconnecting = false; S.room = JSON.parse(ev.data); onChange(); };
+  S.es.onerror = () => {
+    if (!S.es) return;
+    if (!S.reconnecting) { S.reconnecting = true; if (S.room) render(); } // the browser retries on its own while CONNECTING
+    if (S.es.readyState === EventSource.CLOSED) { S.es.close(); S.es = null; reconnect(code); }
+  };
 }
-function dropRoom() { if (S.es) S.es.close(); S.es = null; ls.del('pb_code'); S.code = null; S.room = null; S.sheetFor = null; S.bidDraft = ''; loadScores(); loadRivals(); }
+// Rooms survive server restarts and deploys, so a dropped connection is retried (rejoining with the same
+// player token) for about a minute. Only a room the server no longer has ends the game.
+function reconnect(code, attempt = 0) {
+  setTimeout(async () => {
+    if (S.code !== code) return; // left in the meantime
+    try { await api('join', { code, nick: S.nick, ...myLook() }); connect(code); }
+    catch (e) {
+      if (/no room/i.test(e.message) || attempt >= 7) { dropRoom(); S.reconnecting = false; S.error = 'That room is gone. Create a new one.'; render(); }
+      else reconnect(code, attempt + 1);
+    }
+  }, Math.min(15000, 1000 * 2 ** attempt));
+}
+function dropRoom() { if (S.es) S.es.close(); S.es = null; S.reconnecting = false; ls.del('pb_code'); S.code = null; S.room = null; S.sheetFor = null; S.bidDraft = ''; loadScores(); loadRivals(); }
 function leaveRoom() { api('leave').catch(() => {}); dropRoom(); render(); }
 const startGame = () => act(() => api('start'));
 // The phone's share sheet where there is one; otherwise copy the link. The link pre-fills the code (?join=ABCD).
@@ -615,6 +633,7 @@ function view() {
   if (!S.code || !S.room) return homeView() + flagSheetView();
   const body = S.room.status === 'lobby' ? lobbyView() : S.room.status === 'over' ? overView() : gameView();
   return `<div class="topbar"><span class="muted small">Room <span class="code">${esc(S.code)}</span></span><button class="link" onclick="leaveRoom()">Leave</button></div>`
+    + (S.reconnecting ? `<p class="reconnecting" role="status">Reconnecting to the room<span class="dots"><i>.</i><i>.</i><i>.</i></span></p>` : '')
     + body + (S.error ? `<p class="err">${esc(S.error)}</p>` : '') + sheetView() + flagSheetView();
 }
 function homeView() {
@@ -836,6 +855,9 @@ function stepLines(s) {
   }
 }
 // ---------- victory show (visual only; never touches scores) ----------
+// Torpedo battle pacing (seconds): first shot after START, one shot every GAP, each torpedo runs TRAVEL,
+// a hit ship takes SINK to go under, and the panel lingers LINGER after the last one before the party.
+const BATTLE = { start: 1.2, gap: 1.3, travel: 1.4, sink: 2.6, linger: 1.5 };
 const PARTY_COLORS = ['#FFD60A', '#FF3E8A', '#3FD0E0', '#FF9F1C', '#2BB673', '#FFFFFF'];
 const rand = (lo, hi) => lo + Math.random() * (hi - lo);
 function maybeCelebrate() {
@@ -860,7 +882,7 @@ function celebrate(r) {
     return setTimeout(() => party.remove(), 5000);
   }
   let t = 0;
-  if (torpedo) { party.insertAdjacentHTML('beforeend', battleView(r, rivals, sankLine)); t = 1.2 + rivals.length * 0.7 + 1.6; }
+  if (torpedo) { party.insertAdjacentHTML('beforeend', battleView(r, rivals, sankLine)); t = BATTLE.start + (rivals.length - 1) * BATTLE.gap + BATTLE.travel + BATTLE.sink + BATTLE.linger; }
   setTimeout(() => {
     party.querySelector('.battle')?.remove();
     party.insertAdjacentHTML('beforeend', rainView() + fireworksView());
@@ -891,15 +913,15 @@ function battleView(r, rivals, line) {
   const s = Math.min(0.42, 180 / (rivals.length * 220)), gap = (W - 150) / rivals.length;
   let rivalsSvg = '', shots = '';
   rivals.forEach((id, i) => {
-    const x = 150 + i * gap + (gap - 220 * s) / 2, cx = x + 110 * s, hit = 1.2 + i * 0.7 + 0.8;
+    const x = 150 + i * gap + (gap - 220 * s) / 2, cx = x + 110 * s, hit = BATTLE.start + i * BATTLE.gap + BATTLE.travel;
     rivalsSvg += `<g transform="translate(${x.toFixed(1)} ${(sea - 92 * s).toFixed(1)}) scale(${s.toFixed(3)})"${lookStyle(lookOfId(id))}>
-      <g class="sinking" style="--d:${hit.toFixed(2)}s">${shipBody(r.inventories[id] / GOAL, 'sunk' + id, lookOfId(id)).ship}</g></g>`;
-    shots += `<g class="torp" style="--d:${(hit - 0.8).toFixed(2)}s;--dx:${(cx - 118).toFixed(0)}px"><path d="M100 ${sea + 5}h14" stroke="#fff" stroke-width="2" opacity=".8"/>
+      <g class="sinking" style="--d:${hit.toFixed(2)}s;--t:${BATTLE.sink}s">${shipBody(r.inventories[id] / GOAL, 'sunk' + id, lookOfId(id)).ship}</g></g>`;
+    shots += `<g class="torp" style="--d:${(hit - BATTLE.travel).toFixed(2)}s;--t:${BATTLE.travel}s;--dx:${(cx - 118).toFixed(0)}px"><path d="M100 ${sea + 5}h14" stroke="#fff" stroke-width="2" opacity=".8"/>
       <rect x="112" y="${sea + 3}" width="12" height="4" rx="2" fill="#22313F"/></g>
       <circle class="boom" style="--d:${hit.toFixed(2)}s" cx="${cx.toFixed(0)}" cy="${sea - 4}" r="16" fill="#FF9F1C"/>
       <circle class="boom" style="--d:${(hit + 0.1).toFixed(2)}s" cx="${cx.toFixed(0)}" cy="${sea - 4}" r="9" fill="#FFD60A"/>
-      ${[0, 1, 2].map(k => `<circle class="bubble" style="--d:${(hit + 0.6 + k * 0.2).toFixed(2)}s" cx="${(cx - 6 + k * 6).toFixed(0)}" cy="${sea + 10}" r="${2 + k % 2}" fill="#fff" opacity="0"/>`).join('')}
-      <use class="flotsam" style="--d:${(hit + 1.2).toFixed(2)}s" href="#nana" x="${(cx - 9).toFixed(0)}" y="${sea + 6}" width="18" height="9"/>`;
+      ${[0, 1, 2].map(k => `<circle class="bubble" style="--d:${(hit + 1 + k * 0.35).toFixed(2)}s" cx="${(cx - 6 + k * 6).toFixed(0)}" cy="${sea + 10}" r="${2 + k % 2}" fill="#fff" opacity="0"/>`).join('')}
+      <use class="flotsam" style="--d:${(hit + BATTLE.sink * 0.8).toFixed(2)}s" href="#nana" x="${(cx - 9).toFixed(0)}" y="${sea + 6}" width="18" height="9"/>`;
   });
   const wb = shipBody(0.85, 'battle' + win, lookOfId(win)).ship; // drawn riding high so the attacker reads clearly
   return `<div class="battle"><svg viewBox="0 84 ${W} 106" style="display:block;width:100%">

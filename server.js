@@ -7,6 +7,7 @@ const { resolveAuction } = require('./engine');
 const { createLeaderboardStore } = require('./leaderboard-store');
 const { createGamesStore } = require('./games-store');
 const { computeRivals } = require('./rivals');
+const { createJsonFileStore } = require('./json-file-store');
 
 const PORT = process.env.PORT || 8080;
 const GOAL = 200, START = 10, MAX_PLAYERS = 6;
@@ -76,8 +77,15 @@ function view(room, token) {
   };
 }
 
+// Rooms are saved to rooms.json (on the volume) shortly after every change, so games survive restarts and deploys.
+let scheduleSave = () => {};
+const ROOM_TTL = 12 * 3600e3;
+const cleanRoom = r => r && typeof r === 'object' && /^[A-Z]{4}$/.test(r.code) && typeof r.hostToken === 'string'
+  && r.players && typeof r.players === 'object' && Number.isFinite(r.touched) ? r : null;
+
 function broadcast(room) {
   room.touched = Date.now();
+  scheduleSave();
   for (const s of streams.get(room.code) || []) {
     s.res.write(`data: ${JSON.stringify(view(room, s.token))}\n\n`);
   }
@@ -176,10 +184,27 @@ function readBody(req) {
 }
 const json = (res, code, obj) => { res.writeHead(code, { 'content-type': 'application/json' }); res.end(JSON.stringify(obj)); };
 
-function createServer({ dataDir, logger = console, random: rnd } = {}) {
+function createServer({ dataDir = process.env.DATA_DIR || '/data', logger = console, random: rnd } = {}) {
   random = rnd || Math.random;
   const stores = { scores: createLeaderboardStore({ dataDir, logger }), games: createGamesStore({ dataDir, logger }) };
+  // This server owns the rooms: start from what the last one saved, minus rooms idle past their TTL.
+  const roomStore = createJsonFileStore({ dataDir, file: 'rooms.json', label: 'rooms', clean: cleanRoom, logger,
+    unavailableMessage: 'Room storage is unavailable.' });
+  rooms.clear(); streams.clear();
+  const roomsReady = roomStore.ready.then(() => {
+    const cut = Date.now() - ROOM_TTL;
+    for (const r of roomStore.rows()) if (r.touched >= cut) rooms.set(r.code, r);
+  });
+  let saveTimer = null;
+  const flush = async () => {
+    clearTimeout(saveTimer); saveTimer = null;
+    await roomsReady;
+    if (!roomStore.available) return;
+    await roomStore.update(() => [...rooms.values()]).catch(e => logger.error('[rooms] save failed:', e.message));
+  };
+  scheduleSave = () => { if (!saveTimer) saveTimer = setTimeout(flush, 250); };
   const server = http.createServer(async (req, res) => {
+    await roomsReady;
     const url = new URL(req.url, 'http://x');
     if (req.method === 'GET' && url.pathname === '/') { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' }); return res.end(indexFor(req, url)); }
     if (req.method === 'GET' && url.pathname.startsWith('/assets/') && serveAsset(res, url.pathname)) return;
@@ -223,11 +248,16 @@ function createServer({ dataDir, logger = console, random: rnd } = {}) {
     res.writeHead(404); res.end();
   });
   server.stores = stores;
+  server.flush = flush; // save rooms now (on shutdown, and in tests)
   return server;
 }
 
 // Forget rooms idle for 12 hours.
-setInterval(() => { const cut = Date.now() - 12 * 3600e3; for (const [c, r] of rooms) if (r.touched < cut) rooms.delete(c); }, 3600e3).unref();
+setInterval(() => { const cut = Date.now() - ROOM_TTL; let gone = false; for (const [c, r] of rooms) if (r.touched < cut) { rooms.delete(c); gone = true; } if (gone) scheduleSave(); }, 3600e3).unref();
 
-if (require.main === module) createServer().listen(PORT, '0.0.0.0', () => console.log('Puerto Banana on :' + PORT));
+if (require.main === module) {
+  const server = createServer().listen(PORT, '0.0.0.0', () => console.log('Puerto Banana on :' + PORT));
+  // Fly sends SIGINT/SIGTERM before stopping a machine (deploys, idle stops): save the rooms first.
+  for (const sig of ['SIGINT', 'SIGTERM']) process.on(sig, () => server.flush().finally(() => process.exit(0)));
+}
 module.exports = { createServer };

@@ -57,6 +57,29 @@ async function twoPlayerGame(port, hostNick, mateNick) {
 }
 
 const tests = {
+  async 'rooms survive a server restart: same players, same round, locked bids'() {
+    const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'pb-restart-'));
+    const logger = quiet();
+    const start = async () => { const srv = createServer({ dataDir: dir, logger }); await new Promise(r => srv.listen(0, '127.0.0.1', r)); return srv; };
+    const stop = async srv => { await srv.flush(); srv.closeAllConnections?.(); await new Promise(r => srv.close(r)); };
+    try {
+      let srv = await start(), port = srv.address().port;
+      const g = await twoPlayerGame(port, 'Cap', 'Mate');
+      await api(port, { action: 'bid', token: g.host, code: g.code, bid: 3 });
+      const before = await view(port, g.code, g.mate);
+      await stop(srv);
+
+      srv = await start(); port = srv.address().port; // a fresh server reading the same data dir
+      const after = await view(port, g.code, g.mate);
+      a.equal(after.status, 'playing');
+      a.equal(after.round, before.round);
+      a.deepEqual(after.inventories, before.inventories);
+      a.equal(after.players.find(p => p.nick === 'Cap').locked, true);
+      a.equal((await api(port, { action: 'bid', token: g.mate, code: g.code, bid: 0 })).status, 200); // the game goes on
+      a.equal((await view(port, g.code, g.host)).round, before.round + 1);
+      await stop(srv);
+    } finally { await fs.rm(dir, { recursive: true, force: true }); }
+  },
   async 'only the host can start the game, and everyone can see who the host is'() {
     await withServer(null, async port => {
       const host = tok(), mate = tok();
