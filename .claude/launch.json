@@ -1,0 +1,38 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "puerto-banana",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "server.js"
+      ],
+      "env": {
+        "DATA_DIR": "./data"
+      },
+      "port": 8080
+    },
+    {
+      "name": "rivals-seeded",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "server.js"
+      ],
+      "env": {
+        "DATA_DIR": "/private/tmp/claude-501/-Users-fredriksafsten-Projects-Puerto-Banana/0a80cbbf-6601-4368-97f2-9fddc153f228/scratchpad/rivals-data"
+      },
+      "port": 8080
+    },
+    {
+      "name": "safsten-hub",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "/Users/fredriksafsten/Projects/safsten/server.js"
+      ],
+      "env": {
+        "PORT": "8090"
+      },
+      "port": 8090
+    }
+  ]
+}
