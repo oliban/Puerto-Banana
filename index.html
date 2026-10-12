@@ -99,6 +99,24 @@ body.og .puff{display:none} /* smoke would drift over the tagline */
 .og-text{position:absolute;left:56px;top:48px;z-index:1;color:#0B3954}
 .og-text h1{margin:0;font-size:104px;line-height:.95;text-shadow:5px 5px 0 #FFD60A,9px 9px 0 #FF9F1C}
 .og-text p{margin:22px 0 0;max-width:300px;font-size:30px;font-weight:800;line-height:1.25}
+/* Shop */
+.switch{display:flex;align-items:center;gap:10px;min-height:44px;font-weight:700}
+.switch input{width:22px;height:22px;accent-color:var(--sea-deep)}
+.walletrow{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:10px 0 0}
+.coins{font-family:Bungee,sans-serif;font-size:1.2rem}
+.shopbtn{background:var(--banana);color:var(--banana-ink);box-shadow:0 3px 0 var(--banana-edge)}
+.shoptabs{display:flex;gap:6px;overflow-x:auto;margin:10px 0}
+.shoptabs button{flex:0 0 auto;padding:8px 12px;min-height:44px;font-size:.9rem}
+.shoptabs button[aria-selected="true"]{box-shadow:inset 0 0 0 3px var(--ink)}
+.shopgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.shopgrid>p{grid-column:1/-1}
+.shopitem{display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 8px;min-height:96px;font-size:.85rem;text-align:center}
+.shopitem .icon{font-size:1.9rem;line-height:1}
+.shopitem.poor{opacity:.45}
+.aimbar{position:sticky;top:0;z-index:5;margin:0 0 10px;padding:10px 12px;border-radius:12px;background:var(--hibiscus);color:#fff;font-weight:800;display:flex;justify-content:space-between;align-items:center}
+.aimbar .link{color:#fff}
+.players li.aim{cursor:pointer;border-radius:12px;padding-left:8px;padding-right:8px;box-shadow:inset 0 0 0 3px var(--hibiscus);animation:aimpulse 1s ease-in-out infinite}
+@keyframes aimpulse{50%{box-shadow:inset 0 0 0 3px transparent}}
 /* Lobby invite: the code is the thing to share, so it reads like a boarding ticket */
 .invite{margin:4px 0 16px;padding:16px;border-radius:18px;text-align:center;background:var(--banana);color:var(--banana-ink);box-shadow:0 4px 0 var(--banana-edge)}
 .invite-label{display:block;font-weight:800;font-size:.85rem;text-transform:uppercase;letter-spacing:.08em}
@@ -139,6 +157,68 @@ body.og .puff{display:none} /* smoke would drift over the tagline */
   50%{opacity:calc(var(--o) * .75);transform:translate(calc(var(--dx) * .35),calc(var(--dy) * .6)) scale(calc(var(--s) * .6))}
   100%{fill:var(--smoke-light);opacity:0;transform:translate(var(--dx),var(--dy)) scale(var(--s))}}
 .still .puff{display:none}
+/* Ship effects (shop): drawn in shipBody; purely decorative, so they never catch taps (the flag stays tappable).
+   One-shot animations start --age seconds in (set per effect from when this browser first drew it), so a re-render
+   resumes them, and once they're over the settled end state shows instead of replaying. */
+.fxl{pointer-events:none}
+@keyframes fxpop{from{opacity:0;transform:scale(.3)}}
+.flame{fill:#FF9F1C;transform-box:fill-box;transform-origin:50% 100%;animation:flicker .5s ease-in-out infinite alternate}
+@keyframes flicker{to{transform:scaleY(1.25) skewX(4deg);fill:#FFD60A}}
+.puff.burnt{--smoke-dark:#111;--smoke-light:#4a4a4a}
+.puff.rainbow{filter:none}
+.smoketint{display:none}
+.still .smoketint{display:inline}
+.tent{transform-box:fill-box;transform-origin:50% 100%;animation:tentacle 1.6s ease-in-out infinite alternate}
+@keyframes tentacle{from{transform:rotate(-4deg)}to{transform:rotate(5deg)}}
+.tent-edge{fill:none;stroke:#3E1652;stroke-width:14;stroke-linecap:round}
+.tent-arm{fill:none;stroke:#9B4FC4;stroke-width:11;stroke-linecap:round}
+.tent-sucker{fill:none;stroke:#F0D4FA;stroke-width:3.6;stroke-linecap:round;stroke-dasharray:0 8}
+.sh-bob.rocked{animation:rock 1.1s ease-in-out infinite}
+@keyframes rock{25%{transform:rotate(-4deg)}75%{transform:rotate(4deg)}}
+.raincloud ellipse{fill:#5B6675}
+.drip{stroke:#9CC7E8;stroke-width:2;stroke-linecap:round;animation:drip .6s linear infinite}
+@keyframes drip{from{transform:translateY(-4px);opacity:1}to{transform:translateY(14px);opacity:0}}
+.gw{fill:#fff;stroke:#4A5868;stroke-width:1.1;stroke-linejoin:round} .gt{fill:#2E3A46}
+.gullraid{animation:gullraid 4.5s ease-in-out infinite}
+@keyframes gullraid{0%{transform:translate(50px,-50px);opacity:0}15%{opacity:1}30%,45%{transform:translate(0,0)}85%{opacity:1}100%{transform:translate(-110px,-80px);opacity:0}}
+.sharkswim{transform-box:fill-box;transform-origin:center;animation:swim 7s linear infinite}
+@keyframes swim{0%{transform:translateX(-10px) scaleX(1)}46%{transform:translateX(160px) scaleX(1)}50%{transform:translateX(160px) scaleX(-1)}96%{transform:translateX(-10px) scaleX(-1)}100%{transform:translateX(-10px) scaleX(1)}}
+.wake{fill:none;stroke:#fff;stroke-width:2.5;stroke-linecap:round;opacity:.9}
+.blk{animation:blk 4s linear both}
+@keyframes blk{0%{opacity:0}8%{opacity:1}85%{opacity:1}100%{opacity:0}}
+.jet{fill:none;stroke:#5CC0F0;stroke-width:6;stroke-linecap:round;stroke-dasharray:10 6;animation:jet .5s linear infinite}
+@keyframes jet{to{stroke-dashoffset:-16}}
+.soot{fill:#4a4a4a;opacity:0;transform-box:fill-box;transform-origin:center;animation:soot 1.2s ease-out infinite}
+@keyframes soot{0%{opacity:.85;transform:scale(.4)}100%{opacity:0;transform:translate(-6px,-14px) scale(1.7)}}
+.umbrella{transform-box:fill-box;transform-origin:50% 100%;animation:umbrella 4s ease-out both}
+@keyframes umbrella{0%{opacity:0;transform:scale(.3)}10%{opacity:1;transform:scale(1)}85%{opacity:1}100%{opacity:0}}
+.bub{fill:rgba(160,220,255,.22);stroke:#9EDCF5;stroke-width:2.5} .bubshine{fill:none;stroke:#fff;stroke-width:3;stroke-linecap:round;opacity:.8}
+.bubblepop{transform-box:fill-box;transform-origin:center;animation:bubble 4s ease-out both}
+@keyframes bubble{0%{opacity:0;transform:scale(.2)}12%{opacity:1;transform:scale(1)}88%{opacity:1;transform:scale(1)}94%{opacity:.7;transform:scale(1.12)}100%{opacity:0;transform:scale(1.3)}}
+.giftpop{transform-box:fill-box;transform-origin:50% 100%;animation:fxpop .5s ease-out both}
+.candle{transform-box:fill-box;transform-origin:50% 100%;animation:flicker .4s ease-in-out infinite alternate}
+.petal{animation:petal 3s ease-in infinite}
+@keyframes petal{from{transform:translateY(0);opacity:1}to{transform:translate(-20px,46px);opacity:0}}
+.bottlebob{transform-box:fill-box;transform-origin:center;animation:bottle 1.8s ease-in-out infinite alternate}
+@keyframes bottle{from{transform:translateY(1px) rotate(-8deg)}to{transform:translateY(-4px) rotate(8deg)}}
+.teddywave{transform-box:fill-box;transform-origin:50% 100%;animation:wave 1.2s ease-in-out infinite alternate}
+@keyframes wave{to{transform:rotate(-12deg)}}
+.confetti{opacity:0;animation:confetti 1.4s ease-out both}
+@keyframes confetti{from{opacity:1}to{transform:translate(var(--x),-36px) rotate(160deg);opacity:0}}
+.minifw{opacity:0;transform-box:fill-box;transform-origin:center;animation:minifw 2.2s ease-out infinite}
+@keyframes minifw{0%{opacity:0;transform:scale(.3)}15%{opacity:1}100%{opacity:0;transform:scale(1.15)}}
+.sparkle{transform-box:fill-box;transform-origin:center;animation:sparkle 1.4s ease-in-out infinite}
+@keyframes sparkle{50%{transform:scale(.3) rotate(45deg);opacity:.3}}
+.glint{animation:glint 2.4s ease-in-out infinite}
+@keyframes glint{0%,60%,100%{opacity:0}75%{opacity:1}}
+.disco{fill:var(--c);stroke:#fff;stroke-width:1;animation:disco .8s ease-in-out infinite alternate}
+@keyframes disco{to{opacity:.3}}
+.discorays{transform-box:fill-box;transform-origin:center;animation:spin 3s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.parrotbob{transform-box:fill-box;transform-origin:50% 100%;animation:wave 2s ease-in-out infinite alternate}
+.emote{transform-box:fill-box;transform-origin:50% 100%;animation:fxpop .3s ease-out both}
+/* After the shorthands above, so it wins: per-item stagger (--d) minus the effect's age */
+.fxl *{animation-delay:calc(var(--d,0s) - var(--age,0s))}
 /* Sun: a breathing glow and warm rings rippling outward */
 .hs-glow{transform-box:fill-box;transform-origin:center;animation:breathe 4.5s ease-in-out infinite}
 @keyframes breathe{50%{transform:scale(1.12);opacity:.38}}
@@ -170,7 +250,7 @@ body.og .puff{display:none} /* smoke would drift over the tagline */
 .flagbtn span{overflow:hidden;text-overflow:ellipsis;max-width:100%;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
 .flagbtn[aria-pressed="true"]{box-shadow:inset 0 0 0 3px var(--ink)}
 .flaggrid>p{grid-column:1/-1}
-.toast{position:fixed;left:50%;top:calc(14px + env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:30;margin:0;padding:10px 16px;border-radius:14px;background:var(--banana);color:var(--banana-ink);font-weight:800;box-shadow:0 6px 18px rgba(0,0,0,.2);animation:pop .3s ease-out both;white-space:nowrap}
+.toast{max-width:calc(100vw - 32px);width:max-content;text-align:center;position:fixed;left:50%;top:calc(14px + env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:30;margin:0;padding:10px 16px;border-radius:14px;background:var(--banana);color:var(--banana-ink);font-weight:800;box-shadow:0 6px 18px rgba(0,0,0,.2);animation:pop .3s ease-out both}
 .flagfound{grid-column:1/-1;margin:4px 0 0;padding:8px 12px;border-radius:12px;background:var(--banana);color:var(--banana-ink);font-weight:800;text-align:center;animation:pop .3s ease-out both}
 .flaghead{margin:8px 0 0;font-weight:800;font-size:.85rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
 .credits{margin-top:14px}.credits ul{padding-left:18px;margin:6px 0 0}.credits a{color:inherit}
@@ -323,7 +403,9 @@ summary{cursor:pointer;font-weight:600;color:var(--muted);min-height:44px;displa
 .battle.focus p{background:#4A5566}
 .party-banner{position:absolute;left:50%;top:16px;transform:translateX(-50%);width:min(92vw,420px);background:var(--surface);color:var(--ink);
   border-radius:16px;padding:12px 16px;font-weight:800;text-align:center;box-shadow:0 6px 24px rgba(0,0,0,.25)}
-@media (prefers-reduced-motion:reduce){.reveal li,.sh-bob,.sh-wave,.sh-float,.sh-wave-flag,.wiggle,.hs-sway,.hs-crown,.hs-birdfly,.hs-glow,.hs-star,.bongo-bob,.bongo-talk{animation:none}.hs-heat{display:none}.puff{display:none}}
+@media (prefers-reduced-motion:reduce){.reveal li,.sh-bob,.sh-wave,.sh-float,.sh-wave-flag,.wiggle,.hs-sway,.hs-crown,.hs-birdfly,.hs-glow,.hs-star,.bongo-bob,.bongo-talk,.players li.aim{animation:none}.hs-heat{display:none}.puff{display:none}
+  .flame,.tent,.sh-bob.rocked,.drip,.gullraid,.sharkswim,.petal,.bottlebob,.teddywave,.confetti,.minifw,.sparkle,.glint,.disco,.discorays,.parrotbob,
+  .jet,.soot,.blk,.umbrella,.bubblepop,.giftpop,.candle,.emote{animation:none}.minifw,.glint{opacity:1}.soot{opacity:.6}.confetti{opacity:0}.smoketint{display:inline}}
 </style>
 </head>
 <body>
@@ -350,7 +432,7 @@ summary{cursor:pointer;font-weight:600;color:var(--muted);min-height:44px;displa
 <script src="/digits.js"></script>
 <script>
 const GOAL = 200, MAX_PLAYERS = 6;
-const S = { strokes: [], drawing: false, pendingRender: false, read: null, tauntBook: null, hull: 'navy', cabin: 'white', flag: '', flagSheet: false, flagQuery: '', countries: null, code: null, room: null, es: null, nick: '', joinCode: '', bidDraft: '', error: '', busy: false, sheetFor: null, seen: 0, scores: null, rivals: null, rivalHi: null };
+const S = { shopOn: true, shopSheet: null, shopTab: 'sabotage', targeting: null, catalog: null, seenFx: new Set(), fxSeeded: false, strokes: [], drawing: false, pendingRender: false, read: null, tauntBook: null, hull: 'navy', cabin: 'white', flag: '', flagSheet: false, flagQuery: '', countries: null, code: null, room: null, es: null, nick: '', joinCode: '', bidDraft: '', error: '', busy: false, sheetFor: null, seen: 0, scores: null, rivals: null, rivalHi: null };
 const app = document.getElementById('app');
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const ls = { get(k){try{return localStorage.getItem(k)}catch(e){return null}}, set(k,v){try{localStorage.setItem(k,v)}catch(e){}}, del(k){try{localStorage.removeItem(k)}catch(e){}} };
@@ -511,23 +593,73 @@ function shipBody(f, key = '', look = {}, mine = false) {
     for (let c = 0; c < m; c++) cargo += bunch(x0 + c * HOLD.w, deckAt(x0 + c * HOLD.w + HOLD.w / 2) + SINK - HOLD.bh - (HOLD.rows + t) * HOLD.h, 50 + t * 7 + c);
     left -= m;
   }
+  // Shop effects and bling (purely visual). Victory/storm scenes may pass a look without them.
+  const fx = look.fx || { sab: [], blocked: [], gifts: [], emote: null, age: {} }, bling = look.bling || [];
+  const has = k => fx.sab.includes(k), gift = k => fx.gifts.includes(k), blocked = k => fx.blocked.includes(k);
+  // Each effect's art sits in a group carrying its age, so one-shot animations resume rather than replay on re-render
+  const aged = (k, art, at = '') => `<g${at} style="--age:${((fx.age || {})[k] ?? 99).toFixed(2)}s">${art}</g>`;
+  const burnt = has('bomb'), rainbow = !burnt && bling.includes('rainbow');
+  const RB = ['#FF3E8A', '#FF9F1C', '#FFD60A', '#2BB673', '#3FD0E0', '#8E5BD8'];
   // Funnel smoke, individual per ship: heavier loads puff more, bigger and darker
   const srnd = rng(key + '|smoke'), puffs = 5 + Math.round(Math.min(f, 1.2) * 2.5), beat = 2.8 + srnd() * 1.4;
   let smoke = '';
   for (let i = 0; i < puffs; i++) {
     const t = beat + srnd() * 0.8, d = -(i / puffs) * t - srnd() * 0.4;
-    smoke += `<circle class="puff" cx="${(34 + srnd() * 2).toFixed(1)}" cy="2" r="${(3 + srnd() + Math.min(f, 1.2)).toFixed(1)}" style="--t:${t.toFixed(2)}s;--d:${d.toFixed(2)}s;--dx:${(-16 - srnd() * 20).toFixed(0)}px;--dy:${(-24 - srnd() * 16).toFixed(0)}px;--s:${(2.8 + srnd() * 2).toFixed(2)};--o:${(0.6 + srnd() * 0.15 + Math.min(f, 1) * 0.15).toFixed(2)}"/>`;
+    smoke += `<circle class="puff${burnt ? ' burnt' : rainbow ? ' rainbow' : ''}" cx="${(34 + srnd() * 2).toFixed(1)}" cy="2" r="${(3 + srnd() + Math.min(f, 1.2)).toFixed(1)}" style="--t:${t.toFixed(2)}s;--d:${d.toFixed(2)}s;--dx:${(-16 - srnd() * 20).toFixed(0)}px;--dy:${(-24 - srnd() * 16).toFixed(0)}px;--s:${(2.8 + srnd() * 2).toFixed(2)};--o:${rainbow ? '.9' : (0.6 + srnd() * 0.15 + Math.min(f, 1) * 0.15).toFixed(2)}${rainbow ? `;--smoke-dark:${RB[i % 6]};--smoke-light:${RB[(i + 2) % 6]}` : ''}"/>`;
   }
+  // Still tiles and reduced motion hide the puffs, so a burnt or rainbow ship gets a small static plume instead
+  const tint = burnt ? ['#1b1b1b', '#333', '#4a4a4a'] : rainbow ? ['#FF3E8A', '#FFD60A', '#3FD0E0'] : null;
+  if (tint) smoke += `<g class="smoketint">${[[35, -3, 5.5], [28, -11, 7], [18, -17, 8]].map(([x, y, r], i) => `<circle cx="${x}" cy="${y}" r="${r}" fill="${tint[i]}" opacity=".9"/>`).join('')}</g>`;
   const sink = (-6 + Math.min(f, 1) * 42 + Math.min(Math.max(f - 1, 0), 0.6) * 10).toFixed(1), tilt = over ? 1.8 : 0;
+  // On deck, behind the hull (drawn right after the cargo, in front of it), each in its own spot so three gifts
+  // never stack: cake 60-100, gift box 104-134, bouquet 139-165, diamond 162-198, teddy on the cabin roof,
+  // and the parrot perched where the boom meets the cargo mast (128,16).
+  const deckArt = (gift('cake') ? aged('cake', `<g class="giftpop"><rect x="60" y="34" width="40" height="15" rx="3" fill="#FFC4DA" stroke="#D6457A" stroke-width="1.2"/><rect x="66" y="21" width="28" height="14" rx="3" fill="#fff" stroke="#D6457A" stroke-width="1.2"/><path d="M60 38q5 5 10 0t10 0 10 0 10 0" stroke="#fff" stroke-width="2.5" fill="none"/><circle cx="80" cy="34" r="2.6" fill="#E0505B"/>${[72, 80, 88].map(x => `<rect x="${x - 1.3}" y="13" width="2.6" height="8" fill="#3FD0E0"/><ellipse class="candle" cx="${x}" cy="10" rx="2" ry="3.2" fill="#FFB020"/>`).join('')}</g>`) : '')
+    + (gift('giftbox') ? aged('giftbox', `<g class="giftpop"><rect x="104" y="25" width="30" height="24" rx="2" fill="#3FD0E0" stroke="#1E8C99" stroke-width="1.2"/><rect x="102" y="20" width="34" height="7" rx="2" fill="#6FE6F2" stroke="#1E8C99" stroke-width="1.2"/><path d="M119 20v29" stroke="#FF3E8A" stroke-width="5"/><path d="M119 20c-10-10-17-2-8 1M119 20c10-10 17-2 8 1" stroke="#FF3E8A" stroke-width="3" fill="none"/></g>${Array.from({ length: 10 }, (_, i) => `<rect class="confetti" style="--d:${(i * .08).toFixed(2)}s;--x:${(i - 4.5) * 9}px" x="117" y="14" width="4" height="4" fill="${RB[i % 6]}"/>`).join('')}`) : '')
+    + (gift('bouquet') ? aged('bouquet', `<g class="giftpop"><path d="M145 22l-7-5M163 22l7-5" stroke="#2A9457" stroke-width="3" stroke-linecap="round"/><path d="M142 20 151 48h3L164 20Z" fill="#FFF3B0" stroke="#C9A227" stroke-width="1.2"/>${[[143, 18, '#E0505B'], [152, 12, '#FF6B8A'], [162, 18, '#E0505B'], [147, 8, '#FFD60A'], [158, 7, '#FF9F1C']].map(([x, y, c]) => `<circle cx="${x}" cy="${y}" r="5.2" fill="${c}"/><circle cx="${x}" cy="${y}" r="1.8" fill="#fff"/>`).join('')}</g>${[0, 1, 2, 3].map(i => `<circle class="petal" style="--d:${i * .7}s" cx="${136 + i * 9}" cy="12" r="2.6" fill="#FF6B8A"/>`).join('')}`) : '')
+    + (gift('diamond') ? aged('diamond', `<g class="giftpop"><path d="M162 22l9-12h18l9 12-18 26Z" fill="#BDE4FF" stroke="#3B88C4" stroke-width="1.5"/><path d="M162 22h36M171 10l4 12 5-12 5 12 4-12M175 22l5 26 5-26" stroke="#3B88C4" stroke-width="1" fill="none"/><path class="glint" d="M168 19l7-7" stroke="#fff" stroke-width="3" stroke-linecap="round"/></g>${[[200, 6, 0], [160, 6, .5], [196, 32, 1]].map(([x, y, d]) => `<path class="sparkle" style="--d:${d}s" d="M${x} ${y - 6}l1.8 4.2 4.2 1.8-4.2 1.8-1.8 4.2-1.8-4.2-4.2-1.8 4.2-1.8Z" fill="#fff" stroke="#9ED0F5" stroke-width=".6"/>`).join('')}`) : '')
+    + (gift('teddy') ? aged('teddy', `<g class="teddywave"><circle cx="43" cy="8" r="3.6" fill="#B07A45"/><circle cx="57" cy="8" r="3.6" fill="#B07A45"/><circle cx="50" cy="14" r="8.5" fill="#B07A45"/><circle cx="50" cy="17" r="3.4" fill="#E9C9A0"/><circle cx="47" cy="12" r="1.1" fill="#111"/><circle cx="53" cy="12" r="1.1" fill="#111"/><circle cx="50" cy="16" r="1.2" fill="#111"/></g>`) : '')
+    + (bling.includes('parrot') ? `<g transform="translate(0 4)"><g class="parrotbob"><path d="M124 8l-6 18 4 1 6-14Z" fill="#1F6FD1"/><ellipse cx="128" cy="2" rx="6.5" ry="10" fill="#E0505B"/><path d="M124-3q-4 8 1 14l5-4Z" fill="#FFD60A"/><path d="M125 7l-3 6 5-3Z" fill="#1F6FD1"/><circle cx="131" cy="-9" r="6" fill="#E0505B"/><circle cx="133" cy="-10" r="2.2" fill="#fff"/><circle cx="133.6" cy="-10" r="1" fill="#111"/><path d="M136-11q6 1 3 7l-3-3Z" fill="#FFD60A" stroke="#5B4214" stroke-width=".6"/><path d="M125 12h6" stroke="#5B4214" stroke-width="1.6" stroke-linecap="round"/></g></g>` : '');
+  // In front of the hull: lei and disco lights on the rail, fire on deck, kraken arms gripping the hull,
+  // thieving gulls over the cargo and the hose / bubble blocks
+  const rail = x => deckAt(x) + 1;
+  let lei = '';
+  for (let x0 = 12, i = 0; x0 < 196; x0 += 23.5) {
+    const x1 = x0 + 23.5, y0 = rail(x0), y1 = rail(x1), cx = (x0 + x1) / 2, cy = (y0 + y1) / 2 + 12;
+    lei += `<path d="M${x0} ${y0.toFixed(1)}Q${cx} ${cy.toFixed(1)} ${x1} ${y1.toFixed(1)}" stroke="#2BB673" stroke-width="1.5" fill="none"/>`;
+    for (const t of [.2, .5, .8]) {
+      const bx = (1 - t) ** 2 * x0 + 2 * t * (1 - t) * cx + t * t * x1, by = (1 - t) ** 2 * y0 + 2 * t * (1 - t) * cy + t * t * y1;
+      lei += `<circle cx="${bx.toFixed(1)}" cy="${by.toFixed(1)}" r="3.8" fill="${['#FF3E8A', '#FFD60A', '#FF9F1C', '#fff'][i++ % 4]}"/><circle cx="${bx.toFixed(1)}" cy="${by.toFixed(1)}" r="1.2" fill="#E0505B"/>`;
+    }
+  }
+  const cargoTop = (n ? slotY(n - 1) : deckAt(140) - 4) - (over ? Math.ceil(over / 6) * HOLD.h : 0);
+  const GULL = `<path class="gw" d="M-1-2Q-9-16-21-12Q-11-8-3 1Z"/><path class="gt" d="M-21-12Q-17-15-13-14L-15-10Z"/><path class="gw" d="M1-2Q9-16 21-12Q11-8 3 1Z"/><path class="gt" d="M21-12Q17-15 13-14L15-10Z"/><ellipse class="gw" cx="0" cy="0" rx="8" ry="4.5"/><circle class="gw" cx="8" cy="-3" r="3.6"/><path d="M11-3.5l5 1.2-5 1.2Z" fill="#FF9F1C"/><circle cx="9" cy="-4" r=".9" fill="#111"/><use href="#nana" x="-8" y="3" width="18" height="9"/>`;
+  const TENT = ['M6 112C-8 86 0 62 14 48c7-7 17-2 12 7', 'M74 114C62 88 76 64 86 42c5-11 18-11 17 1', 'M150 116C138 90 160 70 152 28c-2-11 9-15 13-6', 'M214 110C228 86 216 62 204 50c-6-6-15-1-10 7'];
+  const frontArt = (gift('lei') ? aged('lei', `<g class="giftpop">${lei}</g>`) : '')
+    + (bling.includes('disco') ? `<path d="M12 ${rail(12) + 4}${[33, 54, 75, 96, 117, 138, 159, 180, 201].map(x => `Q${x - 10.5} ${(rail(x) + 9).toFixed(1)} ${x} ${(rail(x) + 4).toFixed(1)}`).join('')}" stroke="#2E3A46" stroke-width="1" fill="none"/>${[12, 33, 54, 75, 96, 117, 138, 159, 180, 201].map((x, i) => `<circle class="disco" style="--d:${(i * .13).toFixed(2)}s;--c:${RB[i % 6]}" cx="${x}" cy="${(rail(x) + 5).toFixed(1)}" r="4.6"/>`).join('')}<path d="M158 26v5" stroke="#5B6675" stroke-width="1.4"/><circle cx="158" cy="39" r="8.5" fill="#C9D3DD" stroke="#7D8A97"/><path d="M150 36h16M150 42h16M158 30.5v17M153 32q-3 7 0 14M163 32q3 7 0 14" stroke="#8A97A4" stroke-width=".8" fill="none"/><g class="discorays">${[0, 60, 120, 180, 240, 300].map((a, i) => { const c = Math.cos(a * Math.PI / 180), s = Math.sin(a * Math.PI / 180); return `<path d="M${(158 + c * 11).toFixed(1)} ${(39 + s * 11).toFixed(1)}L${(158 + c * 18).toFixed(1)} ${(39 + s * 18).toFixed(1)}" stroke="${RB[i]}" stroke-width="2.4" stroke-linecap="round"/>`; }).join('')}</g>` : '')
+    + (has('bomb') ? `<g class="fire">${[96, 122, 148].map((x, i) => `<path class="flame" style="--d:${(i * .2).toFixed(1)}s" d="M${x} ${(deckAt(x + 4) + 1).toFixed(1)}c-6-8 0-14 4-22 2 8 10 12 4 22Z"/>`).join('')}</g>` : '')
+    + (has('kraken') ? aged('kraken', TENT.map((d, i) => `<g class="tent" style="--d:${(-i * .35).toFixed(2)}s"><path class="tent-edge" d="${d}"/><path class="tent-arm" d="${d}"/><path class="tent-sucker" d="${d}"/></g>`).join('')) : '')
+    + (has('gulls') ? aged('gulls', [[96, 0], [140, .9], [176, 1.8]].map(([x, d]) => `<g transform="translate(${x} ${(cargoTop - 4).toFixed(1)}) scale(1.25)"><g class="gullraid" style="--d:${d}s">${GULL}</g></g>`).join('')) : '')
+    + (blocked('hose') ? aged('hose', `<g class="blk"><path d="M58 50c-7 0-8-9-1-9s10 3 5 7" stroke="#2A9457" stroke-width="3.5" fill="none"/><path d="M62 45l6-7" stroke="#2A9457" stroke-width="4.5" stroke-linecap="round"/><path class="jet" d="M68 38Q100-4 134 34"/><circle cx="140" cy="40" r="8" fill="#1b1b1b"/><path d="M144 33q4-5 8-3" stroke="#8B5A2B" stroke-width="2" fill="none"/>${[[146, 28, 6, 0], [137, 26, 5, .4], [151, 23, 4, .8]].map(([x, y, r, d]) => `<circle class="soot" style="--d:${d}s" cx="${x}" cy="${y}" r="${r}"/>`).join('')}</g>`) : '')
+    + (blocked('bubble') ? aged('bubble', `<g class="bubblepop"><circle class="bub" cx="110" cy="50" r="70"/><path class="bubshine" d="M62 24a58 58 0 0 1 36-30"/></g>`) : '');
+  // In the scene, not riding with the ship (so they stay in the sea and the sky however deep it sits):
+  // a circling shark and a message in a bottle at the waterline, a rain cloud, an umbrella, fireworks and emotes
+  const emoteText = fx.emote && { honk: '📯 HONK!', ha: 'Ha!', oops: 'Oops', ouch: 'Ouch' }[fx.emote];
+  const sceneArt = (has('shark') ? aged('shark', `<g class="sharkswim"><path class="wake" d="M4 104q-10-3-22 0"/><path d="M6 104Q18 92 20 66Q32 88 48 104Z" fill="#5A6B7D" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/><path class="wake" d="M48 104q6-3 11-1"/></g>`) : '')
+    + (gift('bottle') ? aged('bottle', `<g class="giftpop"><g class="bottlebob"><rect x="150" y="97" width="30" height="12" rx="6" fill="#9ED9C4" fill-opacity=".92" stroke="#3F8F7E" stroke-width="1.4"/><rect x="179" y="100" width="9" height="6" rx="1.5" fill="#9ED9C4" stroke="#3F8F7E" stroke-width="1.2"/><rect x="187" y="100.5" width="5" height="5" rx="1" fill="#8B5A2B"/><rect x="155" y="100" width="18" height="6" rx="1" fill="#FFF6D6" stroke="#C9A227" stroke-width=".6"/><path d="M154 99.5h18" stroke="#fff" stroke-width="1.2" stroke-linecap="round" opacity=".8"/></g></g>`) : '')
+    + (has('cloud') ? `<g class="raincloud"><ellipse cx="110" cy="2" rx="40" ry="10"/><ellipse cx="94" cy="-4" rx="18" ry="10"/><ellipse cx="124" cy="-5" rx="22" ry="12"/>${[80, 96, 112, 128, 144].map((x, i) => `<path class="drip" style="--d:${(i * .13).toFixed(2)}s" d="M${x} 12l-3 10"/>`).join('')}</g>` : '')
+    + (blocked('umbrella') ? aged('umbrella', `<g class="umbrella"><path d="M80 14a30 18 0 0 1 60 0Z" fill="#FF3E8A"/><path d="M110 14v26" stroke="#5B4214" stroke-width="2"/></g>`) : '')
+    + (gift('fireworks') ? aged('fireworks', [[58, 4, '#FF3E8A', '#FFD60A'], [162, -2, '#3FD0E0', '#FF9F1C']].map(([x, y, c, c2], i) => `<g class="minifw" style="--d:${i * .9}s">${Array.from({ length: 12 }, (_, k) => { const a = k * Math.PI / 6, cs = Math.cos(a), sn = Math.sin(a); return `<path d="M${(x + cs * 5).toFixed(1)} ${(y + sn * 5).toFixed(1)}L${(x + cs * 19).toFixed(1)} ${(y + sn * 19).toFixed(1)}" stroke="${k % 2 ? c2 : c}" stroke-width="2.6" stroke-linecap="round"/><circle cx="${(x + cs * 23).toFixed(1)}" cy="${(y + sn * 23).toFixed(1)}" r="2" fill="${k % 2 ? c : c2}"/>`; }).join('')}<circle cx="${x}" cy="${y}" r="3" fill="#fff"/></g>`).join('')) : '')
+    + (emoteText ? aged('emote', `<g class="emote"><rect x="${fx.emote === 'honk' ? 60 : 80}" y="-16" width="${fx.emote === 'honk' ? 100 : 60}" height="22" rx="11" fill="#fff" stroke="#0B3954" stroke-width="1.5"/><text x="110" y="0" text-anchor="middle" font-size="12" font-weight="800" fill="#0B3954">${emoteText}</text></g>`) : '');
   const ports = [44, 64, 84, 104, 124, 144, 164, 184].map(x => `<circle class="sh-port" cx="${x}" cy="64" r="2.4"/>`).join('');
-  const ship = `<g transform="translate(0 ${sink}) rotate(${tilt} 110 80)"><g class="sh-bob">
+  const ship = `<g transform="translate(0 ${sink}) rotate(${tilt} 110 80)"><g class="sh-bob${has('kraken') ? ' rocked' : ''}">
     <path class="sh-mast" d="M128 50V12M128 16 158 26"/>
     <rect class="sh-cabin" x="16" y="22" width="40" height="34" rx="3"/>
     <rect class="sh-win" x="21" y="28" width="30" height="6" rx="2"/><rect class="sh-win" x="21" y="39" width="30" height="5" rx="2"/>
     <path class="sh-funnel" d="M25 22 27 2H43L45 22Z"/><rect class="sh-band" x="26.5" y="7" width="17" height="5"/>${smoke}
-    ${cargo}
+    ${cargo}${deckArt ? `<g class="fxl">${deckArt}</g>` : ''}
     <path class="sh-mast" d="M203 54V3"/>${mastFlag(look.flag)}
-    <path class="sh-hull" d="M6 52 212 45 200 82H22Z"/><path class="sh-keel" d="M22 82H200L192 100H30Z"/><path class="sh-stripe" d="M22 82H200"/>${ports}
+    <path class="sh-hull" d="M6 52 212 45 200 82H22Z"/><path class="sh-keel" d="M22 82H200L192 100H30Z"/><path class="sh-stripe" d="M22 82H200"/>${ports}${frontArt ? `<g class="fxl">${frontArt}</g>` : ''}
     ${mine ? '<rect class="flag-hit" x="182" y="-12" width="38" height="36" onclick="openFlags(event)"/>' : ''}</g></g>`;
   // Overfull ships shed a random handful of bananas into the sea around them
   const rnd = rng(key + '|' + Math.round(f * GOAL));
@@ -537,6 +669,7 @@ function shipBody(f, key = '', look = {}, mine = false) {
     const w = 13 + rnd() * 7, x = rnd() * (214 - w), y = 98 + rnd() * 13, a = Math.round(rnd() * 140 - 70);
     spill += `<g class="sh-float" style="animation-delay:${(-rnd() * 3).toFixed(2)}s;animation-duration:${(2.6 + rnd() * 1.6).toFixed(2)}s"><use href="#nana" x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${w.toFixed(1)}" height="${(w / 2).toFixed(1)}" transform="rotate(${a} ${(x + w / 2).toFixed(1)} ${(y + w / 4).toFixed(1)})"/></g>`;
   }
+  if (sceneArt) spill += `<g class="fxl">${sceneArt}</g>`;
   return { ship, spill };
 }
 // Hull colours players pick on the home screen; keys match HULLS in server.js.
@@ -545,12 +678,36 @@ const HULLS = { navy: ['Navy', '#1D4E89'], coral: ['Coral', '#E0505B'], mango: [
 // Cabin colours players can pick; keys match CABINS in players.js.
 const CABINS = { white: ['White', '#FFFFFF'], sand: ['Sand', '#F6DFB0'], sunshine: ['Sunshine', '#FFE873'], mint: ['Mint', '#BFF0D4'],
   sky: ['Sky', '#BDE4FF'], pink: ['Flamingo', '#FFC4DA'] };
-// A ship's look: hull and cabin colour (CSS variables on its <svg>) and the flag at its masthead.
-const look = p => ({ hull: p.hull, cabin: p.cabin, flag: p.flag });
+// When this browser first drew each effect, so an entrance animation plays once and later renders show it settled.
+// (Local time, not the server's `at`, so a skewed clock can't skip or stall them.)
+const fxFirstSeen = new Map();
+function fxAge(e) {
+  const k = `${e.kind}|${e.from}|${e.target || ''}|${e.at}`, now = Date.now();
+  if (!fxFirstSeen.has(k)) { if (fxFirstSeen.size > 300) fxFirstSeen.clear(); fxFirstSeen.set(k, now); }
+  return (now - fxFirstSeen.get(k)) / 1000;
+}
+// What is happening to one captain's ship right now, from the room's live effects (nothing when the shop is off).
+// `age` maps each drawn item (sabotage kind, blocking item, gift kind or 'emote') to seconds since it first showed.
+function fxFor(id) {
+  const out = { sab: [], blocked: [], gifts: [], emote: null, age: {} };
+  for (const e of (S.room && S.room.shop && S.room.effects) || []) {
+    if (e.kind === 'emote') { if (e.from === id) { out.emote = e.emote; out.age.emote = fxAge(e); } continue; }
+    if (e.target !== id) continue;
+    const kind = S.catalog && S.catalog.catalog[e.kind] && S.catalog.catalog[e.kind].kind;
+    const k = e.blocked || e.kind;
+    if (e.blocked) out.blocked.push(e.blocked); else if (kind === 'gift') out.gifts.push(e.kind); else out.sab.push(e.kind);
+    out.age[k] = Math.min(out.age[k] ?? Infinity, fxAge(e));
+  }
+  return out;
+}
+// A ship's look: hull and cabin colour (CSS variables on its <svg>), the flag at its masthead, worn bling and live effects.
+const look = p => ({ hull: p.hull, cabin: p.cabin, flag: p.flag, bling: S.room && S.room.shop === false ? [] : p.bling || [],
+  fx: p.id && S.room ? fxFor(p.id) : null });
 const myLook = () => look(S);
 const lookOfId = id => look(pl(id));
 const lookStyle = l => {
-  const v = [HULLS[l.hull] && `--hull:${HULLS[l.hull][1]}`, CABINS[l.cabin] && `--cabin:${CABINS[l.cabin][1]}`].filter(Boolean);
+  const hull = l.bling && l.bling.includes('gold') ? '#D4AF37' : HULLS[l.hull] && HULLS[l.hull][1];
+  const v = [hull && `--hull:${hull}`, CABINS[l.cabin] && `--cabin:${CABINS[l.cabin][1]}`].filter(Boolean);
   return v.length ? ` style="${v.join(';')}"` : '';
 };
 function shipSVG(fill, label, key, look = {}, mine) {
@@ -594,7 +751,7 @@ function heroScene(fill = 0.75, key = 'hero', look = {}, mine) {
 // ---------- rooms ----------
 function createRoom() {
   if (!S.nick.trim()) { S.error = 'Pick a name first.'; return render(); }
-  act(async () => { const { code } = await api('create', { nick: S.nick, ...myLook() }); connect(code); });
+  act(async () => { const { code } = await api('create', { nick: S.nick, ...myLook(), shop: S.shopOn }); connect(code); });
 }
 function enterRoom(code, silent) {
   code = String(code || '').trim().toUpperCase();
@@ -608,6 +765,7 @@ function enterRoom(code, silent) {
 function connect(code) {
   if (S.es) S.es.close();
   S.code = code; ls.set('pb_code', code); ls.set('pb_nick', S.nick);
+  S.fxSeeded = false; // the first view on this connection seeds S.seenFx without toasts
   S.es = new EventSource('/events?room=' + code + '&token=' + token());
   S.es.onopen = () => { if (S.reconnecting) { S.reconnecting = false; render(); } };
   S.es.onmessage = ev => { S.reconnecting = false; S.room = JSON.parse(ev.data); onChange(); };
@@ -629,7 +787,7 @@ function reconnect(code, attempt = 0) {
     }
   }, Math.min(15000, 1000 * 2 ** attempt));
 }
-function dropRoom() { if (S.es) S.es.close(); S.es = null; S.reconnecting = false; ls.del('pb_code'); S.code = null; S.room = null; S.sheetFor = null; S.bidDraft = ''; loadScores(); loadRivals(); }
+function dropRoom() { if (S.es) S.es.close(); S.es = null; S.reconnecting = false; ls.del('pb_code'); S.code = null; S.room = null; S.sheetFor = null; S.targeting = null; S.shopSheet = null; S.bidDraft = ''; loadScores(); loadRivals(); }
 function leaveRoom() { api('leave').catch(() => {}); dropRoom(); render(); }
 const startGame = () => act(() => api('start'));
 // The phone's share sheet where there is one; otherwise copy the link. The link pre-fills the code (?join=ABCD).
@@ -662,6 +820,10 @@ function onChange() {
   if (r.lastResult && r.lastResult.round > S.seen && S.sheetFor == null) S.sheetFor = r.lastResult.round;
   // Rounds can resolve while a results sheet is still open (e.g. the host skips missing bids): show the latest one.
   if (r.lastResult && S.sheetFor != null && r.lastResult.round > S.sheetFor) S.sheetFor = r.lastResult.round;
+  // A shop switched off, or a sabotage aimed after the game moved on, can no longer be used.
+  if (!r.shop) { S.shopSheet = null; S.targeting = null; }
+  if (S.targeting && r.status !== 'playing' && S.catalog && S.catalog.catalog[S.targeting.item].kind === 'sabotage') S.targeting = null;
+  fxToasts();
   render();
 }
 function closeSheet() { S.seen = S.sheetFor; S.sheetFor = null; S.bidDraft = ''; S.strokes = []; S.read = null; render(); }
@@ -682,7 +844,7 @@ function pressEnd() {
   setTimeout(() => { if (S.pendingRender && !S.drawing && !S.pressing) { S.pendingRender = false; render(); } }, 0); // after the click
 }
 document.addEventListener('pointerdown', e => {
-  if (!e.target.closest || !e.target.closest('button, a, summary, label')) return;
+  if (!e.target.closest || !e.target.closest('button, a, summary, label, [role="button"]')) return;
   S.pressing = true; clearTimeout(pressTimer); pressTimer = setTimeout(pressEnd, 1500);
 }, true);
 document.addEventListener('pointerup', pressEnd, true);
@@ -699,11 +861,12 @@ function render() {
   if (active) { const el = document.getElementById(active); if (el) { el.focus(); try { el.setSelectionRange(caret, caret); } catch (e) {} } }
 }
 function view() {
-  if (!S.code || !S.room) return homeView() + flagSheetView();
+  if (!S.code || !S.room) return homeView() + flagSheetView() + shopView();
   const body = S.room.status === 'lobby' ? lobbyView() : S.room.status === 'over' ? overView() : gameView();
   return `<div class="topbar"><span class="muted small">Room <span class="code">${esc(S.code)}</span></span><button class="link" onclick="leaveRoom()">Leave</button></div>`
+    + (S.targeting ? `<p class="aimbar">Tap a captain's ship below <button class="link" onclick="S.targeting=null;render()">Cancel</button></p>` : '')
     + (S.reconnecting ? `<p class="reconnecting" role="status">Reconnecting to the room<span class="dots"><i>.</i><i>.</i><i>.</i></span></p>` : '')
-    + body + (S.error ? `<p class="err">${esc(S.error)}</p>` : '') + sheetView() + flagSheetView();
+    + body + (S.error ? `<p class="err">${esc(S.error)}</p>` : '') + sheetView() + flagSheetView() + shopView();
 }
 function homeView() {
   return `<header class="harbor">
@@ -725,6 +888,7 @@ function homeView() {
   <div class="row"><input id="join" class="text code grow" maxlength="4" value="${esc(S.joinCode)}" oninput="S.joinCode=this.value" placeholder="ABCD" autocapitalize="characters">
   <button onclick="enterRoom(S.joinCode)" ${S.busy?'disabled':''}>Join</button></div>
   <p class="or">or start your own</p>
+  <label class="switch"><input type="checkbox" ${S.shopOn ? 'checked' : ''} onchange="S.shopOn=this.checked;ls.set('pb_shop',this.checked?'on':'off')"> Shop and effects</label>
   <button class="primary wide" onclick="createRoom()" ${S.busy?'disabled':''}>Create a room</button>
   ${S.error ? `<p class="err" style="margin-top:12px">${esc(S.error)}</p>` : ''}
   <div class="divider"></div>
@@ -799,7 +963,11 @@ function lobbyView() {
     <div class="invite-actions"><button class="share" onclick="shareInvite()">${navigator.share ? 'Share invite' : 'Copy invite link'}</button>
     <button class="share" onclick="copyText(S.code, 'Code copied')">Copy code</button></div>
     ${S.copied ? `<p class="small copied" role="status">${esc(S.copied)}</p>` : ''}</div>
-  <div class="card"><ul class="players">${ps.map((p, i) => `<li>${tile(0, true, p.id, look(p))}<span class="name">${esc(p.nick)}${p.id===S.room.me?' (you)':''}</span><span class="status">${i>=MAX_PLAYERS?'watching':p.id===S.room.hostId?'host · ready':'ready'}</span></li>`).join('')}</ul></div>
+  <div class="card"><ul class="players">${ps.map((p, i) => `<li class="${S.targeting && p.id !== S.room.me ? 'aim' : ''}" ${S.targeting && p.id !== S.room.me ? `onclick="pickTarget('${p.id}')" role="button" tabindex="0"` : ''}>${tile(0, true, p.id, look(p))}<span class="name">${esc(p.nick)}${p.id===S.room.me?' (you)':''}</span><span class="status">${i>=MAX_PLAYERS?'watching':p.id===S.room.hostId?'host · ready':'ready'}</span></li>`).join('')}</ul></div>
+  <p class="small muted shopline">${S.room.isHost
+    ? `<label class="switch"><input type="checkbox" ${S.room.shop ? 'checked' : ''} onchange="setShop(this.checked)"> Shop and effects</label>`
+    : `Shop and effects: <b>${S.room.shop ? 'on' : 'off'}</b>`}</p>
+  ${S.room.shop ? shopButton() : ''}
   <div style="margin-top:16px">${S.room.isHost
     ? `<button class="primary wide" onclick="startGame()" ${n<2||S.busy?'disabled':''}>${n<2?'Need at least 2 players':'Start game with '+Math.min(n,MAX_PLAYERS)}</button>`
     : `<p class="waiting" role="status">Waiting for ${esc(nickOf(S.room.hostId))} to start the game<span class="dots"><i>.</i><i>.</i><i>.</i></span></p>`}</div>`;
@@ -812,8 +980,16 @@ function playersList(withStatus) {
     const taunt = withStatus ? '' : tauntFor(id);
     const st = withStatus ? (pl(id).locked ? `<span class="status ok">Bid locked</span>` : `<span class="status">Thinking…</span>`)
       : taunt ? `<span class="status taunt">“${esc(taunt)}”</span>` : '';
-    return `<li class="${id===r.me?'me':''}">${tile(inv / GOAL, true, id, lookOfId(id))}<span class="name">${esc(nickOf(id))}${id===r.me?' (you)':''}</span><span class="inv">${inv}</span>${st}</li>`;
-  }).join('')}</ul>`;
+    const aimable = S.targeting && id !== r.me && (S.catalog.catalog[S.targeting.item].kind === 'gift' || r.order.includes(r.me));
+    return `<li class="${id===r.me?'me':''}${aimable ? ' aim' : ''}" ${aimable ? `onclick="pickTarget('${id}')" role="button" tabindex="0"` : ''}>${tile(inv / GOAL, true, id, lookOfId(id))}<span class="name">${esc(nickOf(id))}${id===r.me?' (you)':''}</span><span class="inv">${inv}</span>${st}</li>`;
+  }).join('')}${giftWatchers()}</ul>`;
+}
+// While aiming a gift, captains watching the game can receive it too: they get rows of their own.
+function giftWatchers() {
+  const r = S.room;
+  if (!S.targeting || !S.catalog || S.catalog.catalog[S.targeting.item].kind !== 'gift') return '';
+  return r.players.filter(p => p.id !== r.me && !r.order.includes(p.id)).map(p =>
+    `<li class="aim" onclick="pickTarget('${p.id}')" role="button" tabindex="0">${tile(0, true, p.id, look(p))}<span class="name">${esc(p.nick)}</span><span class="status">watching</span></li>`).join('');
 }
 function gameView() {
   const r = S.room;
@@ -836,7 +1012,9 @@ function gameView() {
   return `<div class="potcard"><span class="plate">Round ${r.round}</span>
     <div class="num">${r.pot} 🍌</div><div class="sub">up for auction this round</div></div>
     ${inGame() ? `<div class="myship" role="img" aria-label="Your ship: ${mine} bananas, ${cargoWord(mine / GOAL).toLowerCase()}">${heroScene(mine / GOAL, r.me, lookOfId(r.me), true)}
-    <div class="myship-foot"><span>Your ship<br><b>${cargoWord(mine / GOAL)}</b></span><span class="num">${mine} 🍌</span></div></div>` : ''}
+    <div class="myship-foot"><span>Your ship<br><b>${cargoWord(mine / GOAL)}</b></span><span class="num">${mine} 🍌</span></div></div>
+` : ''}
+    ${S.room.shop && S.room.wallet ? `<div class="walletrow"><span class="coins">🪙 ${S.room.wallet.credits}</span>${shopButton()}</div>` : ''}
     <div style="margin:12px 0 18px">${action}</div>
     <div class="card">${playersList(true)}</div>${skip}
     ${historyView()}`;
@@ -909,6 +1087,8 @@ function overView() {
     <div class="muted">${r.inventories[w[0]]} bananas after ${r.round - 1} rounds</div></div>
     ${tauntFor(r.me) ? `<div class="taunt-me" role="status">${bongoSays(`${flagThumb(flagOf(pl(r.me).flag))}<b>${esc(nickOf(r.me))}</b>, ${r.inventories[r.me]} ${r.inventories[r.me] === 1 ? 'banana' : 'bananas'}. ${esc(tauntFor(r.me))}`, 'smug', 'Ha ha ha!')}</div>` : ''}
     <div class="card" style="margin-top:14px">${playersList(false)}</div>
+    ${r.earned && r.earned[r.me] !== undefined ? bongoSays(`You earned <b>+${r.earned[r.me]} 🪙</b> this game.${S.room.wallet ? ` You now have ${S.room.wallet.credits} 🪙.` : ''}`, 'happy') : ''}
+    ${S.room.shop ? shopButton() : ''}
     ${r.isHost
       ? `<button class="primary wide" style="margin-top:16px" onclick="rematch()" ${S.busy ? 'disabled' : ''}>Rematch!</button>
          <button class="link" style="display:block;margin:6px auto 0" onclick="backToLobby()">Back to the lobby</button>`
@@ -1131,9 +1311,85 @@ function openFlags(e) {
   if (!Array.isArray(S.countries)) { S.countries = null; loadCountries(); }
   render();
 }
+// Toasts show one at a time, each for its usual time; a burst keeps only the newest few.
+const toastQueue = [];
+let toastShowing = false;
 function toast(text) {
+  toastQueue.push(text);
+  if (toastQueue.length > 4) toastQueue.shift();
+  if (!toastShowing) nextToast();
+}
+function nextToast() {
+  const text = toastQueue.shift();
+  if (text === undefined) { toastShowing = false; return; }
+  toastShowing = true;
   const el = document.createElement('p'); el.className = 'toast'; el.setAttribute('role', 'status'); el.textContent = text;
-  document.body.appendChild(el); setTimeout(() => el.remove(), 2600);
+  document.body.appendChild(el); setTimeout(() => { el.remove(); nextToast(); }, 2600);
+}
+// ---------- ship shop ----------
+const shopButton = () => `<button class="shopbtn" onclick="openShop()">🪙 Shop</button>`;
+const setShop = on => act(() => api('settings', { shop: on }));
+const SHOP_TABS = [['sabotage', '💣 Sabotage'], ['defence', '🛡️ Defence'], ['gift', '🎁 Gifts'], ['bling', '✨ Bling'], ['emote', '📯 Emotes']];
+const EMOTE_TEXT = { honk: '📯 HONK!', ha: 'Ha!', oops: 'Oops', ouch: 'Ouch' };
+function openShop(tab) { S.shopSheet = true; S.error = ''; if (tab) S.shopTab = tab; if (!S.catalog) loadCatalog().then(render); render(); }
+function closeShop() { S.shopSheet = null; S.error = ''; render(); }
+function shopView() {
+  if (!S.shopSheet || !S.room) return '';
+  const r = S.room, w = r.wallet, cat = S.catalog && S.catalog.catalog;
+  const tabs = SHOP_TABS.filter(([k]) => k !== 'sabotage' || (r.status === 'playing' && r.order.includes(r.me))); // spectators can't sabotage
+  if (!tabs.some(([k]) => k === S.shopTab)) S.shopTab = tabs[0][0];
+  let body;
+  if (!cat || !w) body = `<p class="muted">${!w ? 'The shop is closed right now.' : 'Opening the shop…'}</p>`;
+  else if (S.shopTab === 'emote') body = `<div class="shopgrid">${Object.keys(EMOTE_TEXT).map(k => `<button class="shopitem" onclick="sendEmote('${k}')"><span class="icon">${EMOTE_TEXT[k]}</span><span>Free</span></button>`).join('')}</div>`;
+  else {
+    const items = r.market.filter(k => cat[k] && cat[k].kind === S.shopTab);
+    const owned = S.shopTab === 'bling' ? w.owned.filter(k => cat[k] && !items.includes(k)) : [];
+    body = `<div class="shopgrid">${[...items, ...owned].map(k => {
+      const it = cat[k], have = S.shopTab === 'bling' && w.owned.includes(k), stock = S.shopTab === 'defence' ? (w.stock[k] || 0) : 0;
+      const label = have ? (w.worn.includes(k) ? 'Wearing · tap to remove' : 'Owned · tap to wear') : `${it.price} 🪙${stock ? ` · you have ${stock}` : ''}`;
+      const poor = !have && w.credits < it.price;
+      return `<button class="shopitem${poor ? ' poor' : ''}" onclick="${have ? `wearItem('${k}', ${!w.worn.includes(k)})` : `buyItem('${k}')`}"><span class="icon">${it.icon}</span><b>${esc(it.name)}</b><span>${label}</span></button>`;
+    }).join('') || '<p class="muted">Nothing of this kind on sale this game.</p>'}</div>`;
+  }
+  return `<div class="sheet-bg" onclick="if(event.target===this)closeShop()"><div class="sheet" role="dialog" aria-label="Shop">
+    <div class="topbar"><h2>Today's market</h2><button class="link" onclick="closeShop()">Done</button></div>
+    <p class="small muted" style="margin-top:-6px">🪙 ${w ? w.credits : 0} · New stock every game.</p>
+    <div class="shoptabs" role="tablist">${tabs.map(([k, l]) => `<button role="tab" aria-selected="${S.shopTab === k}" onclick="S.shopTab='${k}';S.error='';render()">${l}</button>`).join('')}</div>
+    ${S.error ? `<p class="err" role="alert">${esc(S.error)}</p>` : ''}
+    ${body}</div></div>`;
+}
+function buyItem(k) {
+  const it = S.catalog.catalog[k];
+  if (it.kind === 'sabotage' || it.kind === 'gift') { S.targeting = { item: k }; S.shopSheet = null; return render(); }
+  act(async () => { await api('buy', { item: k }); });
+}
+function pickTarget(id) {
+  const k = S.targeting.item; S.targeting = null;
+  act(async () => { await api('buy', { item: k, target: id }); });
+}
+const sendEmote = k => { S.shopSheet = null; act(() => api('emote', { kind: k })); };
+const wearItem = (k, on) => act(() => api('wear', { item: k, on }));
+// Captain Bongo announces each new effect once, on every screen.
+function fxText(e) {
+  const n = id => esc(nickOf(id)), it = S.catalog && S.catalog.catalog[e.kind];
+  if (e.kind === 'emote') return '';
+  if (!it) return '';
+  if (e.blocked) return { hose: `🧯 ${n(e.target)} hosed down ${n(e.from)}'s bomb!`, umbrella: `☂️ ${n(e.target)} popped an umbrella over ${n(e.from)}'s rain cloud!`,
+    bubble: `🫧 ${n(e.target)}'s bubble shield popped ${n(e.from)}'s ${it.name.toLowerCase()}!` }[e.blocked] || '';
+  if (it.kind === 'gift') return `${it.icon} ${n(e.from)} gave ${n(e.target)} ${/^[aeiou]/i.test(it.name) ? 'an' : 'a'} ${it.name.toLowerCase()}!`;
+  return `${it.icon} ${n(e.from)} unleashed ${/^[aeiou]/i.test(it.name) ? 'an' : 'a'} ${it.name.toLowerCase()} on ${n(e.target)}!`;
+}
+function fxToasts() {
+  const fxKey = e => `${e.kind}|${e.from}|${e.target || ''}|${e.at}`;
+  // The first view after connecting or reloading is history: remember it silently, announce only what comes later.
+  if (!S.fxSeeded) { for (const e of (S.room && S.room.effects) || []) S.seenFx.add(fxKey(e)); S.fxSeeded = true; return; }
+  if (!S.catalog) return; // announced once the catalogue has loaded, on the next change
+  for (const e of (S.room && S.room.effects) || []) {
+    const key = fxKey(e);
+    if (S.seenFx.has(key)) continue;
+    S.seenFx.add(key);
+    const t = fxText(e); if (t) toast(t.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&'));
+  }
 }
 function closeFlags() { S.flagSheet = false; render(); }
 const flagThumb = k => `<svg viewBox="0 0 40 30" aria-hidden="true">${k ? flagArt(k, 40, 30) : '<path d="M4 4 36 15 4 26Z" fill="var(--hibiscus)"/>'}</svg>`;
@@ -1191,7 +1447,8 @@ function pickFlag(k) {
 }
 document.addEventListener('keydown', e => {
   if (e.key === 'Enter' && e.target.id === 'bid') lockBid();
-  if (e.key === 'Escape') { if (S.flagSheet) closeFlags(); else if (S.sheetFor != null) closeSheet(); }
+  if ((e.key === 'Enter' || e.key === ' ') && e.target.classList && e.target.classList.contains('aim')) { e.preventDefault(); e.target.click(); }
+  if (e.key === 'Escape') { if (S.flagSheet) closeFlags(); else if (S.shopSheet) closeShop(); else if (S.targeting) { S.targeting = null; render(); } else if (S.sheetFor != null) closeSheet(); }
 });
 
 // #og-card: the 1200×630 social preview, drawn from the game's own artwork.
@@ -1214,6 +1471,9 @@ S.flag = flagOf(ls.get('pb_flag'));
 function pickHull(k) { S.hull = k; ls.set('pb_hull', k); render(); }
 S.cabin = CABINS[ls.get('pb_cabin')] ? ls.get('pb_cabin') : 'white';
 function pickCabin(k) { S.cabin = k; ls.set('pb_cabin', k); render(); }
+S.shopOn = ls.get('pb_shop') !== 'off';
+async function loadCatalog() { try { S.catalog = (await (await fetch('/api/shop')).json()); } catch (e) { S.catalog = null; } }
+loadCatalog();
 if (location.hash === '#og-card') app.innerHTML = ogCard(); else {
 render();
 loadScores();
