@@ -44,7 +44,7 @@ async function withServer(setup, fn, opts = {}) {
     if (setup) await setup(dir);
     const server = createServer({ dataDir: dir, logger, ...opts });
     await new Promise(r => server.listen(0, '127.0.0.1', r));
-    try { await fn(server.address().port, logger, dir); } finally { server.closeAllConnections?.(); await new Promise(r => server.close(r)); }
+    try { await fn(server.address().port, logger, dir); } finally { await server.flush(); server.closeAllConnections?.(); await new Promise(r => server.close(r)); }
   } finally { await fs.rm(dir, { recursive: true, force: true }); }
 }
 
@@ -335,7 +335,7 @@ const tests = {
       await until(() => logger.errors.some(e => /\[games\]/.test(e)));
     });
   },
-  async 'losers ending with 10 bananas or fewer get one taunt each, picked once; others get none'() {
+  async 'every loser gets one taunt, picked once; winners get none; 1 in 8 is rare'() {
     await withServer(null, async port => {
       const rich = tok(), mid = tok(), broke = tok();
       const { body: { code } } = await api(port, { action: 'create', token: rich, nick: 'Rich' });
@@ -353,13 +353,23 @@ const tests = {
         v = await view(port, code, rich);
       }
       a.equal(v.status, 'over');
-      a.ok(v.inventories[id('Broke')] <= 10 && v.inventories[id('Mid')] > 10);
-      a.deepEqual(Object.keys(v.taunts), [id('Broke')]); // only the low loser; never the winner or Mid
-      a.ok(Number.isInteger(v.taunts[id('Broke')]) && v.taunts[id('Broke')] >= 0);
+      a.deepEqual(Object.keys(v.taunts).sort(), [id('Broke'), id('Mid')].sort()); // every loser, never the winner
+      for (const t of Object.values(v.taunts)) { a.equal(t.rare, false); a.ok(Number.isInteger(t.n) && t.n >= 0); }
       a.deepEqual((await view(port, code, mid)).taunts, v.taunts); // same pick on every screen
       await api(port, { action: 'lobby', token: rich, code });
       a.deepEqual((await view(port, code, rich)).taunts, {});
     }, { random: () => 0.5 });
+  },
+  async 'a roll under 1 in 8 makes the taunt rare'() {
+    await withServer(null, async port => {
+      const g = await twoPlayerGame(port, 'A', 'B');
+      let v = await view(port, g.code, g.host);
+      for (let i = 0; i < 60 && v.status === 'playing'; i++) { await api(port, { action: 'skip', token: g.host, code: g.code }); v = await view(port, g.code, g.host); }
+      a.equal(v.status, 'over');
+      const losers = v.order.filter(id => !v.winners.includes(id));
+      a.deepEqual(Object.keys(v.taunts).sort(), losers.sort());
+      for (const id of losers) a.equal(v.taunts[id].rare, true);
+    }, { random: () => 0.1 });
   },
   async 'unavailable storage keeps health, rooms and games working'() {
     await withServer(dir => fs.mkdir(path.join(dir, 'highscores.json')), async (port, logger) => {

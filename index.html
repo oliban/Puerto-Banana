@@ -646,6 +646,8 @@ const backToLobby = () => act(() => api('lobby'));
 const rematch = () => act(() => api('rematch'));
 const skipMissing = () => act(() => api('skip'));
 function lockBid() {
+  // A tap right after writing beats the scratchpad's read delay: read the strokes now instead of locking a stale bid.
+  if (S.readTimer && S.strokes.length) { clearTimeout(S.readTimer); S.readTimer = null; readStrokes(); }
   const bid = parseInt(S.bidDraft, 10);
   if (!Number.isFinite(bid) || bid < 0) { S.error = 'Bid a whole number, 0 or more.'; return render(); }
   act(() => api('bid', { bid }));
@@ -889,15 +891,15 @@ function redrawPad() {
     ctx.stroke();
   }
 }
-function readPad() {
-  if (!S.strokes.length) { S.read = null; S.bidDraft = ''; return render(); }
+function readStrokes() {
+  if (!S.strokes.length) { S.read = null; S.bidDraft = ''; return; }
   try {
     const r = Digits.recognize(S.strokes);
     S.read = { text: r.text, unsure: r.digits.some(d => d.confidence < 0.6) };
     S.bidDraft = String(parseInt(r.text, 10));
   } catch (e) { S.read = { text: '?', unsure: true }; S.bidDraft = ''; }
-  render();
 }
+function readPad() { S.readTimer = null; readStrokes(); render(); }
 function undoStroke() { S.strokes.pop(); readPad(); }
 function clearPad() { S.strokes = []; S.read = null; S.bidDraft = ''; render(); }
 function overView() {
@@ -953,7 +955,10 @@ function tauntFor(id) {
   const n = S.room && S.room.taunts ? S.room.taunts[id] : undefined;
   if (n === undefined || !S.tauntBook) return '';
   const list = S.tauntBook[flagOf(pl(id).flag) || 'pennant'] || S.tauntBook.pennant || [];
-  return list.length ? list[n % list.length] : '';
+  // Each flag's last two taunts are rare (1 in 8, rolled by the server); the rest are the everyday ones.
+  const pick = typeof n === 'number' ? { rare: false, n } : n; // rooms saved before rare taunts
+  const pool = list.length > 2 ? (pick.rare ? list.slice(-2) : list.slice(0, -2)) : list;
+  return pool.length ? pool[pick.n % pool.length] : '';
 }
 function historyView() {
   const h = (S.room.history || []).slice().reverse();

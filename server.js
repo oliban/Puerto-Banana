@@ -12,7 +12,7 @@ const { createJsonFileStore } = require('./json-file-store');
 const PORT = process.env.PORT || 8080;
 const GOAL = 200, START = 10, MAX_PLAYERS = 6;
 const { hullOf, cabinOf, flagOf } = require('./players'); // hull keys; the client maps each to a colour
-const TAUNT_MAX = 10; // a loser ending with this many bananas or fewer gets taunted (by their flag, client-side)
+const RARE_TAUNT_ODDS = 1 / 8; // each flag's last two taunts are rare (client-side lists)
 const TORPEDO_ODDS = 0.2; // share of finished games where the winner's victory show torpedoes the rivals (visual only)
 let random = Math.random;  // swappable in tests
 const rooms = new Map();          // code -> room
@@ -109,9 +109,10 @@ function resolveRound(room, stores) {
     room.status = 'over';
     room.winners = room.order.filter(t => inv[t] === top).map(ids);
     room.torpedo = random() < TORPEDO_ODDS; // rolled once, so every player sees the same show
-    // One taunt pick per low-scoring loser; the client maps it onto that flag's taunts (pick % count)
-    room.taunts = Object.fromEntries(room.order.filter(t => inv[t] <= TAUNT_MAX && !room.winners.includes(ids(t)))
-      .map(t => [ids(t), Math.floor(random() * 1000)]));
+    // One taunt per loser, picked once so every screen agrees. The client maps n onto that flag's taunts:
+    // rare picks come from the list's last two, the rest from the others.
+    room.taunts = Object.fromEntries(room.order.filter(t => !room.winners.includes(ids(t)))
+      .map(t => [ids(t), { rare: random() < RARE_TAUNT_ODDS, n: Math.floor(random() * 1000) }]));
     recordGame(room, stores);
   }
 }
