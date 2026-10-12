@@ -63,7 +63,11 @@ button.link{background:none;box-shadow:none;padding:0 4px;min-height:44px;color:
 input.text{width:100%;min-height:48px;padding:11px 14px;border-radius:14px;border:2px solid var(--line);background:var(--surface)}
 input.text:focus{border-color:var(--sea)}
 input.code{text-transform:uppercase;font-family:Bungee,sans-serif;letter-spacing:.2em;min-width:0}
-label{display:block;font-weight:600;margin:0 0 6px}
+label,.label{display:block;font-weight:600;margin:0 0 6px}
+.hullpick{display:grid;grid-template-columns:auto minmax(0,120px);gap:12px;align-items:center}
+.swatches{display:grid;grid-template-columns:repeat(4,44px);gap:8px}
+.swatch{min-height:44px;width:44px;padding:0;border-radius:50%;background:var(--c);box-shadow:inset 0 0 0 3px rgba(255,255,255,.35)}
+.swatch[aria-checked="true"]{box-shadow:0 0 0 3px var(--bg),0 0 0 6px var(--ink)}
 .stack>*+*{margin-top:12px}
 .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .row>.grow{flex:1 1 140px}
@@ -157,6 +161,30 @@ summary{cursor:pointer;font-weight:600;color:var(--muted);min-height:44px;displa
 .log .who{font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .log .when{grid-column:2;font-size:.82rem;color:var(--muted)}
 .log .score{font-family:Bungee,sans-serif;font-size:1.1rem;grid-column:3;grid-row:1}
+/* Victory show: banana rain, fireworks and (1 game in 5) torpedoes. Lives outside #app so re-renders keep it. */
+#party{position:fixed;inset:0;z-index:20;pointer-events:none;overflow:hidden}
+#party .drop{position:absolute;top:-8vh;left:var(--x);width:var(--w);animation:fall var(--t) linear var(--d) both}
+@keyframes fall{from{transform:translateY(0) rotate(var(--r0))}to{transform:translateY(118vh) rotate(var(--r1))}}
+#party .burst{position:absolute;left:var(--x);top:var(--y)}
+#party .burst i{position:absolute;width:7px;height:7px;margin:-3.5px;border-radius:50%;background:var(--c);box-shadow:0 0 8px var(--c);
+  transform:rotate(var(--a)) translateX(0);opacity:0;animation:spark 1.1s cubic-bezier(.15,.7,.3,1) var(--d) both}
+@keyframes spark{0%{opacity:1;transform:rotate(var(--a)) translateX(0)}70%{opacity:1}100%{opacity:0;transform:rotate(var(--a)) translateX(var(--len)) translateY(14px)}}
+#party .battle{position:absolute;left:50%;top:22%;width:min(92vw,420px);transform:translateX(-50%);border-radius:20px;overflow:hidden;
+  background:linear-gradient(var(--sky-2),var(--sky));box-shadow:0 10px 40px rgba(0,0,0,.35);animation:pop .3s ease-out both}
+#party .battle p{margin:0;padding:8px 14px 12px;background:var(--sea-deep);color:#fff;font-weight:800;text-align:center}
+@keyframes pop{from{opacity:0;transform:translateX(-50%) scale(.9)}}
+.torp{animation:torp .8s ease-in var(--d) both}
+@keyframes torp{from{transform:translate(0,0);opacity:1}95%{opacity:1}to{transform:translate(var(--dx),0);opacity:0}}
+.boom{transform-box:fill-box;transform-origin:center;animation:boom .6s ease-out var(--d) both}
+@keyframes boom{from{transform:scale(0);opacity:1}to{transform:scale(1.6);opacity:0}}
+.sinking{transform-box:fill-box;transform-origin:60% 100%;animation:sink 1.6s ease-in var(--d) both}
+@keyframes sink{from{transform:none}25%{transform:rotate(-12deg)}to{transform:translateY(90px) rotate(-30deg)}}
+.bubble{animation:rise 1.4s ease-out var(--d) both}
+@keyframes rise{from{transform:translateY(0);opacity:0}20%{opacity:.9}to{transform:translateY(-26px);opacity:0}}
+.flotsam{animation:surface 1s ease-out var(--d) both}
+@keyframes surface{from{transform:translateY(14px);opacity:0}to{transform:none;opacity:1}}
+.party-banner{position:absolute;left:50%;top:16px;transform:translateX(-50%);width:min(92vw,420px);background:var(--surface);color:var(--ink);
+  border-radius:16px;padding:12px 16px;font-weight:800;text-align:center;box-shadow:0 6px 24px rgba(0,0,0,.25)}
 @media (prefers-reduced-motion:reduce){.reveal li,.sh-bob,.sh-wave,.sh-float{animation:none}}
 </style>
 </head>
@@ -168,7 +196,7 @@ summary{cursor:pointer;font-weight:600;color:var(--muted);min-height:44px;displa
 <div id="app"><p class="muted">Loading the docks…</p></div>
 <script>
 const GOAL = 200, MAX_PLAYERS = 6;
-const S = { code: null, room: null, es: null, nick: '', joinCode: '', bidDraft: '', error: '', busy: false, sheetFor: null, seen: 0, scores: null };
+const S = { hull: 'navy', code: null, room: null, es: null, nick: '', joinCode: '', bidDraft: '', error: '', busy: false, sheetFor: null, seen: 0, scores: null };
 const app = document.getElementById('app');
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const ls = { get(k){try{return localStorage.getItem(k)}catch(e){return null}}, set(k,v){try{localStorage.setItem(k,v)}catch(e){}}, del(k){try{localStorage.removeItem(k)}catch(e){}} };
@@ -254,16 +282,21 @@ function shipBody(f, key = '') {
   }
   return { ship, spill };
 }
-function shipSVG(fill, label, key) {
+// Hull colours players pick on the home screen; keys match HULLS in server.js.
+const HULLS = { navy: ['Navy', '#1D4E89'], coral: ['Coral', '#E0505B'], mango: ['Mango', '#EE8A1E'], hibiscus: ['Hibiscus', '#D63A85'],
+  palm: ['Palm green', '#2A9457'], turquoise: ['Turquoise', '#0E97A5'], purple: ['Purple', '#6A4C93'], charcoal: ['Charcoal', '#33414E'] };
+const hullStyle = hull => HULLS[hull] ? ` style="--hull:${HULLS[hull][1]}"` : '';
+const hullOfId = id => pl(id).hull;
+function shipSVG(fill, label, key, hull) {
   const f = Math.max(0, Number(fill) || 0), { ship, spill } = shipBody(f, key);
   const a11y = label ? `role="img" aria-label="${esc(label)}"` : 'aria-hidden="true"';
-  return `<svg class="shipsvg" viewBox="0 -18 220 138" ${a11y}>${waves(88, 220, 120, 'sh-sea2')}${ship}${waves(93, 220, 120, 'sh-sea sh-wave')}${spill}</svg>`;
+  return `<svg class="shipsvg" viewBox="0 -18 220 138" ${a11y}${hullStyle(hull)}>${waves(88, 220, 120, 'sh-sea2')}${ship}${waves(93, 220, 120, 'sh-sea sh-wave')}${spill}</svg>`;
 }
-const tile = (fill, still, key) => `<span class="tile${still ? ' still' : ''}">${shipSVG(fill, '', key)}</span>`;
-function heroScene(fill = 0.75, key = 'hero') {
+const tile = (fill, still, key, hull) => `<span class="tile${still ? ' still' : ''}">${shipSVG(fill, '', key, hull)}</span>`;
+function heroScene(fill = 0.75, key = 'hero', hull) {
   const { ship, spill } = shipBody(fill, key), place = 'transform="translate(10 52) scale(1.1)"';
   const fronds = ['c10-12 26-12 36-2c-12-4-24-2-36 2z', 'c-6-14-20-18-32-12c12 0 24 4 32 12z', 'c-14-2-26 6-30 18c8-10 18-14 30-18z', 'c14-2 26 6 30 18c-8-10-18-14-30-18z', 'c2-14 12-22 24-22c-10 4-18 12-24 22z'];
-  return `<svg class="scene" viewBox="0 0 360 196" aria-hidden="true">
+  return `<svg class="scene" viewBox="0 0 360 196" aria-hidden="true"${hullStyle(hull)}>
     <circle class="hs-glow" cx="300" cy="40" r="36"/><circle class="hs-sun" cx="300" cy="40" r="22"/>
     <g class="hs-cloud"><ellipse cx="62" cy="34" rx="26" ry="8"/><ellipse cx="78" cy="28" rx="15" ry="9"/><ellipse cx="200" cy="20" rx="18" ry="5"/></g>
     <path class="hs-bird" d="M150 46q4-4 8 0q4-4 8 0M176 34q3-3 6 0q3-3 6 0"/>
@@ -278,14 +311,14 @@ function heroScene(fill = 0.75, key = 'hero') {
 // ---------- rooms ----------
 function createRoom() {
   if (!S.nick.trim()) { S.error = 'Pick a name first.'; return render(); }
-  act(async () => { const { code } = await api('create', { nick: S.nick }); connect(code); });
+  act(async () => { const { code } = await api('create', { nick: S.nick, hull: S.hull }); connect(code); });
 }
 function enterRoom(code, silent) {
   code = String(code || '').trim().toUpperCase();
   if (!/^[A-Z]{4}$/.test(code)) { if (!silent) { S.error = 'Room codes are 4 letters.'; render(); } return; }
   if (!silent && !S.nick.trim()) { S.error = 'Pick a name first.'; return render(); }
   act(async () => {
-    try { await api('join', { code, nick: S.nick }); connect(code); }
+    try { await api('join', { code, nick: S.nick, hull: S.hull }); connect(code); }
     catch (e) { ls.del('pb_code'); if (!silent) throw e; }
   });
 }
@@ -327,6 +360,7 @@ function render() {
   const active = document.activeElement && document.activeElement.id;
   const caret = active && document.activeElement.selectionStart;
   app.innerHTML = view();
+  maybeCelebrate();
   if (active) { const el = document.getElementById(active); if (el) { el.focus(); try { el.setSelectionRange(caret, caret); } catch (e) {} } }
 }
 function view() {
@@ -338,11 +372,15 @@ function view() {
 function homeView() {
   return `<header class="harbor">
     <h1>Puerto Banana</h1>
-    ${heroScene()}
+    ${heroScene(0.75, 'hero', S.hull)}
     <p class="harbor-foot">Bid blind for the banana cargo. Win it and you pay the runner-up the gap. First to ${GOAL} bananas wins.</p>
   </header>
   <div class="stack">
     <div><label for="nick">Your name</label><input id="nick" class="text" maxlength="20" value="${esc(S.nick)}" oninput="S.nick=this.value;ls.set('pb_nick',this.value)" autocomplete="nickname"></div>
+    <div><span class="label" id="hull-l">Ship colour</span>
+    <div class="hullpick"><div class="swatches" role="radiogroup" aria-labelledby="hull-l">${Object.entries(HULLS).map(([k, [name, c]]) =>
+      `<button id="hull-${k}" class="swatch" role="radio" aria-checked="${S.hull === k}" aria-label="${name}" style="--c:${c}" onclick="pickHull('${k}')"></button>`).join('')}</div>
+    ${tile(0.5, false, 'preview', S.hull)}</div></div>
     <button class="primary wide" onclick="createRoom()" ${S.busy?'disabled':''}>Create a room</button>
   </div>
   <div class="divider"></div>
@@ -371,7 +409,7 @@ function lobbyView() {
   const ps = S.room.players, n = ps.length;
   return `<h2>Waiting at the dock</h2>
   <p class="muted">Tell friends to join with code <b class="code">${esc(S.code)}</b>.</p>
-  <div class="card"><ul class="players">${ps.map((p, i) => `<li>${tile(0, true)}<span class="name">${esc(p.nick)}${p.id===S.room.me?' (you)':''}</span><span class="status">${i>=MAX_PLAYERS?'watching':'ready'}</span></li>`).join('')}</ul></div>
+  <div class="card"><ul class="players">${ps.map((p, i) => `<li>${tile(0, true, p.id, p.hull)}<span class="name">${esc(p.nick)}${p.id===S.room.me?' (you)':''}</span><span class="status">${i>=MAX_PLAYERS?'watching':'ready'}</span></li>`).join('')}</ul></div>
   <div style="margin-top:16px"><button class="primary wide" onclick="startGame()" ${n<2||S.busy?'disabled':''}>${n<2?'Need at least 2 players':'Start game with '+Math.min(n,MAX_PLAYERS)}</button></div>`;
 }
 function playersList(withStatus) {
@@ -380,7 +418,7 @@ function playersList(withStatus) {
   return `<ul class="players">${ids.map(id => {
     const inv = r.inventories[id];
     const st = withStatus ? (pl(id).locked ? `<span class="status ok">Bid locked</span>` : `<span class="status">Thinking…</span>`) : '';
-    return `<li class="${id===r.me?'me':''}">${tile(inv / GOAL, true, id)}<span class="name">${esc(nickOf(id))}${id===r.me?' (you)':''}</span><span class="inv">${inv}</span>${st}</li>`;
+    return `<li class="${id===r.me?'me':''}">${tile(inv / GOAL, true, id, hullOfId(id))}<span class="name">${esc(nickOf(id))}${id===r.me?' (you)':''}</span><span class="inv">${inv}</span>${st}</li>`;
   }).join('')}</ul>`;
 }
 function gameView() {
@@ -400,7 +438,7 @@ function gameView() {
   const mine = r.inventories[r.me];
   return `<div class="potcard"><span class="plate">Round ${r.round}</span>
     <div class="num">${r.pot} 🍌</div><div class="sub">up for auction this round</div></div>
-    ${inGame() ? `<div class="myship" role="img" aria-label="Your ship: ${mine} bananas, ${cargoWord(mine / GOAL).toLowerCase()}">${heroScene(mine / GOAL, r.me)}
+    ${inGame() ? `<div class="myship" role="img" aria-label="Your ship: ${mine} bananas, ${cargoWord(mine / GOAL).toLowerCase()}">${heroScene(mine / GOAL, r.me, hullOfId(r.me))}
     <div class="myship-foot"><span>Your ship<br><b>${cargoWord(mine / GOAL)}</b></span><span class="num">${mine} 🍌</span></div></div>` : ''}
     <div style="margin:12px 0 18px">${action}</div>
     <div class="card">${playersList(true)}</div>${skip}
@@ -409,7 +447,7 @@ function gameView() {
 function nudge(d) { S.bidDraft = String(Math.max(0, (parseInt(S.bidDraft, 10) || 0) + d)); render(); }
 function overView() {
   const r = S.room, w = r.winners || [];
-  return `<div class="card winner">${tile(Math.max(1.6, r.inventories[w[0]] / GOAL), false, w[0])}<div class="muted">King of the bananas</div>
+  return `<div class="card winner">${tile(Math.max(1.6, r.inventories[w[0]] / GOAL), false, w[0], hullOfId(w[0]))}<div class="muted">King of the bananas</div>
     <div class="num">${w.map(id => esc(nickOf(id))).join(' & ')}</div>
     <div class="muted">${r.inventories[w[0]]} bananas after ${r.round - 1} rounds</div></div>
     <div class="card" style="margin-top:14px">${playersList(false)}</div>
@@ -448,6 +486,78 @@ function stepLines(s) {
     default: return ['Nobody won the auction.'];
   }
 }
+// ---------- victory show (visual only; never touches scores) ----------
+const PARTY_COLORS = ['#FFD60A', '#FF3E8A', '#3FD0E0', '#FF9F1C', '#2BB673', '#FFFFFF'];
+const rand = (lo, hi) => lo + Math.random() * (hi - lo);
+function maybeCelebrate() {
+  const r = S.room;
+  if (!r || r.status !== 'over' || S.sheetFor != null) return;
+  const key = r.code + ':' + (r.history || []).length;
+  if (S.celebrated === key) return;
+  S.celebrated = key;
+  celebrate(r);
+}
+function celebrate(r) {
+  document.getElementById('party')?.remove();
+  const party = document.createElement('div');
+  party.id = 'party'; party.setAttribute('aria-hidden', 'true');
+  document.body.appendChild(party);
+  const rivals = r.order.filter(id => !r.winners.includes(id));
+  const torpedo = r.torpedo && rivals.length > 0;
+  const names = ids => ids.map(id => esc(nickOf(id))).join(' and ');
+  const sankLine = `💥 Torpedoes sank ${names(rivals)}!`;
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    party.innerHTML = `<div class="party-banner">🎉 ${names(r.winners)} ${r.winners.length > 1 ? 'win' : 'wins'}!${torpedo ? '<br>' + sankLine : ''}</div>`;
+    return setTimeout(() => party.remove(), 5000);
+  }
+  let t = 0;
+  if (torpedo) { party.insertAdjacentHTML('beforeend', battleView(r, rivals, sankLine)); t = 1.2 + rivals.length * 0.7 + 1.6; }
+  setTimeout(() => {
+    party.querySelector('.battle')?.remove();
+    party.insertAdjacentHTML('beforeend', rainView() + fireworksView());
+  }, t * 1000);
+  setTimeout(() => party.remove(), (t + 7) * 1000);
+}
+function rainView() {
+  let h = '';
+  for (let i = 0; i < 46; i++) {
+    const w = rand(26, 52), r0 = rand(-90, 90);
+    h += `<svg class="drop" viewBox="0 0 26 12" style="--x:${rand(-4, 98).toFixed(1)}vw;--w:${w.toFixed(0)}px;--t:${rand(2.4, 4.4).toFixed(2)}s;--d:${rand(0, 2.2).toFixed(2)}s;--r0:${r0.toFixed(0)}deg;--r1:${(r0 + rand(-540, 540)).toFixed(0)}deg"><use href="#nana"/></svg>`;
+  }
+  return h;
+}
+function fireworksView() {
+  let h = '';
+  for (let b = 0; b < 7; b++) {
+    const c = PARTY_COLORS[b % PARTY_COLORS.length], d = (b * 0.55 + rand(0, 0.3)).toFixed(2), len = rand(60, 110).toFixed(0);
+    h += `<div class="burst" style="--x:${rand(12, 88).toFixed(0)}%;--y:${rand(10, 45).toFixed(0)}%">`;
+    for (let i = 0; i < 14; i++) h += `<i style="--a:${(i * 360 / 14).toFixed(0)}deg;--c:${c};--d:${d}s;--len:${len}px"></i>`;
+    h += '</div>';
+  }
+  return h;
+}
+// The winner's ship (left) torpedoes each rival (right) in turn; hit ships tip over and sink.
+function battleView(r, rivals, line) {
+  const W = 360, sea = 150, win = r.winners[0];
+  const s = Math.min(0.42, 180 / (rivals.length * 220)), gap = (W - 150) / rivals.length;
+  let rivalsSvg = '', shots = '';
+  rivals.forEach((id, i) => {
+    const x = 150 + i * gap + (gap - 220 * s) / 2, cx = x + 110 * s, hit = 1.2 + i * 0.7 + 0.8;
+    rivalsSvg += `<g transform="translate(${x.toFixed(1)} ${(sea - 92 * s).toFixed(1)}) scale(${s.toFixed(3)})"${hullStyle(hullOfId(id))}>
+      <g class="sinking" style="--d:${hit.toFixed(2)}s">${shipBody(r.inventories[id] / GOAL, 'sunk' + id).ship}</g></g>`;
+    shots += `<g class="torp" style="--d:${(hit - 0.8).toFixed(2)}s;--dx:${(cx - 118).toFixed(0)}px"><path d="M100 ${sea + 5}h14" stroke="#fff" stroke-width="2" opacity=".8"/>
+      <rect x="112" y="${sea + 3}" width="12" height="4" rx="2" fill="#22313F"/></g>
+      <circle class="boom" style="--d:${hit.toFixed(2)}s" cx="${cx.toFixed(0)}" cy="${sea - 4}" r="16" fill="#FF9F1C"/>
+      <circle class="boom" style="--d:${(hit + 0.1).toFixed(2)}s" cx="${cx.toFixed(0)}" cy="${sea - 4}" r="9" fill="#FFD60A"/>
+      ${[0, 1, 2].map(k => `<circle class="bubble" style="--d:${(hit + 0.6 + k * 0.2).toFixed(2)}s" cx="${(cx - 6 + k * 6).toFixed(0)}" cy="${sea + 10}" r="${2 + k % 2}" fill="#fff" opacity="0"/>`).join('')}
+      <use class="flotsam" style="--d:${(hit + 1.2).toFixed(2)}s" href="#nana" x="${(cx - 9).toFixed(0)}" y="${sea + 6}" width="18" height="9"/>`;
+  });
+  const wb = shipBody(0.85, 'battle' + win).ship; // drawn riding high so the attacker reads clearly
+  return `<div class="battle"><svg viewBox="0 84 ${W} 106" style="display:block;width:100%">
+    ${waves(sea - 4, W, 190, 'sh-sea2')}
+    <g transform="translate(4 ${(sea - 92 * 0.62).toFixed(1)}) scale(0.62)"${hullStyle(hullOfId(win))}>${wb}</g>${rivalsSvg}
+    ${waves(sea + 1, W, 190, 'sh-sea sh-wave')}${shots}</svg><p>${line}</p></div>`;
+}
 function sheetView() {
   const r = S.room.lastResult;
   if (S.sheetFor == null || !r || r.round !== S.sheetFor) return '';
@@ -457,7 +567,7 @@ function sheetView() {
     <h2>Round ${r.round} results</h2>
     <ul class="story">${r.steps.flatMap(stepLines).map(l => `<li>${l}</li>`).join('')}</ul>
     <ul class="reveal">${ids.map((id, i) => { const b = r.before[id], a = r.after[id], d = a - b;
-      return `<li class="${r.bids[id]===top?'top':''}" style="animation-delay:${i*0.12}s">${tile(a / GOAL, true, id)}
+      return `<li class="${r.bids[id]===top?'top':''}" style="animation-delay:${i*0.12}s">${tile(a / GOAL, true, id, hullOfId(id))}
         <span class="who"><b>${esc(nickOf(id))}${id===S.room.me?' (you)':''}</b>
         <span class="small">Bananas ${b} → <b>${a}</b> <span class="delta ${d>0?'up':d<0?'down':''}">(${d>0?'+'+d:d<0?'−'+(-d):'no change'})</span></span></span>
         <span class="bid"><span class="small muted">Bid</span><span class="num">${r.bids[id]}</span></span></li>`; }).join('')}</ul>
@@ -466,6 +576,8 @@ function sheetView() {
 document.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.id === 'bid') lockBid(); if (e.key === 'Escape' && S.sheetFor != null) closeSheet(); });
 
 S.nick = ls.get('pb_nick') || '';
+S.hull = HULLS[ls.get('pb_hull')] ? ls.get('pb_hull') : 'navy';
+function pickHull(k) { S.hull = k; ls.set('pb_hull', k); render(); }
 render();
 loadScores();
 const saved = ls.get('pb_code'); if (saved) enterRoom(saved, true);

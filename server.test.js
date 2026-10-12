@@ -36,12 +36,12 @@ async function until(fn, ms = 2000) {
   for (;;) { const v = await fn(); if (v) return v; if (Date.now() > end) throw new Error('timed out'); await new Promise(r => setTimeout(r, 20)); }
 }
 
-async function withServer(setup, fn) {
+async function withServer(setup, fn, opts = {}) {
   const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'pb-server-'));
   const logger = quiet();
   try {
     if (setup) await setup(dir);
-    const server = createServer({ dataDir: dir, logger });
+    const server = createServer({ dataDir: dir, logger, ...opts });
     await new Promise(r => server.listen(0, '127.0.0.1', r));
     try { await fn(server.address().port, logger, dir); } finally { server.closeAllConnections?.(); await new Promise(r => server.close(r)); }
   } finally { await fs.rm(dir, { recursive: true, force: true }); }
@@ -56,6 +56,18 @@ async function twoPlayerGame(port, hostNick, mateNick) {
 }
 
 const tests = {
+  async 'players carry their hull colour; unknown colours fall back to navy'() {
+    await withServer(null, async port => {
+      const host = tok(), mate = tok();
+      const { body: { code } } = await api(port, { action: 'create', token: host, nick: 'Cap', hull: 'coral' });
+      await api(port, { action: 'join', token: mate, code, nick: 'Mate', hull: 'red;background:url(x)' });
+      let v = await view(port, code, host);
+      a.deepEqual(v.players.map(p => [p.nick, p.hull]), [['Cap', 'coral'], ['Mate', 'navy']]);
+      await api(port, { action: 'join', token: mate, code, nick: 'Mate', hull: 'mango' });
+      v = await view(port, code, host);
+      a.equal(v.players.find(p => p.nick === 'Mate').hull, 'mango');
+    });
+  },
   async 'empty leaderboard is an empty JSON array'() {
     await withServer(null, async port => {
       const r = await scores(port);
@@ -117,6 +129,25 @@ const tests = {
       }
       await until(async () => (await scores(port)).body.length === 3);
     });
+  },
+  async 'a finished game rolls the torpedo show once (1 in 5); a new game starts without it'() {
+    for (const [roll, expected] of [[0.1, true], [0.5, false]]) {
+      await withServer(null, async port => {
+        const g = await twoPlayerGame(port, 'A', 'B');
+        let v = await view(port, g.code, g.host);
+        a.equal(v.torpedo, false);
+        for (let i = 0; i < 50 && v.status === 'playing'; i++) {
+          await api(port, { action: 'skip', token: g.host, code: g.code });
+          v = await view(port, g.code, g.host);
+        }
+        a.equal(v.status, 'over');
+        a.equal(v.torpedo, expected);
+        a.equal((await view(port, g.code, g.mate)).torpedo, expected); // everyone sees the same show
+        await api(port, { action: 'lobby', token: g.host, code: g.code });
+        await api(port, { action: 'start', token: g.host, code: g.code });
+        a.equal((await view(port, g.code, g.host)).torpedo, false);
+      }, { random: () => roll });
+    }
   },
   async 'unavailable storage keeps health, rooms and games working'() {
     await withServer(dir => fs.mkdir(path.join(dir, 'highscores.json')), async (port, logger) => {

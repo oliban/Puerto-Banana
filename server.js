@@ -8,6 +8,11 @@ const { createLeaderboardStore } = require('./leaderboard-store');
 
 const PORT = process.env.PORT || 8080;
 const GOAL = 200, START = 10, MAX_PLAYERS = 6;
+// Ship hull colours players can pick; the client maps each key to a colour. Anything else becomes navy.
+const HULLS = ['navy', 'coral', 'mango', 'hibiscus', 'palm', 'turquoise', 'purple', 'charcoal'];
+const hullOf = h => HULLS.includes(h) ? h : 'navy';
+const TORPEDO_ODDS = 0.2; // share of finished games where the winner's victory show torpedoes the rivals (visual only)
+let random = Math.random;  // swappable in tests
 const rooms = new Map();          // code -> room
 const streams = new Map();        // code -> Set<{res, token}>
 const INDEX = fs.readFileSync(path.join(__dirname, 'index.html'));
@@ -29,10 +34,10 @@ function view(room, token) {
     code: room.code, status: room.status, round: room.round, pot: room.pot,
     me: me ? me.id : null, isHost: room.hostToken === token,
     players: Object.values(room.players).sort((a, b) => a.joinedAt - b.joinedAt)
-      .map(p => ({ id: p.id, nick: p.nick, locked: room.bids[p.token] !== undefined })),
+      .map(p => ({ id: p.id, nick: p.nick, hull: p.hull, locked: room.bids[p.token] !== undefined })),
     order, inventories,
     myBid: room.bids[token] ?? null,
-    lastResult: room.lastResult, history: room.history, winners: room.winners,
+    lastResult: room.lastResult, history: room.history, winners: room.winners, torpedo: !!room.torpedo,
   };
 }
 
@@ -59,6 +64,7 @@ function resolveRound(room, store) {
   if (room.order.some(t => inv[t] >= GOAL)) {
     room.status = 'over';
     room.winners = room.order.filter(t => inv[t] === top).map(ids);
+    room.torpedo = random() < TORPEDO_ODDS; // rolled once, so every player sees the same show
     recordScores(room, store);
   }
 }
@@ -83,15 +89,16 @@ const actions = {
     const room = rooms.get(String(b.code || '').toUpperCase());
     if (!room) throw new Error('No room with that code.');
     const nick = String(b.nick || '').trim().slice(0, 20) || 'Player';
-    if (!room.players[token]) room.players[token] = { token, id: rid(4), nick, joinedAt: Date.now() };
-    else room.players[token].nick = nick;
+    const hull = hullOf(b.hull);
+    if (!room.players[token]) room.players[token] = { token, id: rid(4), nick, hull, joinedAt: Date.now() };
+    else Object.assign(room.players[token], { nick, hull });
     broadcast(room); return { code: room.code };
   },
   start(b, token, room) {
     if (room.status !== 'lobby') throw new Error('Game already running.');
     const ts = Object.values(room.players).sort((a, b) => a.joinedAt - b.joinedAt).map(p => p.token).slice(0, MAX_PLAYERS);
     if (ts.length < 2) throw new Error('Need at least 2 players.');
-    Object.assign(room, { status: 'playing', order: ts, inventories: Object.fromEntries(ts.map(t => [t, START])), bids: {}, round: 1, pot: START, lastResult: null, history: [], winners: [], scoresRecorded: false });
+    Object.assign(room, { status: 'playing', order: ts, inventories: Object.fromEntries(ts.map(t => [t, START])), bids: {}, round: 1, pot: START, lastResult: null, history: [], winners: [], torpedo: false, scoresRecorded: false });
     broadcast(room);
   },
   bid(b, token, room, store) {
@@ -110,7 +117,7 @@ const actions = {
     resolveRound(room, store); broadcast(room);
   },
   lobby(b, token, room) {
-    Object.assign(room, { status: 'lobby', order: [], bids: {}, round: 0, lastResult: null, history: [], winners: [] });
+    Object.assign(room, { status: 'lobby', order: [], bids: {}, round: 0, lastResult: null, history: [], winners: [], torpedo: false });
     broadcast(room);
   },
   leave(b, token, room) {
@@ -126,7 +133,8 @@ function readBody(req) {
 }
 const json = (res, code, obj) => { res.writeHead(code, { 'content-type': 'application/json' }); res.end(JSON.stringify(obj)); };
 
-function createServer({ dataDir, logger = console } = {}) {
+function createServer({ dataDir, logger = console, random: rnd } = {}) {
+  random = rnd || Math.random;
   const store = createLeaderboardStore({ dataDir, logger });
   const server = http.createServer(async (req, res) => {
     const url = new URL(req.url, 'http://x');
