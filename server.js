@@ -147,6 +147,15 @@ function resolveRound(room, stores) {
 function recordGame(room, stores) {
   if (room.scoresRecorded || !stores) return;
   room.scoresRecorded = true; // set before the async writes so nothing can record twice
+  // Shop credits: every player in the game, once (same guard as scores). Missing storage only costs the credits.
+  room.earned = {};
+  for (const t of room.order) {
+    const p = room.players[t];
+    const amount = earnings({ score: room.inventories[t], won: room.winners.includes(p.id), torpedo: !!room.torpedo });
+    room.earned[p.id] = amount;
+    if (stores.wallets && stores.wallets.available) stores.wallets.change(t, w => { w.credits += amount; });
+  }
+  if (stores.wallets && !stores.wallets.available) stores.wallets.logger.error(`[wallets] room ${room.code} credits NOT saved: storage unavailable`);
   const completedAt = new Date().toISOString();
   const players = room.order.map(t => ({ name: room.players[t].nick, score: room.inventories[t],
     won: room.winners.includes(room.players[t].id), hull: room.players[t].hull }));

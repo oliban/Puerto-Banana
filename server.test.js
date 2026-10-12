@@ -57,6 +57,28 @@ async function twoPlayerGame(port, hostNick, mateNick) {
 }
 
 const tests = {
+  async 'every player earns credits once per game; spectators earn nothing'() {
+    await withServer(null, async port => {
+      const host = tok(), mate = tok(), watcher = tok();
+      const { body: { code } } = await api(port, { action: 'create', token: host, nick: 'Cap' });
+      await api(port, { action: 'join', token: mate, code, nick: 'Mate' });
+      await api(port, { action: 'start', token: host, code });
+      await api(port, { action: 'join', token: watcher, code, nick: 'Watch' });
+      let v = await view(port, code, host);
+      for (let i = 0; i < 60 && v.status === 'playing'; i++) {
+        await api(port, { action: 'skip', token: host, code });
+        v = await view(port, code, host);
+      }
+      a.equal(v.status, 'over');
+      const expect = id => Math.floor(v.inventories[id] / 10) + (v.winners.includes(id) ? 10 : 0) + (v.torpedo ? 3 : 0);
+      for (const id of v.order) a.equal(v.earned[id], expect(id));
+      a.equal(v.wallet.credits, expect(v.me));
+      const w = await view(port, code, watcher);
+      a.equal(w.wallet.credits, 0);
+      await api(port, { action: 'skip', token: host, code }); // poking a finished game pays nothing extra
+      a.equal((await view(port, code, host)).wallet.credits, expect(v.me));
+    }, { random: () => 0.5 });
+  },
   async 'rooms carry a shop setting and a market; the host can switch the shop off in the lobby'() {
     await withServer(null, async port => {
       const host = tok(), mate = tok();
