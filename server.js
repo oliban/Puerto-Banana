@@ -116,7 +116,7 @@ function broadcast(room) {
   for (const s of streams.get(room.code) || []) {
     s.res.write(`data: ${JSON.stringify(view(room, s.token))}\n\n`);
   }
-  if (room.effects && room.effects.length > 60) room.effects = room.effects.slice(-60);
+  if (Array.isArray(room.effects)) room.effects = room.effects.filter(e => e.kind !== 'emote' || Date.now() - e.at <= 4000); // faded emotes; blocked records stay: they count toward the round's limits
 }
 
 function resolveRound(room, stores) {
@@ -275,6 +275,8 @@ const actions = {
   },
   wear(b, token, room, stores) {
     if (!stores.wallets.available) throw new Error('The shop is closed right now.');
+    ensureShop(room);
+    if (!room.shop) throw new Error('The shop is off in this room.');
     if (!stores.wallets.get(token).owned.includes(b.item)) throw new Error("You don't own that.");
     const after = stores.wallets.change(token, w => {
       w.worn = w.worn.filter(k => k !== b.item);

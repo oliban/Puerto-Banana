@@ -573,6 +573,7 @@ const tests = {
       const off = await view(port, g.code, g.mate);
       a.deepEqual(off.players.find(p => p.nick === 'Cap').bling, []);
       a.equal((await api(port, { action: 'buy', token: g.host, code: g.code, item: 'gold' })).body.error, 'The shop is off in this room.');
+      a.equal((await api(port, { action: 'wear', token: g.host, code: g.code, item: 'parrot', on: false })).body.error, 'The shop is off in this room.');
     });
   },
   async 'emotes are free with a 10 s cooldown and fade from the view'() {
@@ -586,6 +587,22 @@ const tests = {
       srv.rooms().get(g.code).effects.forEach(e => { e.at -= 5000; });
       fx = (await view(port, g.code, g.host)).effects.filter(e => e.kind === 'emote');
       a.equal(fx.length, 0);
+    });
+  },
+  async 'a diamond survives any number of emotes; faded emotes are pruned from the room'() {
+    await withServer(null, async (port, _l, _d, srv) => {
+      const g = await shopGame(port);
+      openMarket(srv, g.code);
+      const cy = (await view(port, g.code, g.host)).order[2];
+      give(srv, g.host, 100);
+      a.equal((await api(port, { action: 'buy', token: g.host, code: g.code, item: 'diamond', target: cy })).status, 200);
+      const room = srv.rooms().get(g.code);
+      const me = (await view(port, g.code, g.host)).me;
+      for (let i = 0; i < 100; i++) room.effects.push({ kind: 'emote', emote: 'honk', from: me, at: Date.now() - 5000 });
+      a.equal((await api(port, { action: 'emote', token: g.mate, code: g.code, kind: 'ha' })).status, 200); // broadcasts
+      a.ok(room.effects.every(e => e.kind !== 'emote' || Date.now() - e.at <= 4000));
+      a.equal(room.effects.filter(e => e.kind === 'emote').length, 1);
+      a.ok((await view(port, g.code, g.host)).effects.some(e => e.kind === 'diamond'));
     });
   },
   async 'shop actions fail politely when wallet storage is broken; games still finish'() {
