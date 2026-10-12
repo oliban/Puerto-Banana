@@ -1004,7 +1004,8 @@ render();
 loadScores();
 loadRivals();
 }
-const invited = (new URLSearchParams(location.search).get('join') || '').toUpperCase();
+// Some apps glue the share text onto the link (?join=RZLG Join my…): the code is the first four letters.
+const invited = ((new URLSearchParams(location.search).get('join') || '').match(/^[a-z]{4}(?![a-z])/i) || [''])[0].toUpperCase();
 if (/^[A-Z]{4}$/.test(invited)) { S.joinCode = invited; history.replaceState(null, '', location.pathname); render(); } // from a shared invite link
 const saved = ls.get('pb_code'); if (saved && !S.joinCode && location.hash !== '#og-card') enterRoom(saved, true);
 </script>

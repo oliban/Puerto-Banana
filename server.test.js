@@ -85,6 +85,10 @@ const tests = {
       const invite = await page('/?join=qgww', { host: 'banana.example', 'x-forwarded-proto': 'https' });
       a.match(meta(invite, 'og:title'), /QGWW/);
       a.equal(meta(invite, 'og:url'), 'https://banana.example/?join=QGWW');
+      // Some share targets glue the invite text onto the link: the code is still the first four letters
+      const glued = await page('/?join=RZLG%20Join%20my%20Puerto%20Banana%20room!%20Code:%20RZLG', { host: 'banana.example', 'x-forwarded-proto': 'https' });
+      a.match(meta(glued, 'og:title'), /RZLG$/);
+      a.equal(meta(glued, 'og:url'), 'https://banana.example/?join=RZLG');
       const evil = await page('/?join=%22%3E%3Cscript%3E', { host: 'x"><script>alert(1)</script>' });
       a.ok(!evil.includes('<script>alert'), 'host header and code never reach the page raw');
       a.equal(meta(evil, 'og:image'), 'https://puerto-banana.fly.dev/assets/og.png');

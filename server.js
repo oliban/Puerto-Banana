@@ -24,7 +24,8 @@ function indexFor(req, url) {
   const host = /^[a-z0-9.-]+(:\d{1,5})?$/i.test(req.headers.host || '') ? req.headers.host : '';
   const proto = req.headers['x-forwarded-proto'] === 'https' || !/^(localhost|127\.|\[::1\])/.test(host) ? 'https' : 'http';
   const origin = host ? `${proto}://${host}` : HOME;
-  const code = /^[a-z]{4}$/i.test(url.searchParams.get('join') || '') ? url.searchParams.get('join').toUpperCase() : '';
+  // Some apps glue the share text onto the link (?join=RZLG Join my…), so the code is the first four letters.
+  const code = ((url.searchParams.get('join') || '').match(/^[a-z]{4}(?![a-z])/i) || [''])[0].toUpperCase();
   const fill = {
     ORIGIN: origin,
     URL: origin + (code ? `/?join=${code}` : '/'),
