@@ -277,7 +277,10 @@ body.og .puff{display:none} /* smoke would drift over the tagline */
 .players{list-style:none;margin:0;padding:0}
 .players li{display:grid;grid-template-columns:64px minmax(0,1fr) auto;grid-template-areas:"ship name inv" "ship status inv";gap:0 12px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
 .players li:last-child{border-bottom:0}
-.players .tile{grid-area:ship}
+.players .tile,.players .tilebox{grid-area:ship}
+.tilebox{position:relative;display:block}
+.flagbadge{position:absolute;right:-5px;top:-5px;width:24px;height:18px;border-radius:4px;overflow:hidden;box-shadow:0 0 0 2px var(--surface),0 1px 3px rgba(0,0,0,.35);pointer-events:none}
+.flagbadge svg{display:block;width:100%;height:100%}
 .players li.me .name{color:var(--coral)}
 .players .name{grid-area:name;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;align-self:end}
 .players .inv{grid-area:inv;font-family:Bungee,sans-serif;font-size:1.15rem;text-align:right}
@@ -318,7 +321,7 @@ body.og .puff{display:none} /* smoke would drift over the tagline */
   padding:20px max(16px,env(safe-area-inset-right,0px)) calc(20px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
 .reveal{list-style:none;padding:0;margin:0 0 14px}
 .reveal li{display:flex;align-items:center;gap:12px;padding:8px 12px 8px 8px;border-radius:14px;background:var(--surface);margin-bottom:8px;animation:flip .45s both}
-.reveal li .tile{flex:0 0 60px}
+.reveal li .tile,.reveal li .tilebox{flex:0 0 60px}
 .reveal li .who{flex:1;min-width:0}
 .reveal li .num{font-size:1.5rem}
 .reveal li.top{box-shadow:inset 0 0 0 3px var(--banana)}
@@ -715,7 +718,11 @@ function shipSVG(fill, label, key, look = {}, mine) {
   const a11y = label ? `role="img" aria-label="${esc(label)}"` : 'aria-hidden="true"';
   return `<svg class="shipsvg" viewBox="0 -18 220 138" ${a11y}${lookStyle(look)}>${waves(88, 220, 120, 'sh-sea2')}${ship}${waves(93, 220, 120, 'sh-sea sh-wave')}${spill}</svg>`;
 }
-const tile = (fill, still, key, look, mine) => `<span class="tile${still ? ' still' : ''}">${shipSVG(fill, '', key, look, mine)}</span>`;
+// List tiles get their captain's flag as a corner badge: the mast flag alone is a few pixels wide on a phone.
+const tile = (fill, still, key, look, mine) => {
+  const t = `<span class="tile${still ? ' still' : ''}">${shipSVG(fill, '', key, look, mine)}</span>`;
+  return still && look && look.flag ? `<span class="tilebox">${t}<span class="flagbadge">${flagThumb(look.flag)}</span></span>` : t;
+};
 // A gull: two wings pivoting at the body. The tips sweep up and down for a few beats, then it glides.
 // SMIL animates the path shape (so Safari does too); reduced motion gets a still gull.
 function bird(x, y, w, cycle, offset, glide = 9, glideDelay = 0) {
