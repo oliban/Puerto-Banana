@@ -220,6 +220,14 @@ body.og .puff{display:none} /* smoke would drift over the tagline */
 .bidbox{display:grid;grid-template-columns:56px minmax(0,1fr) 56px;gap:8px;align-items:stretch}
 .bidbox button{font-size:1.6rem;padding:0}
 .bidbox input{width:100%;min-width:0;text-align:center;font-family:Bungee,sans-serif;font-size:2.2rem;border-radius:14px;border:2px solid var(--line);background:var(--surface);padding:6px 0}
+.bidbox input.unsure{border-color:var(--coral);color:var(--coral)}
+/* Bid scratchpad (handwritten digits, read by digits.js) */
+.pad{margin-top:10px;position:relative;background:var(--surface);border-radius:14px;box-shadow:inset 0 0 0 2px var(--line);overflow:hidden}
+.pad canvas{display:block;width:100%;height:160px;touch-action:none;cursor:crosshair}
+.pad .hint{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--muted);pointer-events:none;font-weight:600}
+.reads{display:flex;align-items:center;gap:10px;margin-top:8px}
+.reads .grow{flex:1}
+.reads button{padding:10px 14px}
 /* A sealed bid is lashed down with rope */
 .locked{text-align:center;padding:20px 16px;border:3px dashed var(--mango)}
 .locked .num{font-size:2.6rem}
@@ -292,6 +300,18 @@ summary{cursor:pointer;font-weight:600;color:var(--muted);min-height:44px;displa
 @keyframes rise{from{transform:translateY(0);opacity:0}20%{opacity:.9}to{transform:translateY(-26px);opacity:0}}
 .flotsam{animation:surface 1s ease-out var(--d) both}
 @keyframes surface{from{transform:translateY(14px);opacity:0}to{transform:none;opacity:1}}
+.storm{position:absolute;inset:0;overflow:hidden}
+.storm-tint{position:absolute;inset:0;background:rgba(28,38,52,.42);animation:tint 7.5s ease both}
+@keyframes tint{0%{opacity:0}10%,85%{opacity:1}100%{opacity:0}}
+.storm-flash{position:absolute;inset:0;background:#F4F8FF;opacity:0;animation:flash 7.5s linear both}
+@keyframes flash{0%,17%{opacity:0}18%{opacity:.75}20%{opacity:0}21%{opacity:.45}23%,58%{opacity:0}59%{opacity:.6}61%,100%{opacity:0}}
+.storm-clouds{position:absolute;top:-8px;left:0;width:100%;height:150px;fill:#3E4A5A;opacity:.95;animation:clouds 7.5s ease both}
+@keyframes clouds{0%{transform:translateY(-120%)}12%,85%{transform:none}100%{transform:translateY(-120%)}}
+.rainline{position:absolute;top:-6vh;left:var(--x);width:2px;height:22px;border-radius:1px;background:linear-gradient(transparent,rgba(214,230,255,.9));
+  transform:rotate(14deg);animation:rainfall var(--t) linear var(--d) infinite}
+@keyframes rainfall{to{transform:translate(-22vh,112vh) rotate(14deg)}}
+.peel{opacity:.95}
+.battle.focus p{background:#4A5566}
 .party-banner{position:absolute;left:50%;top:16px;transform:translateX(-50%);width:min(92vw,420px);background:var(--surface);color:var(--ink);
   border-radius:16px;padding:12px 16px;font-weight:800;text-align:center;box-shadow:0 6px 24px rgba(0,0,0,.25)}
 @media (prefers-reduced-motion:reduce){.reveal li,.sh-bob,.sh-wave,.sh-float,.sh-wave-flag,.wiggle,.hs-sway,.hs-crown,.hs-birdfly,.hs-glow,.hs-star,.bongo-bob,.bongo-talk{animation:none}.hs-heat{display:none}.puff{display:none}}
@@ -306,12 +326,14 @@ summary{cursor:pointer;font-weight:600;color:var(--muted);min-height:44px;displa
   <symbol id="flag-rainbow" viewBox="0 0 40 30"><rect width="40" height="5" fill="#E40303"/><rect y="5" width="40" height="5" fill="#FF8C00"/><rect y="10" width="40" height="5" fill="#FFED00"/><rect y="15" width="40" height="5" fill="#008026"/><rect y="20" width="40" height="5" fill="#24408E"/><rect y="25" width="40" height="5" fill="#732982"/></symbol>
   <symbol id="flag-chequered" viewBox="0 0 4 3"><rect width="4" height="3" fill="#fff"/><path d="M0 0h1v1H0zM2 0h1v1H2zM1 1h1v1H1zM3 1h1v1H3zM0 2h1v1H0zM2 2h1v1H2z" fill="#111"/></symbol>
   <symbol id="flag-white" viewBox="0 0 40 30"><rect x=".5" y=".5" width="39" height="29" fill="#fff" stroke="#c9d3d9"/></symbol>
+  <symbol id="peel" viewBox="0 0 30 30"><path d="M15 9C9 12 4 20 3 27c3-4 7-9 12-13Z" fill="#E8C547" stroke="#A9861A" stroke-width="1"/><path d="M15 9c6 3 11 11 12 18-3-4-7-9-12-13Z" fill="#E8C547" stroke="#A9861A" stroke-width="1"/><path d="M15 9c-1 6 0 14 2 20-3-5-4-12-4-17Z" fill="#D9B43A" stroke="#A9861A" stroke-width="1"/><path d="M14 4h2v6h-2Z" fill="#6B4F1D"/><circle cx="9" cy="21" r="1" fill="#7A5A1A"/><circle cx="21" cy="19" r="1.2" fill="#7A5A1A"/></symbol>
   <symbol id="bunch" viewBox="0 0 26 18"><use href="#nana" width="26" height="12"/><use href="#nana" x="1" y="3" width="25" height="12"/><use href="#nana" y="6" width="26" height="12"/></symbol>
 </defs></svg>
 <div id="app"><p class="muted">Loading the docks…</p></div>
+<script src="/digits.js"></script>
 <script>
 const GOAL = 200, MAX_PLAYERS = 6;
-const S = { tauntBook: null, hull: 'navy', cabin: 'white', flag: '', flagSheet: false, flagQuery: '', countries: null, code: null, room: null, es: null, nick: '', joinCode: '', bidDraft: '', error: '', busy: false, sheetFor: null, seen: 0, scores: null, rivals: null, rivalHi: null };
+const S = { strokes: [], drawing: false, pendingRender: false, read: null, tauntBook: null, hull: 'navy', cabin: 'white', flag: '', flagSheet: false, flagQuery: '', countries: null, code: null, room: null, es: null, nick: '', joinCode: '', bidDraft: '', error: '', busy: false, sheetFor: null, seen: 0, scores: null, rivals: null, rivalHi: null };
 const app = document.getElementById('app');
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const ls = { get(k){try{return localStorage.getItem(k)}catch(e){return null}}, set(k,v){try{localStorage.setItem(k,v)}catch(e){}}, del(k){try{localStorage.removeItem(k)}catch(e){}} };
@@ -598,6 +620,7 @@ async function copyText(text, done) {
   catch (e) { S.error = "Couldn't copy. The room code is " + S.code + '.'; render(); }
 }
 const backToLobby = () => act(() => api('lobby'));
+const rematch = () => act(() => api('rematch'));
 const skipMissing = () => act(() => api('skip'));
 function lockBid() {
   const bid = parseInt(S.bidDraft, 10);
@@ -614,7 +637,7 @@ function onChange() {
   if (r.lastResult && r.lastResult.round > S.seen && S.sheetFor == null) S.sheetFor = r.lastResult.round;
   render();
 }
-function closeSheet() { S.seen = S.sheetFor; S.sheetFor = null; S.bidDraft = ''; render(); }
+function closeSheet() { S.seen = S.sheetFor; S.sheetFor = null; S.bidDraft = ''; S.strokes = []; S.read = null; render(); }
 
 // ---------- helpers ----------
 const nickOf = id => ((S.room.players.find(p => p.id === id)) || {}).nick || 'Someone';
@@ -623,9 +646,12 @@ const inGame = () => S.room.order.includes(S.room.me);
 
 // ---------- rendering ----------
 function render() {
+  if (S.drawing) { S.pendingRender = true; return; } // never rebuild the page under a finger mid-stroke
   const active = document.activeElement && document.activeElement.id;
   const caret = active && document.activeElement.selectionStart;
   app.innerHTML = view();
+  const slot = document.getElementById('padslot');
+  if (slot) { slot.appendChild(pad()); redrawPad(); }
   maybeCelebrate();
   if (active) { const el = document.getElementById(active); if (el) { el.focus(); try { el.setSelectionRange(caret, caret); } catch (e) {} } }
 }
@@ -755,9 +781,12 @@ function gameView() {
     <div class="muted small">Waiting for ${waiting} more</div></div>`;
   else action = `<label for="bid">Your secret bid</label>
     <div class="bidbox"><button aria-label="Lower bid" onclick="nudge(-1)">−</button>
-    <input id="bid" inputmode="numeric" pattern="[0-9]*" value="${esc(S.bidDraft)}" placeholder="0" oninput="S.bidDraft=this.value.replace(/\\D/g,'')">
+    <input id="bid" class="${S.read && S.read.unsure ? 'unsure' : ''}" inputmode="numeric" pattern="[0-9]*" value="${esc(S.bidDraft)}" placeholder="0" oninput="typed(this.value)">
     <button aria-label="Raise bid" onclick="nudge(1)">+</button></div>
-    <button class="primary wide" style="margin-top:12px" onclick="lockBid()" ${S.busy?'disabled':''}>Lock in bid</button>`;
+    <div class="pad" id="padslot">${S.strokes.length ? '' : '<div class="hint">…or write your bid here</div>'}</div>
+    <div class="reads"><span class="grow small ${S.read && S.read.unsure ? 'err' : 'muted'}">${S.read && S.read.unsure ? 'Not sure about that. Rewrite it or fix the number above.' : ''}</span>
+      <button onclick="undoStroke()" ${S.strokes.length ? '' : 'disabled'}>Undo</button><button onclick="clearPad()" ${S.strokes.length ? '' : 'disabled'}>Clear</button></div>
+    <button class="primary wide" style="margin-top:12px" onclick="lockBid()" ${S.busy?'disabled':''}>Lock in ${S.bidDraft ? esc(S.bidDraft) : 'bid'}</button>`;
   const skip = r.isHost && waiting > 0 && waiting < r.order.length
     ? `<button class="link" onclick="skipMissing()">Someone gone? Count missing bids as 0</button>` : '';
   const mine = r.inventories[r.me];
@@ -769,7 +798,67 @@ function gameView() {
     <div class="card">${playersList(true)}</div>${skip}
     ${historyView()}`;
 }
-function nudge(d) { S.bidDraft = String(Math.max(0, (parseInt(S.bidDraft, 10) || 0) + d)); render(); }
+// Typing or nudging takes over from the drawing, so wipe the pad to keep the two in step.
+function typed(v) {
+  S.bidDraft = v.replace(/\D/g, '');
+  if (S.strokes.length || S.read) { S.strokes = []; S.read = null; }
+  render();
+}
+function nudge(d) { typed(String(Math.max(0, (parseInt(S.bidDraft, 10) || 0) + d))); }
+
+// ---------- bid scratchpad: write your bid with a finger; digits.js reads it ----------
+let padEl = null;
+function pad() {
+  if (padEl) return padEl;
+  padEl = document.createElement('canvas');
+  padEl.setAttribute('aria-label', 'Scratchpad: write your bid with your finger');
+  let cur = null;
+  const pt = e => { const r = padEl.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
+  padEl.addEventListener('pointerdown', e => {
+    e.preventDefault(); padEl.setPointerCapture(e.pointerId);
+    clearTimeout(S.readTimer); S.drawing = true; cur = [pt(e)]; S.strokes.push(cur);
+    const hint = padEl.parentNode && padEl.parentNode.querySelector('.hint'); if (hint) hint.remove();
+    redrawPad();
+  });
+  padEl.addEventListener('pointermove', e => {
+    if (!cur) return;
+    const evs = e.getCoalescedEvents ? e.getCoalescedEvents() : [e];
+    for (const ev of evs) cur.push(pt(ev));
+    redrawPad();
+  });
+  const end = () => {
+    if (!cur) return; cur = null; S.drawing = false;
+    clearTimeout(S.readTimer); S.readTimer = setTimeout(readPad, 350);
+    if (S.pendingRender) { S.pendingRender = false; render(); }
+  };
+  padEl.addEventListener('pointerup', end); padEl.addEventListener('pointercancel', end);
+  return padEl;
+}
+function redrawPad() {
+  if (!padEl || !padEl.isConnected) return;
+  const dpr = window.devicePixelRatio || 1, r = padEl.getBoundingClientRect();
+  if (padEl.width !== Math.round(r.width * dpr)) { padEl.width = Math.round(r.width * dpr); padEl.height = Math.round(r.height * dpr); }
+  const ctx = padEl.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, r.width, r.height);
+  ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--ink');
+  ctx.lineWidth = 7; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  for (const st of S.strokes) {
+    ctx.beginPath(); st.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y));
+    if (st.length === 1) ctx.lineTo(st[0][0] + 0.1, st[0][1]);
+    ctx.stroke();
+  }
+}
+function readPad() {
+  if (!S.strokes.length) { S.read = null; S.bidDraft = ''; return render(); }
+  try {
+    const r = Digits.recognize(S.strokes);
+    S.read = { text: r.text, unsure: r.digits.some(d => d.confidence < 0.6) };
+    S.bidDraft = String(parseInt(r.text, 10));
+  } catch (e) { S.read = { text: '?', unsure: true }; S.bidDraft = ''; }
+  render();
+}
+function undoStroke() { S.strokes.pop(); readPad(); }
+function clearPad() { S.strokes = []; S.read = null; S.bidDraft = ''; render(); }
 function overView() {
   const r = S.room, w = r.winners || [];
   return `<div class="card winner">${tile(Math.max(1.6, r.inventories[w[0]] / GOAL), false, w[0], lookOfId(w[0]))}<div class="muted">King of the bananas</div>
@@ -777,7 +866,10 @@ function overView() {
     <div class="muted">${r.inventories[w[0]]} bananas after ${r.round - 1} rounds</div></div>
     ${tauntFor(r.me) ? `<div class="taunt-me" role="status">${bongoSays(`${flagThumb(flagOf(pl(r.me).flag))}<b>${esc(nickOf(r.me))}</b>, ${r.inventories[r.me]} ${r.inventories[r.me] === 1 ? 'banana' : 'bananas'}. ${esc(tauntFor(r.me))}`, 'smug', 'Ha ha ha!')}</div>` : ''}
     <div class="card" style="margin-top:14px">${playersList(false)}</div>
-    <button class="primary wide" style="margin-top:16px" onclick="backToLobby()">Back to the lobby</button>
+    ${r.isHost
+      ? `<button class="primary wide" style="margin-top:16px" onclick="rematch()" ${S.busy ? 'disabled' : ''}>Rematch!</button>
+         <button class="link" style="display:block;margin:6px auto 0" onclick="backToLobby()">Back to the lobby</button>`
+      : `<p class="waiting" role="status">Waiting for ${esc(nickOf(r.hostId))} to start the rematch<span class="dots"><i>.</i><i>.</i><i>.</i></span></p>`}
     ${historyView()}`;
 }
 // ---------- Captain Bongo, the mascot ----------
@@ -877,9 +969,21 @@ function celebrate(r) {
   const torpedo = r.torpedo && rivals.length > 0;
   const names = ids => ids.map(id => esc(nickOf(id))).join(' and ');
   const sankLine = `💥 Torpedoes sank ${names(rivals)}!`;
+  // Winners (and spectators) get the party; losers get a storm, and in torpedo games a close-up of their own sinking.
+  const lost = r.order.includes(r.me) && !r.winners.includes(r.me);
+  const winnerName = names(r.winners);
   if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    party.innerHTML = `<div class="party-banner">🎉 ${names(r.winners)} ${r.winners.length > 1 ? 'win' : 'wins'}!${torpedo ? '<br>' + sankLine : ''}</div>`;
+    party.innerHTML = lost
+      ? `<div class="party-banner">⛈ ${winnerName} ${r.winners.length > 1 ? 'take' : 'takes'} the bananas.${torpedo ? `<br>💥 ${winnerName} torpedoed your ship!` : ''}</div>`
+      : `<div class="party-banner">🎉 ${winnerName} ${r.winners.length > 1 ? 'win' : 'wins'}!${torpedo ? '<br>' + sankLine : ''}</div>`;
     return setTimeout(() => party.remove(), 5000);
+  }
+  if (lost) {
+    const t = torpedo ? BATTLE.start + BATTLE.travel + BATTLE.sink + BATTLE.linger : 0;
+    if (torpedo) party.insertAdjacentHTML('beforeend', battleView(r, [r.me], `💥 ${winnerName} torpedoed your ship!`, true));
+    setTimeout(() => { party.querySelector('.battle')?.remove(); party.insertAdjacentHTML('beforeend', stormView()); }, t * 1000);
+    setTimeout(() => party.remove(), (t + 7.5) * 1000);
+    return;
   }
   let t = 0;
   if (torpedo) { party.insertAdjacentHTML('beforeend', battleView(r, rivals, sankLine)); t = BATTLE.start + (rivals.length - 1) * BATTLE.gap + BATTLE.travel + BATTLE.sink + BATTLE.linger; }
@@ -897,6 +1001,19 @@ function rainView() {
   }
   return h;
 }
+// The losers' weather: a grey tint, dark clouds, slanting rain, two lightning flashes and soggy banana peels.
+function stormView() {
+  let rain = '', peels = '';
+  for (let i = 0; i < 70; i++) rain += `<i class="rainline" style="--x:${rand(-10, 105).toFixed(1)}vw;--t:${rand(0.45, 0.8).toFixed(2)}s;--d:${rand(0, 1.2).toFixed(2)}s"></i>`;
+  for (let i = 0; i < 11; i++) {
+    const r0 = rand(-40, 40);
+    peels += `<svg class="drop peel" viewBox="0 0 30 30" style="--x:${rand(2, 92).toFixed(1)}vw;--w:${rand(30, 46).toFixed(0)}px;--t:${rand(5, 7.5).toFixed(2)}s;--d:${rand(0.4, 2.6).toFixed(2)}s;--r0:${r0.toFixed(0)}deg;--r1:${(r0 + rand(-120, 120)).toFixed(0)}deg"><use href="#peel"/></svg>`;
+  }
+  const cloud = (x, y, k) => `<g transform="translate(${x} ${y}) scale(${k})"><ellipse cx="0" cy="20" rx="70" ry="22"/><ellipse cx="-34" cy="10" rx="34" ry="24"/><ellipse cx="22" cy="0" rx="42" ry="30"/></g>`;
+  return `<div class="storm"><div class="storm-tint"></div><div class="storm-flash"></div>
+    <svg class="storm-clouds" viewBox="0 0 400 110" preserveAspectRatio="xMidYMin slice">${cloud(60, 20, 1.1)}${cloud(200, 10, 1.3)}${cloud(340, 24, 1.15)}</svg>
+    ${rain}${peels}</div>`;
+}
 function fireworksView() {
   let h = '';
   for (let b = 0; b < 7; b++) {
@@ -908,9 +1025,10 @@ function fireworksView() {
   return h;
 }
 // The winner's ship (left) torpedoes each rival (right) in turn; hit ships tip over and sink.
-function battleView(r, rivals, line) {
+// focus: a loser's close-up of their own ship (big) instead of the wide shot of every rival.
+function battleView(r, rivals, line, focus = false) {
   const W = 360, sea = 150, win = r.winners[0];
-  const s = Math.min(0.42, 180 / (rivals.length * 220)), gap = (W - 150) / rivals.length;
+  const s = focus ? 0.8 : Math.min(0.42, 180 / (rivals.length * 220)), gap = (W - 150) / rivals.length;
   let rivalsSvg = '', shots = '';
   rivals.forEach((id, i) => {
     const x = 150 + i * gap + (gap - 220 * s) / 2, cx = x + 110 * s, hit = BATTLE.start + i * BATTLE.gap + BATTLE.travel;
@@ -924,7 +1042,7 @@ function battleView(r, rivals, line) {
       <use class="flotsam" style="--d:${(hit + BATTLE.sink * 0.8).toFixed(2)}s" href="#nana" x="${(cx - 9).toFixed(0)}" y="${sea + 6}" width="18" height="9"/>`;
   });
   const wb = shipBody(0.85, 'battle' + win, lookOfId(win)).ship; // drawn riding high so the attacker reads clearly
-  return `<div class="battle"><svg viewBox="0 84 ${W} 106" style="display:block;width:100%">
+  return `<div class="battle${focus ? ' focus' : ''}"><svg viewBox="${focus ? '0 50 360 140' : `0 84 ${W} 106`}" style="display:block;width:100%">
     ${waves(sea - 4, W, 190, 'sh-sea2')}
     <g transform="translate(4 ${(sea - 92 * 0.62).toFixed(1)}) scale(0.62)"${lookStyle(lookOfId(win))}>${wb}</g>${rivalsSvg}
     ${waves(sea + 1, W, 190, 'sh-sea sh-wave')}${shots}</svg><p>${line}</p></div>`;

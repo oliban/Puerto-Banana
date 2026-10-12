@@ -18,6 +18,7 @@ let random = Math.random;  // swappable in tests
 const rooms = new Map();          // code -> room
 const streams = new Map();        // code -> Set<{res, token}>
 const INDEX = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8');
+const DIGITS = fs.readFileSync(path.join(__dirname, 'digits.js')); // bid scratchpad: handwritten-digit recognizer
 const HOME = 'https://puerto-banana.fly.dev';
 // The home page with its social-preview tags filled in. Links must be absolute, so they use the address the
 // page was requested on (only if it looks like a plain host); an invite link (?join=ABCD) names the room.
@@ -129,6 +130,15 @@ function recordGame(room, stores) {
     .catch(e => stores.games.logger.error(`[games] room ${room.code} result NOT saved:`, e.message));
 }
 
+// Deal a fresh game to the room's players (the first MAX_PLAYERS by join order).
+function newGame(room) {
+  const ts = Object.values(room.players).sort((a, b) => a.joinedAt - b.joinedAt).map(p => p.token).slice(0, MAX_PLAYERS);
+  if (ts.length < 2) throw new Error('Need at least 2 players.');
+  Object.assign(room, { status: 'playing', order: ts, inventories: Object.fromEntries(ts.map(t => [t, START])), bids: {}, round: 1, pot: START,
+    lastResult: null, history: [], winners: [], torpedo: false, taunts: {}, scoresRecorded: false });
+  broadcast(room);
+}
+
 const actions = {
   create(b, token) {
     const code = newCode();
@@ -147,10 +157,13 @@ const actions = {
   start(b, token, room) {
     if (room.hostToken !== token) throw new Error('Only the host can start the game.');
     if (room.status !== 'lobby') throw new Error('Game already running.');
-    const ts = Object.values(room.players).sort((a, b) => a.joinedAt - b.joinedAt).map(p => p.token).slice(0, MAX_PLAYERS);
-    if (ts.length < 2) throw new Error('Need at least 2 players.');
-    Object.assign(room, { status: 'playing', order: ts, inventories: Object.fromEntries(ts.map(t => [t, START])), bids: {}, round: 1, pot: START, lastResult: null, history: [], winners: [], torpedo: false, taunts: {}, scoresRecorded: false });
-    broadcast(room);
+    newGame(room);
+  },
+  // One tap from the end screen: a fresh game with everyone still in the room (leavers were removed).
+  rematch(b, token, room) {
+    if (room.hostToken !== token) throw new Error('Only the host can start a rematch.');
+    if (room.status !== 'over') throw new Error('The game is not over yet.');
+    newGame(room);
   },
   bid(b, token, room, stores) {
     if (room.status !== 'playing' || !room.order.includes(token)) throw new Error('You are not in this game.');
@@ -172,7 +185,7 @@ const actions = {
     broadcast(room);
   },
   leave(b, token, room) {
-    if (room.status === 'lobby') { delete room.players[token]; if (room.hostToken === token) { const next = Object.keys(room.players)[0]; if (next) room.hostToken = next; } broadcast(room); }
+    if (room.status === 'lobby' || room.status === 'over') { delete room.players[token]; if (room.hostToken === token) { const next = Object.keys(room.players)[0]; if (next) room.hostToken = next; } broadcast(room); }
   },
 };
 
@@ -208,6 +221,10 @@ function createServer({ dataDir = process.env.DATA_DIR || '/data', logger = cons
     const url = new URL(req.url, 'http://x');
     if (req.method === 'GET' && url.pathname === '/') { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' }); return res.end(indexFor(req, url)); }
     if (req.method === 'GET' && url.pathname.startsWith('/assets/') && serveAsset(res, url.pathname)) return;
+    if (req.method === 'GET' && url.pathname === '/digits.js') {
+      res.writeHead(200, { 'content-type': 'text/javascript; charset=utf-8', 'cache-control': 'public, max-age=86400' });
+      return res.end(DIGITS);
+    }
     if (req.method === 'GET' && url.pathname === '/healthz') return json(res, 200, { ok: true, rooms: rooms.size });
     if (req.method === 'GET' && url.pathname === '/api/highscores') {
       await stores.scores.ready;
