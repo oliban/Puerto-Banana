@@ -19,6 +19,7 @@ function request(port, method, pathname, body) {
 }
 const api = (port, body) => request(port, 'POST', '/api', body);
 const scores = port => request(port, 'GET', '/api/highscores');
+const rivals = (port, name) => request(port, 'GET', '/api/rivals' + (name === undefined ? '' : '?name=' + encodeURIComponent(name)));
 
 // The first SSE event is the player's current view.
 function view(port, code, token) {
@@ -148,6 +149,60 @@ const tests = {
         a.equal((await view(port, g.code, g.host)).torpedo, false);
       }, { random: () => roll });
     }
+  },
+  async 'a finished game is saved once to the history with wins and hulls; spectators are not'() {
+    await withServer(null, async port => {
+      const host = tok(), mate = tok(), watcher = tok();
+      const { body: { code } } = await api(port, { action: 'create', token: host, nick: 'Anna', hull: 'coral' });
+      await api(port, { action: 'join', token: mate, code, nick: 'Bo', hull: 'mango' });
+      await api(port, { action: 'start', token: host, code });
+      await api(port, { action: 'join', token: watcher, code, nick: 'Cy' }); // joined after start: spectator
+      let v;
+      for (let i = 0; i < 50; i++) {
+        await api(port, { action: 'skip', token: host, code });
+        v = await view(port, code, host);
+        if (v.status === 'over') break;
+      }
+      a.equal(v.status, 'over');
+      const r = await until(async () => { const x = await rivals(port, 'anna'); return x.body.players.length === 2 && x.body; });
+      a.equal(r.mode, 'rivals');
+      a.deepEqual(r.players.map(p => p.key).sort(), ['anna', 'bo']);
+      a.equal(r.players.find(p => p.key === 'anna').hull, 'coral');
+      a.equal(r.players.reduce((n, p) => n + p.won, 0) >= 1, true);
+      a.equal(r.games.length, 1);
+
+      // Poking a finished room or reconnecting must not add a second game.
+      await api(port, { action: 'skip', token: host, code });
+      await view(port, code, mate);
+      await new Promise(res => setTimeout(res, 100));
+      a.equal((await rivals(port, 'anna')).body.games.length, 1);
+      a.equal((await rivals(port, 'Cy')).body.mode, 'active'); // the spectator never played
+    });
+  },
+  async 'rivals without a name falls back to the most active captains'() {
+    await withServer(null, async port => {
+      const r = await rivals(port);
+      a.equal(r.status, 200);
+      a.match(r.type, /application\/json/);
+      a.deepEqual(r.body, { mode: 'active', me: null, games: [], players: [] });
+    });
+  },
+  async 'unreadable game history answers 503 while games and the harbour log still work'() {
+    await withServer(dir => fs.mkdir(path.join(dir, 'games.json')), async (port, logger) => {
+      const r = await rivals(port, 'A');
+      a.equal(r.status, 503);
+      a.deepEqual(r.body, { error: 'Game history unavailable.' });
+      const g = await twoPlayerGame(port, 'A', 'B');
+      let v;
+      for (let i = 0; i < 50; i++) {
+        await api(port, { action: 'skip', token: g.host, code: g.code });
+        v = await view(port, g.code, g.host);
+        if (v.status === 'over') break;
+      }
+      a.equal(v.status, 'over');
+      await until(async () => (await scores(port)).body.length >= 1);
+      await until(() => logger.errors.some(e => /\[games\]/.test(e)));
+    });
   },
   async 'unavailable storage keeps health, rooms and games working'() {
     await withServer(dir => fs.mkdir(path.join(dir, 'highscores.json')), async (port, logger) => {

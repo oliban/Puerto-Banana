@@ -1,7 +1,5 @@
-// Durable top-20 leaderboard: one JSON file, serialized atomic writes (temp file + rename).
-const fs = require('fs/promises');
-const path = require('path');
-const crypto = require('crypto');
+// Durable top-20 leaderboard on a shared JSON-file store.
+const { createJsonFileStore } = require('./json-file-store');
 
 const FILE = 'highscores.json', LIMIT = 20, NAME_MAX = 20;
 
@@ -15,58 +13,16 @@ function clean(e) {
 }
 
 function createLeaderboardStore({ dataDir = process.env.DATA_DIR || '/data', logger = console } = {}) {
-  const file = path.join(dataDir, FILE);
-  let entries = [];
-  let chain = Promise.resolve();
-  const store = { available: true, logger };
-
-  const accept = (rows, source) => {
-    const good = [];
-    for (const r of rows) { const c = clean(r); if (c) good.push(c); else logger.error(`[highscores] discarded malformed ${source} row:`, JSON.stringify(r)); }
-    return good;
+  const top = rows => rows.slice().sort(rank).slice(0, LIMIT);
+  const base = createJsonFileStore({ dataDir, file: FILE, label: 'highscores', clean, normalize: top, logger,
+    unavailableMessage: 'Highscore storage is unavailable.' });
+  return {
+    get available() { return base.available; },
+    logger,
+    ready: base.ready,
+    list: () => base.rows().map(e => ({ ...e })),
+    record: newEntries => base.update(rows => rows.concat(base.accept(newEntries, 'new'))),
   };
-
-  store.ready = (async () => {
-    let text;
-    try { text = await fs.readFile(file, 'utf8'); } catch (e) {
-      if (e.code === 'ENOENT') return;
-      store.available = false;
-      logger.error(`[highscores] storage unavailable (${file}):`, e.message);
-      return;
-    }
-    try {
-      const rows = JSON.parse(text);
-      if (!Array.isArray(rows)) throw new Error('not an array');
-      entries = accept(rows, 'stored').sort(rank).slice(0, LIMIT);
-    } catch (e) {
-      logger.error(`[highscores] ${file} is corrupt (${e.message}); starting empty, next save replaces it`);
-    }
-  })();
-
-  store.list = () => entries.map(e => ({ ...e }));
-
-  store.record = newEntries => {
-    const run = chain.then(async () => {
-      await store.ready;
-      if (!store.available) throw new Error('Highscore storage is unavailable.');
-      const next = entries.concat(accept(newEntries, 'new')).sort(rank).slice(0, LIMIT);
-      const tmp = path.join(dataDir, `.${FILE}.${process.pid}.${crypto.randomBytes(4).toString('hex')}.tmp`);
-      try {
-        await fs.mkdir(dataDir, { recursive: true });
-        await fs.writeFile(tmp, JSON.stringify(next, null, 1));
-        await fs.rename(tmp, file);
-      } catch (e) {
-        await fs.rm(tmp, { force: true }).catch(() => {});
-        logger.error('[highscores] save failed:', e.message);
-        throw e;
-      }
-      entries = next;
-    });
-    chain = run.catch(() => {}); // a failed write must not block later ones
-    return run;
-  };
-
-  return store;
 }
 
 module.exports = { createLeaderboardStore };

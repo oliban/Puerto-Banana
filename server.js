@@ -5,12 +5,12 @@ const path = require('path');
 const crypto = require('crypto');
 const { resolveAuction } = require('./engine');
 const { createLeaderboardStore } = require('./leaderboard-store');
+const { createGamesStore } = require('./games-store');
+const { computeRivals } = require('./rivals');
 
 const PORT = process.env.PORT || 8080;
 const GOAL = 200, START = 10, MAX_PLAYERS = 6;
-// Ship hull colours players can pick; the client maps each key to a colour. Anything else becomes navy.
-const HULLS = ['navy', 'coral', 'mango', 'hibiscus', 'palm', 'turquoise', 'purple', 'charcoal'];
-const hullOf = h => HULLS.includes(h) ? h : 'navy';
+const { hullOf } = require('./players'); // hull keys; the client maps each to a colour
 const TORPEDO_ODDS = 0.2; // share of finished games where the winner's victory show torpedoes the rivals (visual only)
 let random = Math.random;  // swappable in tests
 const rooms = new Map();          // code -> room
@@ -48,7 +48,7 @@ function broadcast(room) {
   }
 }
 
-function resolveRound(room, store) {
+function resolveRound(room, stores) {
   const ids = t => room.players[t].id;
   const bids = {}; room.order.forEach(t => { bids[t] = room.bids[t] ?? 0; });
   const { inv, steps } = resolveAuction(room.inventories, bids, room.pot, room.order);
@@ -65,18 +65,22 @@ function resolveRound(room, store) {
     room.status = 'over';
     room.winners = room.order.filter(t => inv[t] === top).map(ids);
     room.torpedo = random() < TORPEDO_ODDS; // rolled once, so every player sees the same show
-    recordScores(room, store);
+    recordGame(room, stores);
   }
 }
 
 // Called on the transition to 'over', from server-owned state only; once per game.
-function recordScores(room, store) {
-  if (room.scoresRecorded || !store) return;
-  room.scoresRecorded = true; // set before the async write so nothing can record twice
+// The harbour log and the game history save independently: one failing never blocks the other.
+function recordGame(room, stores) {
+  if (room.scoresRecorded || !stores) return;
+  room.scoresRecorded = true; // set before the async writes so nothing can record twice
   const completedAt = new Date().toISOString();
-  const entries = room.order.filter(t => room.winners.includes(room.players[t].id))
-    .map(t => ({ name: room.players[t].nick, score: room.inventories[t], completedAt }));
-  store.record(entries).catch(e => store.logger.error(`[highscores] room ${room.code} result NOT saved:`, e.message));
+  const players = room.order.map(t => ({ name: room.players[t].nick, score: room.inventories[t],
+    won: room.winners.includes(room.players[t].id), hull: room.players[t].hull }));
+  stores.scores.record(players.filter(p => p.won).map(({ name, score }) => ({ name, score, completedAt })))
+    .catch(e => stores.scores.logger.error(`[highscores] room ${room.code} result NOT saved:`, e.message));
+  stores.games.record({ completedAt, players })
+    .catch(e => stores.games.logger.error(`[games] room ${room.code} result NOT saved:`, e.message));
 }
 
 const actions = {
@@ -101,20 +105,20 @@ const actions = {
     Object.assign(room, { status: 'playing', order: ts, inventories: Object.fromEntries(ts.map(t => [t, START])), bids: {}, round: 1, pot: START, lastResult: null, history: [], winners: [], torpedo: false, scoresRecorded: false });
     broadcast(room);
   },
-  bid(b, token, room, store) {
+  bid(b, token, room, stores) {
     if (room.status !== 'playing' || !room.order.includes(token)) throw new Error('You are not in this game.');
     if (room.bids[token] !== undefined) throw new Error('Bid already locked.');
     const bid = Number(b.bid);
     if (!Number.isInteger(bid) || bid < 0 || bid > 1e9) throw new Error('Bid a whole number, 0 or more.');
     room.bids[token] = bid;
-    if (room.order.every(t => room.bids[t] !== undefined)) resolveRound(room, store);
+    if (room.order.every(t => room.bids[t] !== undefined)) resolveRound(room, stores);
     broadcast(room);
   },
-  skip(b, token, room, store) {
+  skip(b, token, room, stores) {
     if (room.hostToken !== token) throw new Error('Only the host can do that.');
     if (room.status !== 'playing') return;
     room.order.forEach(t => { if (room.bids[t] === undefined) room.bids[t] = 0; });
-    resolveRound(room, store); broadcast(room);
+    resolveRound(room, stores); broadcast(room);
   },
   lobby(b, token, room) {
     Object.assign(room, { status: 'lobby', order: [], bids: {}, round: 0, lastResult: null, history: [], winners: [], torpedo: false });
@@ -135,14 +139,19 @@ const json = (res, code, obj) => { res.writeHead(code, { 'content-type': 'applic
 
 function createServer({ dataDir, logger = console, random: rnd } = {}) {
   random = rnd || Math.random;
-  const store = createLeaderboardStore({ dataDir, logger });
+  const stores = { scores: createLeaderboardStore({ dataDir, logger }), games: createGamesStore({ dataDir, logger }) };
   const server = http.createServer(async (req, res) => {
     const url = new URL(req.url, 'http://x');
     if (req.method === 'GET' && url.pathname === '/') { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' }); return res.end(INDEX); }
     if (req.method === 'GET' && url.pathname === '/healthz') return json(res, 200, { ok: true, rooms: rooms.size });
     if (req.method === 'GET' && url.pathname === '/api/highscores') {
-      await store.ready;
-      return store.available ? json(res, 200, store.list()) : json(res, 503, { error: 'Highscores unavailable.' });
+      await stores.scores.ready;
+      return stores.scores.available ? json(res, 200, stores.scores.list()) : json(res, 503, { error: 'Highscores unavailable.' });
+    }
+    if (req.method === 'GET' && url.pathname === '/api/rivals') {
+      await stores.games.ready;
+      if (!stores.games.available) return json(res, 503, { error: 'Game history unavailable.' });
+      return json(res, 200, computeRivals(stores.games.list(), url.searchParams.get('name') || ''));
     }
     if (req.method === 'GET' && url.pathname === '/events') {
       const room = rooms.get(String(url.searchParams.get('room') || '').toUpperCase());
@@ -168,12 +177,12 @@ function createServer({ dataDir, logger = console, random: rnd } = {}) {
           room = rooms.get(String(b.code || '').toUpperCase());
           if (!room || !room.players[token]) throw new Error('Room not found.');
         }
-        return json(res, 200, fn(b, token, room, store) || { ok: true });
+        return json(res, 200, fn(b, token, room, stores) || { ok: true });
       } catch (e) { return json(res, 400, { error: e.message }); }
     }
     res.writeHead(404); res.end();
   });
-  server.store = store;
+  server.stores = stores;
   return server;
 }
 
