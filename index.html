@@ -9,38 +9,42 @@
 <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Figtree:wght@400;600;800&display=swap" rel="stylesheet">
 <style>
 /* Visual QA checklist (check after any layout change):
-   - 320px and 390px wide: no horizontal scroll, rows wrap, hull name fits
+   - 320px and 390px wide: no horizontal scroll, rows wrap, title fits
    - safe-area insets on notched phones (top/bottom/left/right padding on #app and .sheet)
    - every tap target >= 44px tall, :focus-visible ring on every control
-   - light + dark, and prefers-reduced-motion (ship stops bobbing, reveal stops flipping) */
+   - light + dark, and prefers-reduced-motion (ships stop bobbing, waves stop, reveal stops flipping)
+   - cargo ships at fill 0, 0.5, 1 and >1 read as empty / half / full / overfull */
 :root{
-  --bg:#E6F1EE; --surface:#FFFFFF; --ink:#12343B; --muted:#4F6E73; --line:#C9DDD8;
-  --banana:#FFD23F; --banana-ink:#3A2F00; --banana-edge:#C99E00;
-  --rust:#C2412D; --ok:#1F7A52;
-  --sea:#1C5F6E; --sea-deep:#134653; --foam:#FFFFFF; --sky:#BFE0DA;
-  --topside:#183A44; --hull:#C2412D; --rope:#B98A4E; --plank:#F6EBD2; --plank-ink:#4A3410;
-  --container:#C2412D; --container-2:#A3331F;
+  --bg:#FFF8EC; --bg-2:#DDF7F6; --surface:#FFFFFF; --ink:#0B3954; --muted:#4D6F80; --line:#D3ECEA;
+  --banana:#FFD60A; --banana-ink:#3A2F00; --banana-edge:#E5A100;
+  --coral:#D93842; --ok:#078A7E;
+  --sea:#3FD0E0; --sea-deep:#0582B8; --sky:#A6ECF5; --sky-2:#E9FCFF;
+  --hull:#1D4E89; --keel:#FF6B6B; --rail:#1D4E89; --cabin:#FFFFFF;
+  --mango:#FF9F1C; --hibiscus:#FF3E8A; --palm:#2BB673; --trunk:#9C6B3C; --sand:#FFE0A3; --sun:#FFC93C; --cloud:#FFFFFF;
+ 
   color-scheme:light dark;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
-    --bg:#0E2226; --surface:#163338; --ink:#E6F1EE; --muted:#9BB8B5; --line:#24484E;
-    --banana-ink:#2A2200; --banana-edge:#B08A00; --rust:#F06A42; --ok:#4CC38A;
-    --sea:#123F4A; --sea-deep:#0B2C34; --foam:#9FC9C4; --sky:#16343A;
-    --topside:#0F262C; --hull:#B23A26; --rope:#C9A06A; --plank:#3A3122; --plank-ink:#F2E2B8;
-    --container:#B8401F; --container-2:#8F3015;
+    --bg:#071F2E; --bg-2:#0B3346; --surface:#0E3448; --ink:#EAFBFF; --muted:#9CC7D4; --line:#1B4A60;
+    --banana-ink:#2A2200; --banana-edge:#C98E00; --coral:#FF7A7F; --ok:#3ED6C2;
+    --sea:#0F7C99; --sea-deep:#06506E; --sky:#12425C; --sky-2:#0A2A3E;
+    --hull:#2A64A8; --keel:#E85A5A; --rail:#7FB4E8; --cabin:#DCEFF5;
+    --palm:#23A866; --trunk:#B88553; --sand:#C9A66B; --sun:#FFF0B8; --cloud:#2B5A73;
+
   }
 }
 :root[data-theme="dark"]{
-  --bg:#0E2226; --surface:#163338; --ink:#E6F1EE; --muted:#9BB8B5; --line:#24484E;
-  --banana-ink:#2A2200; --banana-edge:#B08A00; --rust:#F06A42; --ok:#4CC38A;
-  --sea:#123F4A; --sea-deep:#0B2C34; --foam:#9FC9C4; --sky:#16343A;
-  --topside:#0F262C; --hull:#B23A26; --rope:#C9A06A; --plank:#3A3122; --plank-ink:#F2E2B8;
-  --container:#B8401F; --container-2:#8F3015;
+  --bg:#071F2E; --bg-2:#0B3346; --surface:#0E3448; --ink:#EAFBFF; --muted:#9CC7D4; --line:#1B4A60;
+  --banana-ink:#2A2200; --banana-edge:#C98E00; --coral:#FF7A7F; --ok:#3ED6C2;
+  --sea:#0F7C99; --sea-deep:#06506E; --sky:#12425C; --sky-2:#0A2A3E;
+  --hull:#2A64A8; --keel:#E85A5A; --rail:#7FB4E8; --cabin:#DCEFF5;
+  --palm:#23A866; --trunk:#B88553; --sand:#C9A66B; --sun:#FFF0B8; --cloud:#2B5A73;
+
 }
 *,*::before,*::after{box-sizing:border-box}
 html,body{margin:0;min-height:100%}
-body{background:var(--bg);color:var(--ink);font:400 17px/1.45 Figtree,system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+body{background:var(--bg) linear-gradient(var(--bg-2),var(--bg) 480px) no-repeat;color:var(--ink);font:400 17px/1.45 Figtree,system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden}
 #app{max-width:460px;margin:0 auto;
   padding:calc(16px + env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) calc(40px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
 h1,h2,.num{font-family:Bungee,Impact,"Arial Black",sans-serif;font-weight:400;letter-spacing:.01em}
@@ -49,81 +53,96 @@ p{margin:0 0 12px}
 .muted{color:var(--muted)}
 .small{font-size:.88rem}
 button,input{font:inherit;color:inherit}
-button{cursor:pointer;border:0;border-radius:12px;padding:10px 18px;min-height:48px;font-weight:800;background:var(--surface);color:var(--ink);box-shadow:inset 0 0 0 2px var(--line);touch-action:manipulation}
-button.primary{background:var(--banana);color:var(--banana-ink);box-shadow:0 3px 0 var(--banana-edge)}
-button.primary:active{transform:translateY(2px);box-shadow:0 1px 0 var(--banana-edge)}
+button{cursor:pointer;border:0;border-radius:14px;padding:10px 18px;min-height:48px;font-weight:800;background:var(--surface);color:var(--ink);box-shadow:inset 0 0 0 2px var(--sea),0 3px 0 var(--line);touch-action:manipulation}
+button.primary{background:linear-gradient(var(--banana),color-mix(in srgb,var(--banana) 80%,var(--mango)));color:var(--banana-ink);box-shadow:0 4px 0 var(--banana-edge)}
+button.primary:active{transform:translateY(3px);box-shadow:0 1px 0 var(--banana-edge)}
 button:disabled{opacity:.45;cursor:default}
 button.link{background:none;box-shadow:none;padding:0 4px;min-height:44px;color:var(--muted);font-weight:600;text-decoration:underline;text-align:left}
 .wide{width:100%}
-:focus-visible{outline:3px solid var(--rust);outline-offset:2px}
-input.text{width:100%;min-height:48px;padding:11px 14px;border-radius:12px;border:2px solid var(--line);background:var(--surface)}
+:focus-visible{outline:3px solid var(--hibiscus);outline-offset:2px}
+input.text{width:100%;min-height:48px;padding:11px 14px;border-radius:14px;border:2px solid var(--line);background:var(--surface)}
+input.text:focus{border-color:var(--sea)}
 input.code{text-transform:uppercase;font-family:Bungee,sans-serif;letter-spacing:.2em;min-width:0}
 label{display:block;font-weight:600;margin:0 0 6px}
 .stack>*+*{margin-top:12px}
 .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .row>.grow{flex:1 1 140px}
-.card{background:var(--surface);border-radius:16px;padding:16px}
-.divider{height:1px;background:var(--line);margin:22px 0}
-.err{color:var(--rust);font-weight:600}
+.card{background:var(--surface);border-radius:18px;padding:16px;box-shadow:0 3px 0 var(--line)}
+.divider{height:4px;margin:24px 0;background:radial-gradient(circle,var(--sea) 1.6px,transparent 2.2px) 0 0/12px 4px repeat-x}
+.err{color:var(--coral);font-weight:600}
 .topbar{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:12px}
 .topbar .code{font-family:Bungee,sans-serif;letter-spacing:.15em}
 
-/* The ship: the one loud thing. Hull name painted on the topside, red antifouling below. */
-.harbor{position:relative;border-radius:20px;overflow:hidden;background:linear-gradient(var(--sky) 0 62%,var(--sea) 62%);padding:26px 14px 0;margin-bottom:18px}
-.ship{position:relative;width:min(100%,360px);margin:0 auto;animation:bob 4.5s ease-in-out infinite}
-.deck{display:flex;align-items:flex-end;gap:6px;padding:0 9% 0 13%}
-.crates{display:flex;flex-wrap:wrap-reverse;gap:3px;flex:1}
-.crates i{flex:1 0 18%;height:16px;border-radius:2px;background:repeating-linear-gradient(90deg,var(--banana) 0 7px,var(--banana-edge) 7px 9px)}
-.bridge{width:46px;height:44px;border-radius:4px 4px 0 0;background:var(--foam);position:relative;box-shadow:inset 0 -14px 0 var(--line)}
-.bridge::before{content:"";position:absolute;left:8px;right:8px;top:9px;height:7px;border-radius:2px;background:var(--topside)}
-.bridge::after{content:"";position:absolute;right:12px;top:-20px;width:12px;height:20px;background:var(--hull);box-shadow:inset 0 5px 0 var(--topside)}
-.hull{clip-path:polygon(0 0,100% 0,90% 100%,7% 100%);background:linear-gradient(var(--topside) 0 64%,var(--foam) 64% 68%,var(--hull) 68%);padding:12px 12% 26px;text-align:center}
-.hull h1{margin:0;color:var(--banana);font-size:clamp(1.35rem,7.4vw,2.05rem);line-height:1.05;white-space:nowrap}
-.waves{height:22px;margin:-12px -14px 0;position:relative;background:radial-gradient(circle at 12px 0,transparent 11px,var(--sea) 12px) 0 0/24px 22px repeat-x}
-.harbor-foot{background:var(--sea);color:#E6F1EE;margin:0 -14px;padding:2px 16px 16px;font-size:.95rem}
-@keyframes bob{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(3px) rotate(-.6deg)}}
+/* Cargo ships: one SVG drawing (shipSVG) loaded from an empty hold to bananas spilling overboard */
+.shipsvg,.scene{display:block;width:100%;height:auto}
+.tile{display:block;border-radius:12px;overflow:hidden;background:linear-gradient(var(--sky-2),var(--sky))}
+.sh-hull{fill:var(--hull)} .sh-keel{fill:var(--keel)} .sh-stripe{stroke:#fff;stroke-width:2.5}
+.sh-cabin{fill:var(--cabin)} .sh-win{fill:var(--sea-deep)} .sh-funnel{fill:var(--mango)} .sh-band{fill:var(--hibiscus)}
+.sh-port{fill:#fff;opacity:.85} .sh-flag{fill:var(--hibiscus)}
+.sh-mast{stroke:var(--rail);stroke-width:2.2;stroke-linecap:round;fill:none}
+.sh-sea{fill:var(--sea-deep)} .sh-sea2{fill:var(--sea)}
+.nb{fill:var(--banana);stroke:var(--banana-edge);stroke-width:.9;stroke-linejoin:round} .nb-tip{stroke:#5B4214;stroke-width:1.6;stroke-linecap:round}
+.hs-sun{fill:var(--sun)} .hs-glow{fill:var(--sun);opacity:.25} .hs-cloud{fill:var(--cloud);opacity:.9}
+.hs-bird{stroke:var(--ink);stroke-width:1.4;fill:none;stroke-linecap:round;opacity:.6}
+.hs-sand{fill:var(--sand)} .hs-trunk{stroke:var(--trunk);stroke-width:5;fill:none;stroke-linecap:round} .hs-palm{fill:var(--palm)} .hs-nut{fill:var(--trunk)}
+.sh-bob{animation:bob 4.5s ease-in-out infinite;transform-box:fill-box;transform-origin:50% 100%}
+.sh-wave{animation:drift 5s linear infinite}
+.sh-float{animation:float 3.2s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
+.still .sh-bob,.still .sh-wave,.still .sh-float{animation:none}
+@keyframes bob{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(1.5px) rotate(-.8deg)}}
+@keyframes drift{to{transform:translateX(-30px)}}
+@keyframes float{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-2px) rotate(8deg)}}
 
-/* The pot: corrugated cargo container */
-.container{position:relative;border-radius:6px;color:#fff;padding:18px 18px 16px;
-  background:repeating-linear-gradient(90deg,var(--container) 0 14px,var(--container-2) 14px 18px);
-  box-shadow:inset 0 0 0 4px rgba(0,0,0,.18)}
-.container .plate{display:inline-block;background:rgba(255,255,255,.92);color:#12343B;border-radius:4px;padding:2px 8px;font-weight:800;font-size:.85rem}
-.container .num{font-size:clamp(3rem,16vw,4.2rem);line-height:1;margin-top:8px;text-shadow:0 3px 0 rgba(0,0,0,.25)}
-.container .sub{font-weight:600;opacity:.95}
-/* Your stash: a deck plank */
-.stash{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:12px 0 0;padding:10px 14px;border-radius:10px;color:var(--plank-ink);
-  background:repeating-linear-gradient(0deg,var(--plank) 0 15px,color-mix(in srgb,var(--plank) 88%,var(--rope)) 15px 16px)}
-.stash .num{font-size:1.8rem;line-height:1}
+/* Home: a Caribbean bay */
+.harbor{border-radius:24px;overflow:hidden;background:linear-gradient(var(--sky-2),var(--sky) 70%);margin-bottom:18px;box-shadow:0 4px 0 var(--line)}
+.harbor h1{margin:0;padding:18px 16px 0;text-align:center;color:var(--ink);font-size:clamp(1.6rem,8.6vw,2.4rem);line-height:1.05;text-shadow:3px 3px 0 var(--banana),5px 5px 0 var(--mango)}
+.harbor-foot{background:var(--sea-deep);color:#fff;margin-top:-1px;padding:2px 16px 16px;font-size:.95rem}
+.fleet{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:12px 0 0}
+.fleet figure{margin:0}
+.fleet figcaption{text-align:center;font-weight:800;font-size:.78rem;margin-top:4px;letter-spacing:.02em}
+
+/* The pot: the ship up for auction */
+.potcard{border-radius:20px;background:var(--sea-deep);color:#fff;padding:12px 18px 14px;box-shadow:0 4px 0 var(--line)}
+.plate{display:inline-block;background:var(--hibiscus);color:#fff;border-radius:999px;padding:3px 12px;font-weight:800;font-size:.85rem}
+.potcard .num{font-size:clamp(2.6rem,14vw,3.6rem);line-height:1;margin-top:6px;text-shadow:0 3px 0 rgba(0,0,0,.2)}
+.potcard .sub{font-weight:600;opacity:.95}
+/* Your own ship: the big animated bay; opponents get small stills in the list */
+.myship{margin-top:12px;border-radius:20px;overflow:hidden;background:linear-gradient(var(--sky-2),var(--sky) 70%);box-shadow:0 4px 0 var(--line)}
+.myship-foot{display:flex;justify-content:space-between;align-items:center;gap:12px;background:var(--sea-deep);color:#fff;margin-top:-1px;padding:2px 16px 12px;line-height:1.25}
+.myship-foot .num{font-size:1.9rem;line-height:1}
 .players{list-style:none;margin:0;padding:0}
-.players li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 12px;padding:12px 0;border-bottom:1px solid var(--line)}
+.players li{display:grid;grid-template-columns:64px minmax(0,1fr) auto;grid-template-areas:"ship name inv" "ship status inv";gap:0 12px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
 .players li:last-child{border-bottom:0}
-.players li.me .name{color:var(--rust)}
-.players .name{font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.players .inv{font-family:Bungee,sans-serif;font-size:1.15rem;text-align:right}
-.players .status{font-size:.88rem;color:var(--muted)}
+.players .tile{grid-area:ship}
+.players li.me .name{color:var(--coral)}
+.players .name{grid-area:name;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;align-self:end}
+.players .inv{grid-area:inv;font-family:Bungee,sans-serif;font-size:1.15rem;text-align:right}
+.players .status{grid-area:status;font-size:.88rem;color:var(--muted);align-self:start}
 .players .status.ok{color:var(--ok);font-weight:600}
-.bar{grid-column:1/-1;height:6px;border-radius:3px;background:var(--line);overflow:hidden}
-.bar>i{display:block;height:100%;background:var(--banana)}
 .bidbox{display:grid;grid-template-columns:56px minmax(0,1fr) 56px;gap:8px;align-items:stretch}
 .bidbox button{font-size:1.6rem;padding:0}
-.bidbox input{width:100%;min-width:0;text-align:center;font-family:Bungee,sans-serif;font-size:2.2rem;border-radius:12px;border:2px solid var(--line);background:var(--surface);padding:6px 0}
+.bidbox input{width:100%;min-width:0;text-align:center;font-family:Bungee,sans-serif;font-size:2.2rem;border-radius:14px;border:2px solid var(--line);background:var(--surface);padding:6px 0}
 /* A sealed bid is lashed down with rope */
-.locked{text-align:center;padding:20px 16px;border:3px dashed var(--rope)}
+.locked{text-align:center;padding:20px 16px;border:3px dashed var(--mango)}
 .locked .num{font-size:2.6rem}
-.sheet-bg{position:fixed;inset:0;background:rgba(6,20,23,.55);display:flex;align-items:flex-end;justify-content:center;z-index:10}
-.sheet{background:var(--bg);width:100%;max-width:460px;max-height:88%;overflow:auto;border-radius:20px 20px 0 0;
+.sheet-bg{position:fixed;inset:0;background:rgba(4,30,45,.55);display:flex;align-items:flex-end;justify-content:center;z-index:10}
+.sheet{background:var(--bg);width:100%;max-width:460px;max-height:88%;overflow:auto;border-radius:22px 22px 0 0;border-top:6px solid var(--sea);
   padding:20px max(16px,env(safe-area-inset-right,0px)) calc(20px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
 .reveal{list-style:none;padding:0;margin:0 0 14px}
-.reveal li{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;background:var(--surface);margin-bottom:8px;animation:flip .45s both}
+.reveal li{display:flex;align-items:center;gap:12px;padding:8px 12px 8px 8px;border-radius:14px;background:var(--surface);margin-bottom:8px;animation:flip .45s both}
+.reveal li .tile{flex:0 0 60px}
+.reveal li .who{flex:1;min-width:0}
 .reveal li .num{font-size:1.5rem}
 .reveal li.top{box-shadow:inset 0 0 0 3px var(--banana)}
 .delta{font-weight:800}
-.delta.up{color:var(--ok)} .delta.down{color:var(--rust)}
+.delta.up{color:var(--ok)} .delta.down{color:var(--coral)}
 .steps{margin:0 0 16px;padding-left:20px}
 .steps li{margin-bottom:6px}
 @keyframes flip{from{transform:rotateX(90deg);opacity:0}to{transform:none;opacity:1}}
-.winner{text-align:center;padding:16px 12px;border-top:10px solid var(--hull)}
-.winner .num{font-size:clamp(1.8rem,9vw,2.6rem);color:var(--rust);overflow-wrap:anywhere}
+.winner{text-align:center;padding:0 0 16px;overflow:hidden}
+.winner .tile{border-radius:0;margin-bottom:12px}
+.winner .tile .shipsvg{max-width:320px;margin:0 auto}
+.winner .num{font-size:clamp(1.8rem,9vw,2.6rem);color:var(--coral);overflow-wrap:anywhere;padding:0 12px}
 details{margin-top:18px}
 summary{cursor:pointer;font-weight:600;color:var(--muted);min-height:44px;display:flex;align-items:center}
 .hist{font-size:.92rem}
@@ -134,14 +153,18 @@ summary{cursor:pointer;font-weight:600;color:var(--muted);min-height:44px;displa
 .log li{display:grid;grid-template-columns:2.2em minmax(0,1fr) auto;align-items:baseline;gap:0 10px;padding:9px 0;border-bottom:1px solid var(--line)}
 .log li:last-child{border-bottom:0}
 .log .rank{font-family:Bungee,sans-serif;color:var(--muted)}
-.log li:first-child .rank{color:var(--rust)}
+.log li:nth-child(1) .rank{color:var(--mango)} .log li:nth-child(2) .rank{color:var(--sea-deep)} .log li:nth-child(3) .rank{color:var(--hibiscus)}
 .log .who{font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .log .when{grid-column:2;font-size:.82rem;color:var(--muted)}
 .log .score{font-family:Bungee,sans-serif;font-size:1.1rem;grid-column:3;grid-row:1}
-@media (prefers-reduced-motion:reduce){.reveal li,.ship{animation:none}}
+@media (prefers-reduced-motion:reduce){.reveal li,.sh-bob,.sh-wave,.sh-float{animation:none}}
 </style>
 </head>
 <body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs>
+  <symbol id="nana" viewBox="0 0 26 12"><path class="nb" d="M2 3C6 10.5 18 11.5 23.5 3.5 22.8 2.6 21.7 2.5 21 3.2 16 8 8 7.8 4 2.4 3.3 1.8 2.3 2.1 2 3Z"/><path class="nb-tip" d="M22.5 3.4 24.6 1.2"/></symbol>
+  <symbol id="bunch" viewBox="0 0 26 18"><use href="#nana" width="26" height="12"/><use href="#nana" x="1" y="3" width="25" height="12"/><use href="#nana" y="6" width="26" height="12"/></symbol>
+</defs></svg>
 <div id="app"><p class="muted">Loading the docks…</p></div>
 <script>
 const GOAL = 200, MAX_PLAYERS = 6;
@@ -172,6 +195,88 @@ async function loadScores() {
     S.scores = Array.isArray(d) ? d : 'error';
   } catch (e) { S.scores = 'error'; }
   if (!S.code || !S.room) render();
+}
+
+// ---------- cargo ships ----------
+// One ship drawing, loaded by fill: 0 = empty hold, 1 = full to the rails, >1 = piled high and spilling.
+// The hold takes 28 bunches (about 7 bananas each); a part-bunch shows as 1-3 loose bananas, so the
+// picture changes every couple of bananas from 0 to GOAL.
+// Ship coordinates are 220 wide with the waterline near y 92. The load sets how deep it sits: empty rides
+// high on its red keel, at GOAL the rail is just above the water, overfull puts the deck awash.
+const HOLD = { x: 66, cols: 7, rows: 4, w: 19, h: 9, deck: 51, bh: 11 };
+const SLOTS = HOLD.cols * HOLD.rows;
+const wob = i => (i * 37 % 13) - 6; // stable per-bunch tilt so piles look stacked by hand
+const overflow = f => f > 1.03 ? Math.min(15, Math.max(2, Math.round((f - 1) * SLOTS))) : 0;
+const cargoWord = f => f <= 0 ? 'Empty' : f < 0.1 ? 'A few bananas' : f < 0.25 ? 'Light load' : f < 0.4 ? 'Filling up' : f < 0.6 ? 'Half full'
+  : f < 0.8 ? 'Well stocked' : f < 0.95 ? 'Nearly full' : overflow(f) ? (f < 1.3 ? 'Overfull' : 'Sinking with bananas') : 'Full';
+const bunch = (x, y, i) => `<use href="#bunch" x="${x}" y="${y}" width="${HOLD.w}" height="${HOLD.bh}" transform="rotate(${wob(i)} ${x + HOLD.w / 2} ${y + 7})"/>`;
+const slotX = i => HOLD.x + (i % HOLD.cols) * HOLD.w, slotY = i => HOLD.deck - HOLD.bh - Math.floor(i / HOLD.cols) * HOLD.h;
+function waves(y, width, bottom, cls) {
+  let d = `M0 ${y}`;
+  for (let x = 0; x < width + 30; x += 30) d += 'q7.5 -4 15 0t15 0';
+  return `<path class="${cls}" d="${d}V${bottom}H0Z"/>`;
+}
+// Seeded randomness: each ship's floating bananas stay put across re-renders, and change when its load
+// changes or the page reloads.
+const SEA_SEED = (Math.random() * 2 ** 32) >>> 0;
+function rng(key) {
+  let h = SEA_SEED;
+  for (const c of String(key)) h = Math.imul(h ^ c.charCodeAt(0), 2654435761);
+  return () => { h = (h + 0x6D2B79F5) | 0; let t = Math.imul(h ^ (h >>> 15), 1 | h); t ^= t + Math.imul(t ^ (t >>> 7), 61 | t); return ((t ^ (t >>> 14)) >>> 0) / 2 ** 32; };
+}
+function shipBody(f, key = '') {
+  const load = Math.min(f, 1) * SLOTS, n = Math.floor(load), over = overflow(f);
+  let cargo = '';
+  for (let i = 0; i < n; i++) cargo += bunch(slotX(i), slotY(i), i);
+  // The part-bunch in the next slot: 1-3 loose bananas, so even 1 banana shows
+  const loose = n < SLOTS && load > n ? Math.max(1, Math.round((load - n) * 3)) : 0;
+  for (let j = 0; j < loose; j++) cargo += `<use href="#nana" x="${slotX(n) + j * 2}" y="${slotY(n) + 3 - j * 3}" width="17" height="8" transform="rotate(${wob(n + j) * 2} ${slotX(n) + 9} ${slotY(n) + 7})"/>`;
+  // Overfull: a pyramid of 6, 5, 4 bunches above the rails
+  for (let t = 0, left = over, k = HOLD.cols - 1; left > 0; t++, k--) {
+    const m = Math.min(k, left), x0 = HOLD.x + (HOLD.cols - k) * HOLD.w / 2;
+    for (let c = 0; c < m; c++) cargo += bunch(x0 + c * HOLD.w, HOLD.deck - HOLD.bh - (HOLD.rows + t) * HOLD.h, 50 + t * 7 + c);
+    left -= m;
+  }
+  if (over >= 6) cargo += `<use href="#nana" x="196" y="28" width="16" height="8" transform="rotate(55 204 32)"/>`;
+  const sink = (-6 + Math.min(f, 1) * 42 + Math.min(Math.max(f - 1, 0), 0.6) * 10).toFixed(1), tilt = over ? 1.8 : 0;
+  const ports = [44, 64, 84, 104, 124, 144, 164, 184].map(x => `<circle class="sh-port" cx="${x}" cy="64" r="2.4"/>`).join('');
+  const ship = `<g transform="translate(0 ${sink}) rotate(${tilt} 110 80)"><g class="sh-bob">
+    <path class="sh-mast" d="M128 50V12M128 16 158 26"/>
+    <rect class="sh-cabin" x="16" y="22" width="40" height="34" rx="3"/>
+    <rect class="sh-win" x="21" y="28" width="30" height="6" rx="2"/><rect class="sh-win" x="21" y="39" width="30" height="5" rx="2"/>
+    <path class="sh-funnel" d="M25 22 27 2H43L45 22Z"/><rect class="sh-band" x="26.5" y="7" width="17" height="5"/>
+    ${cargo}
+    <path class="sh-hull" d="M6 52 212 45 200 82H22Z"/><path class="sh-keel" d="M22 82H200L192 100H30Z"/><path class="sh-stripe" d="M22 82H200"/>${ports}
+    <path class="sh-mast" d="M206 46V24"/><path class="sh-flag" d="M206 24 218 28 206 32Z"/></g></g>`;
+  // Overfull ships shed a random handful of bananas into the sea around them
+  const rnd = rng(key + '|' + Math.round(f * GOAL));
+  const floats = over ? 1 + Math.floor(rnd() * (2 + over / 2)) : 0;
+  let spill = '';
+  for (let i = 0; i < floats; i++) {
+    const w = 13 + rnd() * 7, x = rnd() * (214 - w), y = 95 + rnd() * 16, a = Math.round(rnd() * 140 - 70);
+    spill += `<g class="sh-float" style="animation-delay:${(-rnd() * 3).toFixed(2)}s;animation-duration:${(2.6 + rnd() * 1.6).toFixed(2)}s"><use href="#nana" x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${w.toFixed(1)}" height="${(w / 2).toFixed(1)}" transform="rotate(${a} ${(x + w / 2).toFixed(1)} ${(y + w / 4).toFixed(1)})"/></g>`;
+  }
+  return { ship, spill };
+}
+function shipSVG(fill, label, key) {
+  const f = Math.max(0, Number(fill) || 0), { ship, spill } = shipBody(f, key);
+  const a11y = label ? `role="img" aria-label="${esc(label)}"` : 'aria-hidden="true"';
+  return `<svg class="shipsvg" viewBox="0 -18 220 138" ${a11y}>${waves(88, 220, 120, 'sh-sea2')}${ship}${waves(93, 220, 120, 'sh-sea sh-wave')}${spill}</svg>`;
+}
+const tile = (fill, still, key) => `<span class="tile${still ? ' still' : ''}">${shipSVG(fill, '', key)}</span>`;
+function heroScene(fill = 0.75, key = 'hero') {
+  const { ship, spill } = shipBody(fill, key), place = 'transform="translate(10 52) scale(1.1)"';
+  const fronds = ['c10-12 26-12 36-2c-12-4-24-2-36 2z', 'c-6-14-20-18-32-12c12 0 24 4 32 12z', 'c-14-2-26 6-30 18c8-10 18-14 30-18z', 'c14-2 26 6 30 18c-8-10-18-14-30-18z', 'c2-14 12-22 24-22c-10 4-18 12-24 22z'];
+  return `<svg class="scene" viewBox="0 0 360 196" aria-hidden="true">
+    <circle class="hs-glow" cx="300" cy="40" r="36"/><circle class="hs-sun" cx="300" cy="40" r="22"/>
+    <g class="hs-cloud"><ellipse cx="62" cy="34" rx="26" ry="8"/><ellipse cx="78" cy="28" rx="15" ry="9"/><ellipse cx="200" cy="20" rx="18" ry="5"/></g>
+    <path class="hs-bird" d="M150 46q4-4 8 0q4-4 8 0M176 34q3-3 6 0q3-3 6 0"/>
+    ${waves(146, 360, 196, 'sh-sea2')}
+    <ellipse class="hs-sand" cx="336" cy="150" rx="50" ry="11"/>
+    <path class="hs-trunk" d="M336 148C333 126 328 106 318 92"/>
+    ${fronds.map(d => `<path class="hs-palm" d="M318 92${d}"/>`).join('')}
+    <circle class="hs-nut" cx="316" cy="96" r="2.6"/><circle class="hs-nut" cx="321" cy="95" r="2.6"/>
+    <g ${place}>${ship}</g>${waves(156, 360, 196, 'sh-sea sh-wave')}<g ${place}>${spill}</g></svg>`;
 }
 
 // ---------- rooms ----------
@@ -235,13 +340,13 @@ function view() {
     + body + (S.error ? `<p class="err">${esc(S.error)}</p>` : '') + sheetView();
 }
 function homeView() {
+  const fleet = [0, 15, 45, 75, 100, 140, 200, 260]
+    .map(b => `<figure>${tile(b / GOAL, false, 'fleet' + b)}<figcaption>${b} 🍌</figcaption></figure>`).join('');
   return `<header class="harbor">
-    <div class="ship" aria-hidden="true">
-      <div class="deck"><div class="crates">${'<i></i>'.repeat(10)}</div><div class="bridge"></div></div>
-      <div class="hull"><h1>Puerto Banana</h1></div>
-    </div>
-    <div class="waves" aria-hidden="true"></div>
-    <p class="harbor-foot">Bid blind for the banana container. Win it and you pay the runner-up the gap. First to ${GOAL} bananas wins.</p>
+    <h1>Puerto Banana</h1>
+    ${heroScene()}
+    <div class="harbor-foot"><p>Bid blind for the banana cargo. Win it and you pay the runner-up the gap. First to ${GOAL} bananas wins.</p>
+    <div class="fleet" aria-label="Your ship fills up as you collect bananas, from empty at 0 to overfull past ${GOAL}">${fleet}</div></div>
   </header>
   <div class="stack">
     <div><label for="nick">Your name</label><input id="nick" class="text" maxlength="20" value="${esc(S.nick)}" oninput="S.nick=this.value;ls.set('pb_nick',this.value)" autocomplete="nickname"></div>
@@ -273,7 +378,7 @@ function lobbyView() {
   const ps = S.room.players, n = ps.length;
   return `<h2>Waiting at the dock</h2>
   <p class="muted">Tell friends to join with code <b class="code">${esc(S.code)}</b>.</p>
-  <div class="card"><ul class="players">${ps.map((p, i) => `<li><span class="name">${esc(p.nick)}${p.id===S.room.me?' (you)':''}</span><span class="status">${i>=MAX_PLAYERS?'watching':'ready'}</span></li>`).join('')}</ul></div>
+  <div class="card"><ul class="players">${ps.map((p, i) => `<li>${tile(0, true)}<span class="name">${esc(p.nick)}${p.id===S.room.me?' (you)':''}</span><span class="status">${i>=MAX_PLAYERS?'watching':'ready'}</span></li>`).join('')}</ul></div>
   <div style="margin-top:16px"><button class="primary wide" onclick="startGame()" ${n<2||S.busy?'disabled':''}>${n<2?'Need at least 2 players':'Start game with '+Math.min(n,MAX_PLAYERS)}</button></div>`;
 }
 function playersList(withStatus) {
@@ -282,8 +387,7 @@ function playersList(withStatus) {
   return `<ul class="players">${ids.map(id => {
     const inv = r.inventories[id];
     const st = withStatus ? (pl(id).locked ? `<span class="status ok">Bid locked</span>` : `<span class="status">Thinking…</span>`) : '';
-    return `<li class="${id===r.me?'me':''}"><span class="name">${esc(nickOf(id))}${id===r.me?' (you)':''}</span><span class="inv">${inv}</span>${st}<span></span>
-      <span class="bar"><i style="width:${Math.min(100, inv/GOAL*100)}%"></i></span></li>`;
+    return `<li class="${id===r.me?'me':''}">${tile(inv / GOAL, true, id)}<span class="name">${esc(nickOf(id))}${id===r.me?' (you)':''}</span><span class="inv">${inv}</span>${st}</li>`;
   }).join('')}</ul>`;
 }
 function gameView() {
@@ -300,9 +404,11 @@ function gameView() {
     <button class="primary wide" style="margin-top:12px" onclick="lockBid()" ${S.busy?'disabled':''}>Lock in bid</button>`;
   const skip = r.isHost && waiting > 0 && waiting < r.order.length
     ? `<button class="link" onclick="skipMissing()">Someone gone? Count missing bids as 0</button>` : '';
-  return `<div class="container"><span class="plate">Round ${r.round}</span>
-    <div class="num">${r.pot} 🍌</div><div class="sub">in the hold, up for auction</div></div>
-    ${inGame() ? `<div class="stash"><span>Your stash</span><span class="num">${r.inventories[r.me]} 🍌</span></div>` : ''}
+  const mine = r.inventories[r.me];
+  return `<div class="potcard"><span class="plate">Round ${r.round}</span>
+    <div class="num">${r.pot} 🍌</div><div class="sub">up for auction this round</div></div>
+    ${inGame() ? `<div class="myship" role="img" aria-label="Your ship: ${mine} bananas, ${cargoWord(mine / GOAL).toLowerCase()}">${heroScene(mine / GOAL, r.me)}
+    <div class="myship-foot"><span>Your ship<br><b>${cargoWord(mine / GOAL)}</b></span><span class="num">${mine} 🍌</span></div></div>` : ''}
     <div style="margin:12px 0 18px">${action}</div>
     <div class="card">${playersList(true)}</div>${skip}
     ${historyView()}`;
@@ -310,7 +416,7 @@ function gameView() {
 function nudge(d) { S.bidDraft = String(Math.max(0, (parseInt(S.bidDraft, 10) || 0) + d)); render(); }
 function overView() {
   const r = S.room, w = r.winners || [];
-  return `<div class="card winner"><div class="muted">King of the bananas</div>
+  return `<div class="card winner">${tile(Math.max(1.6, r.inventories[w[0]] / GOAL), false, w[0])}<div class="muted">King of the bananas</div>
     <div class="num">${w.map(id => esc(nickOf(id))).join(' & ')}</div>
     <div class="muted">${r.inventories[w[0]]} bananas after ${r.round - 1} rounds</div></div>
     <div class="card" style="margin-top:14px">${playersList(false)}</div>
@@ -343,7 +449,7 @@ function sheetView() {
   return `<div class="sheet-bg" onclick="if(event.target===this)closeSheet()"><div class="sheet" role="dialog" aria-label="Round results">
     <h2>Round ${r.round} bids</h2>
     <ul class="reveal">${ids.map((id, i) => { const d = r.after[id] - r.before[id];
-      return `<li class="${r.bids[id]===top?'top':''}" style="animation-delay:${i*0.12}s"><span><b>${esc(nickOf(id))}</b><br><span class="delta ${d>0?'up':d<0?'down':''}">${d>0?'+':''}${d} → ${r.after[id]}</span></span><span class="num">${r.bids[id]}</span></li>`; }).join('')}</ul>
+      return `<li class="${r.bids[id]===top?'top':''}" style="animation-delay:${i*0.12}s">${tile(r.after[id] / GOAL, true, id)}<span class="who"><b>${esc(nickOf(id))}</b><br><span class="delta ${d>0?'up':d<0?'down':''}">${d>0?'+':''}${d} → ${r.after[id]}</span></span><span class="num">${r.bids[id]}</span></li>`; }).join('')}</ul>
     <ul class="steps">${r.steps.map(s => `<li>${stepText(s)}</li>`).join('')}</ul>
     <button class="primary wide" onclick="closeSheet()">${S.room.status==='over'?'See the winner':'Next round'}</button></div></div>`;
 }
