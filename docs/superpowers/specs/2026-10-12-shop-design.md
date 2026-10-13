@@ -58,7 +58,7 @@ Success means:
 
 This lives in one shared module, `shop.js`. The server uses it for prices and rules; the client gets the same list from `GET /api/shop`.
 
-**Sabotage.** One use, aimed at a rival during a round, and lasts until that round resolves.
+**Sabotage.** One use, aimed at a rival during a round, and lasts until the game ends.
 
 | Item | Price | Effect |
 |---|---|---|
@@ -91,11 +91,11 @@ This lives in one shared module, `shop.js`. The server uses it for prices and ru
 
 | Item | Price | Delivery and display |
 |---|---|---|
-| bouquet 💐 | 8 | a seagull drops a bouquet of roses on their deck; petals drift over the ship until the round ends |
-| lei 🌺 | 5 | a hibiscus garland is hung around their bow until the round ends |
+| bouquet 💐 | 8 | a seagull drops a bouquet of roses on their deck; petals drift over the ship until the game ends |
+| lei 🌺 | 5 | a hibiscus garland is hung around their bow until the game ends |
 | bottle 💌 | 3 | a message in a bottle bobs over to their ship ("Captain Anna sends you love") |
-| cake 🍰 | 12 | a big cake appears on their deck, with candles, until the round ends |
-| teddy 🧸 | 10 | a teddy bear waves from their bridge until the round ends |
+| cake 🍰 | 12 | a big cake appears on their deck, with candles, until the game ends |
+| teddy 🧸 | 10 | a teddy bear waves from their bridge until the game ends |
 | giftbox 🎁 | 15 | a box lands on their deck and bursts into confetti |
 | fireworks 🎆 | 20 | private fireworks over their ship only |
 | diamond 💎 | 50 | a sparkling diamond on their deck for the rest of the game |
@@ -145,7 +145,7 @@ New actions on `POST /api`, authenticated by player token like bids:
 - Allowed in any room status, and the target must be another player in the room.
 - Credits are deducted.
 - Adds an effect `{ kind, from, target, round, at }`, where `round` is the current round, or 0 in the lobby or on the end screen.
-- Gift effects end like sabotage when their round resolves, except `diamond`, which stays until the game ends.
+- Gift effects, like sabotage, stay until the game ends.
 - In the lobby or on the end screen, gifts are dropped after 30 s.
 - Error for a second gift in the same round: "You've already sent a gift this round."
 
@@ -159,7 +159,7 @@ New actions on `POST /api`, authenticated by player token like bids:
 - `room.effects` holds the live effects. It's saved with the room in `rooms.json`, so effects survive restarts.
 - `view()` includes `effects` (with `from` and `target` as player ids), each player's `bling`, and the viewer's own `wallet`.
 - Blocked effects carry an `at` timestamp and, like emotes, `view()` drops them after 4 s, which is long enough for the counter-animation to play once.
-- When a round resolves, all of its sabotage effects (blocked or not) are removed.
+- When a round resolves, its blocked sabotage records are removed; sabotage and gifts that landed stay until the game ends.
 - `newGame`, `lobby` and `rematch` clear `room.effects`.
 
 **Credits at game end** use the same once-only guard as scores and history.

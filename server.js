@@ -121,8 +121,8 @@ function broadcast(room) {
 }
 
 function resolveRound(room, stores) {
-  ensureShop(room); // sabotage and gifts last until their round resolves; the diamond stays for the game
-  room.effects = room.effects.filter(e => e.round === undefined || e.round !== room.round || e.kind === 'diamond');
+  ensureShop(room); // sabotage and gifts stay on the ships for the rest of the game; spent blocks are tidied away
+  room.effects = room.effects.filter(e => !(e.blocked && e.round === room.round));
   const ids = t => room.players[t].id;
   const bids = {}; room.order.forEach(t => { bids[t] = room.bids[t] ?? 0; });
   const { inv, steps } = resolveAuction(room.inventories, bids, room.pot, room.order);

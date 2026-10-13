@@ -529,7 +529,7 @@ const tests = {
       a.deepEqual(srv.stores.wallets.get(g.mate).stock, {});
     });
   },
-  async 'sabotage and gifts end with their round; the diamond lasts the game; a rematch clears everything'() {
+  async 'sabotage and gifts last the whole game; a rematch clears everything'() {
     await withServer(null, async (port, _l, _d, srv) => {
       const g = await shopGame(port);
       openMarket(srv, g.code);
@@ -539,11 +539,12 @@ const tests = {
       await api(port, { action: 'buy', token: g.mate, code: g.code, item: 'diamond', target: cy });
       await api(port, { action: 'buy', token: g.host, code: g.code, item: 'cake', target: cy });
       await api(port, { action: 'skip', token: g.host, code: g.code }); // round 1 resolves
-      let kinds = (await view(port, g.code, g.host)).effects.map(e => e.kind);
-      a.deepEqual(kinds, ['diamond']);
+      const kinds = (await view(port, g.code, g.host)).effects.map(e => e.kind);
+      a.deepEqual(kinds, ['kraken', 'diamond', 'cake']);
       let v = await view(port, g.code, g.host);
       for (let i = 0; i < 60 && v.status === 'playing'; i++) { await api(port, { action: 'skip', token: g.host, code: g.code }); v = await view(port, g.code, g.host); }
-      a.deepEqual(v.effects.map(e => e.kind), ['diamond']);
+      a.equal(v.status, 'over');
+      a.deepEqual(v.effects.map(e => e.kind), ['kraken', 'diamond', 'cake']);
       await api(port, { action: 'rematch', token: g.host, code: g.code });
       a.deepEqual((await view(port, g.code, g.host)).effects, []);
     });
