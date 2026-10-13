@@ -834,7 +834,7 @@ function enterRoom(code, silent) {
 }
 function connect(code) {
   if (S.es) S.es.close();
-  S.code = code; ls.set('pb_code', code); ls.set('pb_nick', S.nick);
+  S.code = code; S.invited = null; S.showCreate = false; ls.set('pb_code', code); ls.set('pb_nick', S.nick);
   S.fxSeeded = false; // the first view on this connection seeds S.seenFx without toasts
   S.paperSeeded = false; // ...and S.papers without front pages
   S.es = new EventSource('/events?room=' + code + '&token=' + token());
@@ -956,6 +956,7 @@ function view() {
     + body + (S.error ? `<p class="err">${esc(S.error)}</p>` : '') + sheetView() + flagSheetView() + shopView();
 }
 function homeView() {
+  const invited = S.invited && !S.showCreate; // came from a shared link: joining is the point, creating a room is tucked away
   return `<header class="harbor">
     <h1>Puerto Banana</h1>
     ${heroScene(0.75, 'hero', myLook(), true)}
@@ -971,12 +972,12 @@ function homeView() {
       `<button id="cabin-${k}" class="swatch" role="radio" aria-checked="${S.cabin === k}" aria-label="${name}" style="--c:${c}" onclick="pickCabin('${k}')"></button>`).join('')}</div></div>
   </div>
   <div class="divider"></div>
-  <label for="join">Join with a code</label>
+  <label for="join">${invited ? "You're invited! Room code" : 'Join with a code'}</label>
   <div class="row"><input id="join" class="text code grow" maxlength="4" value="${esc(S.joinCode)}" oninput="S.joinCode=this.value" placeholder="ABCD" autocapitalize="characters">
-  <button onclick="enterRoom(S.joinCode)" ${S.busy?'disabled':''}>Join</button></div>
-  <p class="or">or start your own</p>
+  <button ${invited ? 'class="primary" ' : ''}onclick="enterRoom(S.joinCode)" ${S.busy?'disabled':''}>Join${invited ? ' room' : ''}</button></div>
+  ${invited ? `<button class="link" onclick="S.showCreate=true;render()">Start your own room instead</button>` : `<p class="or">or start your own</p>
   <label class="switch"><input type="checkbox" ${S.shopOn ? 'checked' : ''} onchange="S.shopOn=this.checked;ls.set('pb_shop',this.checked?'on':'off')"> Shop and effects</label>
-  <button class="primary wide" onclick="createRoom()" ${S.busy?'disabled':''}>Create a room</button>
+  <button class="primary wide" onclick="createRoom()" ${S.busy?'disabled':''}>Create a room</button>`}
   ${S.error ? `<p class="err" style="margin-top:12px">${esc(S.error)}</p>` : ''}
   <div class="divider"></div>
   ${bongoSays(`<p>Every round a <b>banana cargo</b> is up for auction, as big as the richest captain's stash. Everyone bids <b>in secret</b>, even more than they own.</p>
@@ -2023,7 +2024,7 @@ loadRivals();
 }
 // Some apps glue the share text onto the link (?join=RZLG Join my…): the code is the first four letters.
 const invited = ((new URLSearchParams(location.search).get('join') || '').match(/^[a-z]{4}(?![a-z])/i) || [''])[0].toUpperCase();
-if (/^[A-Z]{4}$/.test(invited)) { S.joinCode = invited; history.replaceState(null, '', location.pathname); render(); } // from a shared invite link
+if (/^[A-Z]{4}$/.test(invited)) { S.joinCode = S.invited = invited; history.replaceState(null, '', location.pathname); render(); } // from a shared invite link
 const saved = ls.get('pb_code'); if (saved && !S.joinCode && location.hash !== '#og-card') enterRoom(saved, true);
 </script>
 </body>
