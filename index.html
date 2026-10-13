@@ -336,6 +336,8 @@ body.og .puff{display:none} /* smoke would drift over the tagline */
 .winner .num{font-size:clamp(1.8rem,9vw,2.6rem);color:var(--coral);overflow-wrap:anywhere;padding:0 12px}
 details{margin-top:18px}
 summary{cursor:pointer;font-weight:600;color:var(--muted);min-height:44px;display:flex;align-items:center}
+.earlier{margin-top:18px}
+.earlier h3{margin:0 0 4px;font-size:1rem;font-weight:600;color:var(--muted)}
 .hist{font-size:.92rem}
 .hist div{padding:6px 0;border-bottom:1px solid var(--line)}
 /* Harbour log: the shared top 20 */
@@ -1230,8 +1232,8 @@ function tauntFor(id) {
 function historyView() {
   const h = (S.room.history || []).slice().reverse();
   if (!h.length) return '';
-  return `<details><summary>Earlier rounds</summary><div class="hist">${h.map(x =>
-    `<div><b>Round ${x.round}</b>, ${x.pot} 🍌: ${S.room.order.map(id => esc(nickOf(id)) + ' ' + x.bids[id]).join(', ')}</div>`).join('')}</div></details>`;
+  return `<section class="earlier"><h3>Earlier rounds</h3><div class="hist">${h.map(x =>
+    `<div><b>Round ${x.round}</b>, ${x.pot} 🍌: ${S.room.order.map(id => esc(nickOf(id)) + ' ' + x.bids[id]).join(', ')}</div>`).join('')}</div></section>`;
 }
 // Round results in plain sentences: who won, who gains what, who pays whom. "You" for the viewer.
 const bn = n => `${n} banana${n === 1 ? '' : 's'}`;
