@@ -22,7 +22,7 @@
 <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bungee&family=Figtree:wght@400;600;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bungee&family=Figtree:wght@400;600;800&family=UnifrakturMaguntia&display=swap" rel="stylesheet">
 <style>
 /* Visual QA checklist (check after any layout change):
    - 320px and 390px wide: no horizontal scroll, rows wrap, title fits
@@ -406,6 +406,63 @@ summary{cursor:pointer;font-weight:600;color:var(--muted);min-height:44px;displa
 .battle.focus p{background:#4A5566}
 .party-banner{position:absolute;left:50%;top:16px;transform:translateX(-50%);width:min(92vw,420px);background:var(--surface);color:var(--ink);
   border-radius:16px;padding:12px 16px;font-weight:800;text-align:center;box-shadow:0 6px 24px rgba(0,0,0,.25)}
+/* World-politics easter eggs (GAGS in the script): purely visual. One-shot entrances start --age seconds in
+   (from when this browser first drew that occurrence), so re-renders show them settled instead of replaying. */
+.reveal li{position:relative;flex-wrap:wrap}
+.gagrow{flex:1 0 100%;display:flex;flex-direction:column;align-items:flex-start;gap:4px;padding:2px 2px 2px 4px;font-size:.86rem;line-height:1.35;font-weight:600;color:var(--ink)}
+.gagline{animation:gagin .4s ease-out both;animation-delay:calc(.7s - var(--age,0s))}
+@keyframes gagin{from{opacity:0;transform:translateY(-4px)}}
+.gag-stamp{position:absolute;left:50%;top:50%;z-index:1;pointer-events:none;padding:1px 10px;border:3px solid var(--coral);border-radius:6px;color:var(--coral);
+  background:color-mix(in srgb,var(--surface) 55%,transparent);font:400 clamp(1.1rem,6.4vw,1.55rem)/1.15 Bungee,Impact,"Arial Black",sans-serif;letter-spacing:.06em;white-space:nowrap;
+  transform:translate(-50%,-50%) rotate(-12deg);animation:stampin .45s cubic-bezier(.3,1.5,.5,1) both;animation-delay:calc(.6s - var(--age,0s))}
+@keyframes stampin{from{opacity:0;transform:translate(-50%,-50%) rotate(-12deg) scale(2.4)}}
+.gag-badge{display:inline-block;border:2px solid var(--coral);border-radius:5px;padding:0 6px;color:var(--coral);font:400 .78rem/1.5 Bungee,Impact,sans-serif;letter-spacing:.03em;transform:rotate(-3deg)}
+.gag-badge s{text-decoration-thickness:2px}
+.gag-paused{display:inline-block;margin-left:4px;padding:0 8px;border-radius:999px;background:var(--ok);color:var(--surface);font-weight:800;font-size:.78rem;text-transform:uppercase;letter-spacing:.06em}
+.gag-kp{display:flex;flex-direction:column;align-items:flex-start;line-height:1.25}
+.gag-kp .num,.reveal li .gag-kp .num{font-size:1.45rem;color:var(--coral)}
+.gag-kp small{font-size:.74rem;font-weight:400;color:var(--muted)}
+.players li{grid-template-areas:"ship name inv" "ship status inv" ". gag gag"}
+.players .gag{grid-area:gag;font-size:.8rem;line-height:1.3;color:var(--muted);font-weight:600;padding-top:2px}
+.players .gag .gag-kp{color:var(--ink)}
+.gag-euro{display:flex;flex-direction:column;align-items:center;gap:2px;margin-top:14px;padding:14px 16px;border-radius:18px;text-align:center;color:#fff;
+  background:linear-gradient(135deg,#1B1464,#5B2A86 55%,#C2185B);box-shadow:0 3px 0 var(--line);animation:gagpop .5s cubic-bezier(.3,1.5,.5,1) both;animation-delay:calc(.4s - var(--age,0s))}
+.gag-euro .lbl{font-size:.78rem;font-weight:800;text-transform:uppercase;letter-spacing:.1em;opacity:.9;max-width:100%;overflow-wrap:anywhere}
+.gag-euro .pts{font-family:Bungee,Impact,sans-serif;font-size:clamp(2.1rem,12vw,2.9rem);line-height:1.05;color:#FFD500;text-shadow:0 3px 0 #0057B7}
+@keyframes gagpop{from{opacity:0;transform:scale(.6)}}
+.gag-crown{transform-box:fill-box;transform-origin:50% 100%;animation:crowndrop 1.6s ease-out both}
+@keyframes crowndrop{0%{transform:translateY(-70px) rotate(-20deg);opacity:0}10%{opacity:1}45%{transform:translateY(0) rotate(14deg)}60%{transform:rotate(-10deg)}75%{transform:rotate(6deg)}88%{transform:rotate(-3deg)}100%{transform:none}}
+.gag-bloom{transform-box:fill-box;transform-origin:50% 100%;animation:fxpop .6s cubic-bezier(.3,1.5,.5,1) both}
+.gag-escort{animation:escortin 1.8s ease-out both}
+@keyframes escortin{from{transform:translateX(70px);opacity:0}}
+.gag-escortbob{transform-box:fill-box;transform-origin:50% 100%;animation:bob 3.4s ease-in-out infinite}
+.gag-canal{animation:canal 12s linear both;animation-delay:calc(.5s - var(--age,0s))}
+@keyframes canal{from{transform:translateX(-330px)}to{transform:translateX(130px)}}
+.torp.swerve{animation-name:swerve}
+@keyframes swerve{0%{transform:translate(0,0);opacity:1}55%{transform:translate(calc(var(--dx) * .78),0)}70%{transform:translate(var(--dx),13px)}85%{transform:translate(calc(var(--dx) + 34px),13px);opacity:1}100%{transform:translate(calc(var(--dx) + 80px),4px);opacity:0}}
+.gag-caption{transform-box:fill-box;transform-origin:50% 100%;animation:gagpop .4s ease-out var(--d) both}
+/* The Banana Times: breaking-news front pages (showPaper in the script). Lives outside #app so re-renders keep it.
+   The paper stays paper-coloured in dark mode on purpose. */
+#bt{position:fixed;inset:0;z-index:999;display:grid;place-items:center;background:rgba(5,25,40,.55);backdrop-filter:blur(2px);padding:12px;cursor:pointer}
+#bt .paper{width:min(340px,88vw);background:#f6f0e1;color:#1b1b1b;border-radius:3px;box-shadow:0 18px 40px rgba(0,0,0,.45),inset 0 0 40px rgba(120,90,40,.18);padding:14px 16px 16px;font-family:Georgia,'Times New Roman',serif;animation:btspin 1s cubic-bezier(.2,.8,.25,1) both;transform:rotate(-4deg);
+  max-height:calc(100dvh - 24px);overflow:auto;outline:none}
+@keyframes btspin{0%{transform:scale(.05) rotate(-760deg);opacity:0}70%{opacity:1}100%{transform:scale(1) rotate(-4deg)}}
+#bt .mast{text-align:center;font:900 30px/1 'UnifrakturMaguntia','Old English Text MT',Georgia,serif;letter-spacing:.5px;border-bottom:3px double #1b1b1b;padding-bottom:6px}
+#bt .meta{display:flex;justify-content:space-between;gap:8px;font:italic 10px Georgia,serif;border-bottom:1px solid #1b1b1b;padding:3px 0;margin-bottom:8px}
+#bt .breaking{display:inline-block;background:#c8102e;color:#fff;font:800 11px system-ui;letter-spacing:1.5px;padding:3px 7px;margin-bottom:6px}
+#bt .breaking.gossip{background:#8E2A6B}
+#bt h1{font:900 25px/1.05 Georgia,serif;margin:0 0 6px;text-transform:uppercase;overflow-wrap:anywhere;color:#1b1b1b;letter-spacing:0}
+#bt .sub{font:italic 14px/1.3 Georgia,serif;margin:0 0 8px;overflow-wrap:anywhere}
+#bt .photo{border:1px solid #1b1b1b;filter:sepia(.35) contrast(1.05);overflow:hidden}
+#bt .photo svg{display:block;width:100%;height:auto}
+#bt .cap{font:italic 10px Georgia,serif;margin:3px 0 8px;overflow-wrap:anywhere}
+#bt .cols{columns:2;column-gap:12px;column-rule:1px solid #bbb}
+#bt .cols i{display:block;height:5px;background:#cfc6b1;margin:0 0 5px;border-radius:2px}
+#bt .acts{display:flex;gap:8px;margin-top:10px}
+#bt .acts button{flex:1;min-height:44px;font:800 14px system-ui;padding:8px 10px}
+#bt .tap{text-align:center;font:11px system-ui;color:#7a6f5a;margin-top:8px}
+@media (prefers-reduced-motion:reduce){#bt .paper{animation:none}}
+@media (prefers-reduced-motion:reduce){.gagline,.gag-stamp,.gag-euro,.gag-crown,.gag-bloom,.gag-escort,.gag-escortbob,.gag-canal,.gag-caption{animation:none}}
 @media (prefers-reduced-motion:reduce){.reveal li,.sh-bob,.sh-wave,.sh-float,.sh-wave-flag,.wiggle,.hs-sway,.hs-crown,.hs-birdfly,.hs-glow,.hs-star,.bongo-bob,.bongo-talk,.players li.aim{animation:none}.hs-heat{display:none}.puff{display:none}
   .flame,.tent,.sh-bob.rocked,.drip,.gullraid,.sharkswim,.petal,.bottlebob,.teddywave,.confetti,.minifw,.sparkle,.glint,.disco,.discorays,.parrotbob,
   .jet,.soot,.blk,.umbrella,.bubblepop,.giftpop,.candle,.emote{animation:none}.minifw,.glint{opacity:1}.soot{opacity:.6}.confetti{opacity:0}.smoketint{display:inline}}
@@ -435,7 +492,7 @@ summary{cursor:pointer;font-weight:600;color:var(--muted);min-height:44px;displa
 <script src="/digits.js"></script>
 <script>
 const GOAL = 200, MAX_PLAYERS = 6;
-const S = { shopOn: true, shopSheet: null, shopTab: 'sabotage', targeting: null, catalog: null, seenFx: new Set(), fxSeeded: false, strokes: [], drawing: false, pendingRender: false, read: null, tauntBook: null, hull: 'navy', cabin: 'white', flag: '', flagSheet: false, flagQuery: '', countries: null, code: null, room: null, es: null, nick: '', joinCode: '', bidDraft: '', error: '', busy: false, sheetFor: null, seen: 0, scores: null, rivals: null, rivalHi: null };
+const S = { papers: new Set(), paperSeeded: false, gameSeq: 0, shopOn: true, shopSheet: null, shopTab: 'sabotage', targeting: null, catalog: null, seenFx: new Set(), fxSeeded: false, strokes: [], drawing: false, pendingRender: false, read: null, tauntBook: null, hull: 'navy', cabin: 'white', flag: '', flagSheet: false, flagQuery: '', countries: null, code: null, room: null, es: null, nick: '', joinCode: '', bidDraft: '', error: '', busy: false, sheetFor: null, seen: 0, scores: null, rivals: null, rivalHi: null };
 const app = document.getElementById('app');
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const ls = { get(k){try{return localStorage.getItem(k)}catch(e){return null}}, set(k,v){try{localStorage.setItem(k,v)}catch(e){}}, del(k){try{localStorage.removeItem(k)}catch(e){}} };
@@ -636,6 +693,10 @@ function shipBody(f, key = '', look = {}, mine = false) {
     }
   }
   const cargoTop = (n ? slotY(n - 1) : deckAt(140) - 4) - (over ? Math.ceil(over / 6) * HOLD.h : 0);
+  // Easter eggs (GAGS): art on a results-sheet ship whose captain won the round, and an escort while sabotaged
+  const geo = { cargoTop, wide: !!look.wide }, gflag = GAGS[flagOf(look.flag)] || {};
+  const gagWon = look.gagWon && gflag.won && gflag.won.art ? gflag.won.art(geo) : {};
+  const escort = fx.sab.length && gflag.sabotaged ? `<g style="--age:${Math.min(99, ...fx.sab.map(k => (fx.age || {})[k] ?? 99)).toFixed(2)}s">${gflag.sabotaged.art(geo)}</g>` : '';
   const GULL = `<path class="gw" d="M-1-2Q-9-16-21-12Q-11-8-3 1Z"/><path class="gt" d="M-21-12Q-17-15-13-14L-15-10Z"/><path class="gw" d="M1-2Q9-16 21-12Q11-8 3 1Z"/><path class="gt" d="M21-12Q17-15 13-14L15-10Z"/><ellipse class="gw" cx="0" cy="0" rx="8" ry="4.5"/><circle class="gw" cx="8" cy="-3" r="3.6"/><path d="M11-3.5l5 1.2-5 1.2Z" fill="#FF9F1C"/><circle cx="9" cy="-4" r=".9" fill="#111"/><use href="#nana" x="-8" y="3" width="18" height="9"/>`;
   const TENT = ['M6 112C-8 86 0 62 14 48c7-7 17-2 12 7', 'M74 114C62 88 76 64 86 42c5-11 18-11 17 1', 'M150 116C138 90 160 70 152 28c-2-11 9-15 13-6', 'M214 110C228 86 216 62 204 50c-6-6-15-1-10 7'];
   const frontArt = (gift('lei') ? aged('lei', `<g class="giftpop">${lei}</g>`) : '')
@@ -660,9 +721,9 @@ function shipBody(f, key = '', look = {}, mine = false) {
     <rect class="sh-cabin" x="16" y="22" width="40" height="34" rx="3"/>
     <rect class="sh-win" x="21" y="28" width="30" height="6" rx="2"/><rect class="sh-win" x="21" y="39" width="30" height="5" rx="2"/>
     <path class="sh-funnel" d="M25 22 27 2H43L45 22Z"/><rect class="sh-band" x="26.5" y="7" width="17" height="5"/>${smoke}
-    ${cargo}${deckArt ? `<g class="fxl">${deckArt}</g>` : ''}
+    ${cargo}${deckArt || gagWon.deck ? `<g class="fxl">${deckArt}${gagWon.deck || ''}</g>` : ''}
     <path class="sh-mast" d="M203 54V3"/>${mastFlag(look.flag)}
-    <path class="sh-hull" d="M6 52 212 45 200 82H22Z"/><path class="sh-keel" d="M22 82H200L192 100H30Z"/><path class="sh-stripe" d="M22 82H200"/>${ports}${frontArt ? `<g class="fxl">${frontArt}</g>` : ''}
+    <path class="sh-hull" d="M6 52 212 45 200 82H22Z"/><path class="sh-keel" d="M22 82H200L192 100H30Z"/><path class="sh-stripe" d="M22 82H200"/>${ports}${frontArt || gagWon.front ? `<g class="fxl">${frontArt}${gagWon.front || ''}</g>` : ''}
     ${mine ? '<rect class="flag-hit" x="182" y="-12" width="38" height="36" onclick="openFlags(event)"/>' : ''}</g></g>`;
   // Overfull ships shed a random handful of bananas into the sea around them
   const rnd = rng(key + '|' + Math.round(f * GOAL));
@@ -672,7 +733,7 @@ function shipBody(f, key = '', look = {}, mine = false) {
     const w = 13 + rnd() * 7, x = rnd() * (214 - w), y = 98 + rnd() * 13, a = Math.round(rnd() * 140 - 70);
     spill += `<g class="sh-float" style="animation-delay:${(-rnd() * 3).toFixed(2)}s;animation-duration:${(2.6 + rnd() * 1.6).toFixed(2)}s"><use href="#nana" x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${w.toFixed(1)}" height="${(w / 2).toFixed(1)}" transform="rotate(${a} ${(x + w / 2).toFixed(1)} ${(y + w / 4).toFixed(1)})"/></g>`;
   }
-  if (sceneArt) spill += `<g class="fxl">${sceneArt}</g>`;
+  if (sceneArt || escort) spill += `<g class="fxl">${sceneArt}${escort}</g>`;
   return { ship, spill };
 }
 // Hull colours players pick on the home screen; keys match HULLS in server.js.
@@ -736,7 +797,7 @@ function bird(x, y, w, cycle, offset, glide = 9, glideDelay = 0) {
   return `<g class="hs-birdfly" style="animation-duration:${glide}s;animation-delay:${glideDelay}s"><path class="hs-bird" d="${held}">${flap}</path></g>`;
 }
 function heroScene(fill = 0.75, key = 'hero', look = {}, mine) {
-  const { ship, spill } = shipBody(fill, key, look, mine), place = 'transform="translate(10 52) scale(1.1)"';
+  const { ship, spill } = shipBody(fill, key, { ...look, wide: true }, mine), place = 'transform="translate(10 52) scale(1.1)"';
   const fronds = ['c10-12 26-12 36-2c-12-4-24-2-36 2z', 'c-6-14-20-18-32-12c12 0 24 4 32 12z', 'c-14-2-26 6-30 18c8-10 18-14 30-18z', 'c14-2 26 6 30 18c-8-10-18-14-30-18z', 'c2-14 12-22 24-22c-10 4-18 12-24 22z'];
   return `<svg class="scene" viewBox="0 0 360 196" aria-hidden="true"${lookStyle(look)}>
     <g class="hs-day"><circle class="hs-heat" cx="300" cy="40" r="24"/><circle class="hs-heat" style="animation-delay:-2.25s" cx="300" cy="40" r="24"/><circle class="hs-glow" cx="300" cy="40" r="36"/><circle class="hs-sun" cx="300" cy="40" r="22"/></g>
@@ -752,7 +813,7 @@ function heroScene(fill = 0.75, key = 'hero', look = {}, mine) {
     <g class="hs-sway"><path class="hs-trunk" d="M336 148C333 126 328 106 318 92"/>
     <g class="hs-crown">${fronds.map(d => `<path class="hs-palm" d="M318 92${d}"/>`).join('')}</g>
     <circle class="hs-nut" cx="316" cy="96" r="2.6"/><circle class="hs-nut" cx="321" cy="95" r="2.6"/></g>
-    <g ${place}>${ship}</g>${waves(156, 360, 196, 'sh-sea sh-wave')}<g ${place}>${spill}</g></svg>`;
+    <g ${place}>${ship}</g>${waves(156, 360, 196, 'sh-sea sh-wave')}<g ${place}>${spill}</g>${look.heroGag || ''}</svg>`;
 }
 
 // ---------- rooms ----------
@@ -773,6 +834,7 @@ function connect(code) {
   if (S.es) S.es.close();
   S.code = code; ls.set('pb_code', code); ls.set('pb_nick', S.nick);
   S.fxSeeded = false; // the first view on this connection seeds S.seenFx without toasts
+  S.paperSeeded = false; // ...and S.papers without front pages
   S.es = new EventSource('/events?room=' + code + '&token=' + token());
   S.es.onopen = () => { if (S.reconnecting) { S.reconnecting = false; render(); } };
   S.es.onmessage = ev => { S.reconnecting = false; S.room = JSON.parse(ev.data); onChange(); };
@@ -794,8 +856,16 @@ function reconnect(code, attempt = 0) {
     }
   }, Math.min(15000, 1000 * 2 ** attempt));
 }
-function dropRoom() { if (S.es) S.es.close(); S.es = null; S.reconnecting = false; ls.del('pb_code'); S.code = null; S.room = null; S.sheetFor = null; S.targeting = null; S.shopSheet = null; S.bidDraft = ''; loadScores(); loadRivals(); }
+function dropRoom() { closePaper(true); clearTimeout(S.paperWait); if (S.es) S.es.close(); S.es = null; S.reconnecting = false; ls.del('pb_code'); S.code = null; S.room = null; S.sheetFor = null; S.targeting = null; S.shopSheet = null; S.bidDraft = ''; loadScores(); loadRivals(); }
 function leaveRoom() { api('leave').catch(() => {}); dropRoom(); render(); }
+// The Leave button: a captain flying the gb flag (GAGS.gb.leave) gets a front page first: Remain, or Get Leave done.
+function leaveTap() {
+  const g = myGag('leave');
+  if (!g || !g.paper || !S.room) return leaveRoom();
+  const p = g.paper(), me = S.room.me;
+  showPaper({ headline: p.headline, sub: p.sub, caption: p.caption, photo: me ? photoOf(S.room, me) : { look: myLook(), fill: 0.6 },
+    actions: [{ label: 'Remain' }, { label: 'Get Leave done', primary: true, run: leaveRoom }] });
+}
 const startGame = () => act(() => api('start'));
 // The phone's share sheet where there is one; otherwise copy the link. The link pre-fills the code (?join=ABCD).
 async function shareInvite() {
@@ -822,6 +892,13 @@ function onChange() {
   const r = S.room;
   if (r.status === 'over' && S.lastStatus !== 'over') setTimeout(() => { loadScores(); loadRivals(); }, 600);
   if (r.status === 'over' && Object.keys(r.taunts || {}).length) loadTaunts(); // the server saves the result just after the last round
+  // Banana Times bookkeeping: count games (story keys are per game) and spot a rematch after a finished game.
+  if (r.status === 'playing' && (S.lastStatus !== 'playing' || r.round < (S.lastRound || 0))) {
+    S.gameSeq++;
+    if (S.sawOver === r.code) { S.sawOver = null; S.rematchFor = `${r.code}|${S.gameSeq}`; }
+  }
+  if (r.status === 'over') { S.sawOver = r.code; S.lastWinner = (r.winners || [])[0]; }
+  S.lastRound = r.round;
   S.lastStatus = r.status;
   if (r.status === 'lobby' || (r.status === 'playing' && !r.lastResult)) S.seen = 0;
   if (r.lastResult && r.lastResult.round > S.seen && S.sheetFor == null) S.sheetFor = r.lastResult.round;
@@ -865,12 +942,13 @@ function render() {
   const slot = document.getElementById('padslot');
   if (slot) { slot.appendChild(pad()); redrawPad(); }
   maybeCelebrate();
+  paperPump();
   if (active) { const el = document.getElementById(active); if (el) { el.focus(); try { el.setSelectionRange(caret, caret); } catch (e) {} } }
 }
 function view() {
   if (!S.code || !S.room) return homeView() + flagSheetView() + shopView();
   const body = S.room.status === 'lobby' ? lobbyView() : S.room.status === 'over' ? overView() : gameView();
-  return `<div class="topbar"><span class="muted small">Room <span class="code">${esc(S.code)}</span></span><button class="link" onclick="leaveRoom()">Leave</button></div>`
+  return `<div class="topbar"><span class="muted small">Room <span class="code">${esc(S.code)}</span></span><button class="link" onclick="leaveTap()">Leave</button></div>`
     + (S.targeting ? `<p class="aimbar">Tap a captain's ship below <button class="link" onclick="S.targeting=null;render()">Cancel</button></p>` : '')
     + (S.reconnecting ? `<p class="reconnecting" role="status">Reconnecting to the room<span class="dots"><i>.</i><i>.</i><i>.</i></span></p>` : '')
     + body + (S.error ? `<p class="err">${esc(S.error)}</p>` : '') + sheetView() + flagSheetView() + shopView();
@@ -988,7 +1066,8 @@ function playersList(withStatus) {
     const st = withStatus ? (pl(id).locked ? `<span class="status ok">Bid locked</span>` : `<span class="status">Thinking…</span>`)
       : taunt ? `<span class="status taunt">“${esc(taunt)}”</span>` : '';
     const aimable = S.targeting && id !== r.me && (S.catalog.catalog[S.targeting.item].kind === 'gift' || r.order.includes(r.me));
-    return `<li class="${id===r.me?'me':''}${aimable ? ' aim' : ''}" ${aimable ? `onclick="pickTarget('${id}')" role="button" tabindex="0"` : ''}>${tile(inv / GOAL, true, id, lookOfId(id))}<span class="name">${esc(nickOf(id))}${id===r.me?' (you)':''}</span><span class="inv">${inv}</span>${st}</li>`;
+    const gag = gagAt(id, withStatus ? 'list' : 'over'), gagLine = gag && gagText(gag.line, { id, inv });
+    return `<li class="${id===r.me?'me':''}${aimable ? ' aim' : ''}" ${aimable ? `onclick="pickTarget('${id}')" role="button" tabindex="0"` : ''}>${tile(inv / GOAL, true, id, lookOfId(id))}<span class="name">${esc(nickOf(id))}${id===r.me?' (you)':''}</span><span class="inv">${inv}</span>${st}${gagLine ? `<span class="gag">${gagLine}</span>` : ''}</li>`;
   }).join('')}${giftWatchers()}</ul>`;
 }
 // While aiming a gift, captains watching the game can receive it too: they get rows of their own.
@@ -1018,7 +1097,7 @@ function gameView() {
   const mine = r.inventories[r.me];
   return `<div class="potcard"><span class="plate">Round ${r.round}</span>
     <div class="num">${r.pot} 🍌</div><div class="sub">up for auction this round</div></div>
-    ${inGame() ? `<div class="myship" role="img" aria-label="Your ship: ${mine} bananas, ${cargoWord(mine / GOAL).toLowerCase()}">${heroScene(mine / GOAL, r.me, lookOfId(r.me), true)}
+    ${inGame() ? `<div class="myship" role="img" aria-label="Your ship: ${mine} bananas, ${cargoWord(mine / GOAL).toLowerCase()}">${heroScene(mine / GOAL, r.me, { ...lookOfId(r.me), heroGag: heroGag(r.me) }, true)}
     <div class="myship-foot"><span>Your ship<br><b>${cargoWord(mine / GOAL)}</b></span><span class="num">${mine} 🍌</span></div></div>
 ` : ''}
     ${S.room.shop && S.room.wallet ? `<div class="walletrow"><span class="coins">🪙 ${S.room.wallet.credits}</span>${shopButton()}</div>` : ''}
@@ -1092,6 +1171,7 @@ function overView() {
   return `<div class="card winner">${tile(Math.max(1.6, r.inventories[w[0]] / GOAL), false, w[0], lookOfId(w[0]))}<div class="muted">King of the bananas</div>
     <div class="num">${w.map(id => esc(nickOf(id))).join(' & ')}</div>
     <div class="muted">${r.inventories[w[0]]} bananas after ${r.round - 1} rounds</div></div>
+    ${r.order.map(id => { const g = gagAt(id, 'card'); return g ? g.html({ id, age: gagAge(`${r.code}|card|${(r.history || []).length}|${id}`) }) : ''; }).join('')}
     ${tauntFor(r.me) ? `<div class="taunt-me" role="status">${bongoSays(`${flagThumb(flagOf(pl(r.me).flag))}<b>${esc(nickOf(r.me))}</b>, ${r.inventories[r.me]} ${r.inventories[r.me] === 1 ? 'banana' : 'bananas'}. ${esc(tauntFor(r.me))}`, 'smug', 'Ha ha ha!')}</div>` : ''}
     <div class="card" style="margin-top:14px">${playersList(false)}</div>
     ${r.earned && r.earned[r.me] !== undefined ? bongoSays(`You earned <b>+${r.earned[r.me]} 🪙</b> this game.${S.room.wallet ? ` You now have ${S.room.wallet.credits} 🪙.` : ''}`, 'happy') : ''}
@@ -1179,6 +1259,443 @@ function stepLines(s) {
     default: return ['Nobody won the auction.'];
   }
 }
+// ---------- world-politics easter eggs (visual only; never touches scores) ----------
+// Jokes about governments and policies, keyed by the captain's flag. Each one fires every time its trigger applies,
+// derived from room state alone, so every screen agrees. A flag's entry maps triggers to what they show:
+//   won       results row + ship: took (or shared) this round's auction     paid   results row: won and paid a gap > 0
+//   bust      results row: top bid but couldn't pay it                      round  results row: every round
+//   list      in-game player list row                                       over   end-screen player list row
+//   card      end-screen card                                               hero   your own big ship scene, every round
+//   sabotaged art beside the ship while a sabotage is live on it            torpedo  the victory-show torpedo swerves
+//   leave     the Leave button opens a Banana Times front page first (Remain / Get Leave done)
+// Fields: stamp (big rotated text over the results row), line (trusted html, or o => html; o = { id, inv }),
+// art (geo => svg or { deck, front }), html (o => html), caption, and paper: o => { headline, sub, caption, fill? }, the
+// Banana Times front page for that trigger (plain text; showPaper escapes it; o = { id, n: nick, inv, bid, from, item }).
+// once: 'game' gives a persistent trigger one paper per game. Names are always esc()'d.
+const officialResult = o => `<span class="gag-kp"><span><b class="num">200 🍌</b> Official result · 100% of the vote</span><small>Actual count: ${o.inv} 🍌</small></span>`;
+const ESCORT = { sabotaged: { art: escortArt, paper: o => ({ headline: `Navy escort for ${o.n}`, sub: `${o.from}'s ${o.item} meets a grey escort ship within minutes. New allies on patrol.`, caption: `${o.n}'s ship, under escort.` }) } };
+const PESO = { list: { line: o => `inflation-adjusted: ${(o.inv * 1e6).toLocaleString('en-US')} 🍌`, once: 'game',
+  paper: o => ({ headline: `Inflation hits ${o.n}'s hold`, sub: `${o.inv} bananas now worth ${(o.inv * 1e6).toLocaleString('en-US')}. Wheelbarrows sold out.`, caption: 'The cargo, revalued hourly.' }) } };
+const GAGS = {
+  ru: { won: { stamp: 'SANCTIONED', line: 'Delivered anyway via a third country 🇦🇪',
+    paper: o => ({ headline: 'Captain sanctioned!', sub: 'Bananas arrive anyway, “via a third country” 🇦🇪', caption: `${o.n}'s sanctioned vessel, fully loaded.` }) } },
+  us: { paid: { line: '<span><span class="gag-badge"><s>25% tariff applied 🧾</s></span><span class="gag-paused">paused</span></span>',
+    paper: o => ({ headline: '25% tariff on bananas!', sub: 'Update: tariff paused. Update: maybe not. Markets confused.', caption: `${o.n}'s bananas, awaiting a decision.` }) } },
+  eu: { won: { line: '1 bunch rejected: banana too curved (Reg. 2257/94)',
+    paper: o => ({ headline: 'Brussels rejects curved banana', sub: `One bunch of ${o.n}'s cargo fails Regulation 2257/94. Too bendy.`, caption: 'The offending cargo, impounded.' }) } },
+  gb: { leave: { paper: () => ({ headline: 'Leave? Really?', sub: 'Last time leaving took 3½ years. Captain urged to think it over.', caption: 'The ship, still in port.' }) } },
+  ch: { torpedo: { caption: 'Neutral. No comment.',
+    paper: o => ({ headline: 'Torpedoes miss Swiss ship', sub: `${o.n}'s statement in full: “Neutral. No comment.”`, caption: 'Unharmed, unbothered.' }) } },
+  se: ESCORT, fi: ESCORT,
+  no: { over: { line: 'Bananas moved to the sovereign banana fund: 1.7 trillion invested, none eaten.',
+    paper: o => ({ headline: 'Bananas moved to fund', sub: `${o.n} wins with ${o.inv} bananas. Sovereign banana fund now 1.7 trillion. None eaten.`, caption: 'Ship returns empty, as planned.', fill: 0 }) } },
+  ve: PESO, ar: PESO,
+  kp: { round: { line: officialResult, once: 'game',
+    paper: o => ({ headline: 'Glorious victory: 200 bananas!', sub: `${o.n} wins with 100% of the vote. Actual count: ${o.inv}.`, caption: 'Official photograph. Do not zoom in.', fill: 1 }) },
+    over: { line: officialResult } },
+  gr: { bust: { line: 'Bailout approved. Terms: 300 years.',
+    paper: o => ({ headline: 'Bailout approved', sub: `${o.n} bid ${o.bid} and can't pay. Terms: 300 years.`, caption: 'The vessel, now owned by its creditors.', fill: 0 }) } },
+  pa: { hero: { art: canalArt, once: 'game',
+    paper: o => ({ headline: 'Canal toll raised again', sub: `Every ship through ${o.n}'s canal pays up. Bananas per crossing: undisclosed.`, caption: 'A ship in transit, paying.' }) } },
+  banana: { won: { line: 'Coup! The crown changes hands 👑', art: g => ({ front: crownArt(g) }),
+    paper: o => ({ headline: 'Coup in the Banana Republic', sub: `${o.n} seizes the crown and the cargo. 👑`, caption: 'The new regime, at anchor.' }) } },
+  cn: { won: { line: '<span><span class="gag-badge">Made in China</span> …including the bananas</span>', art: () => ({ front: madeInChinaArt() }),
+    paper: o => ({ headline: 'Made in China', sub: 'Including, it turns out, the bananas.', caption: `${o.n}'s cargo, customs sticker attached.` }) } },
+  ua: { won: { line: 'Grain corridor open: bananas delivered via the Black Sea route! 🌻', art: () => ({ deck: sunflowerArt() }),
+    paper: () => ({ headline: 'Grain corridor open!', sub: 'Bananas delivered via the Black Sea route 🌻', caption: 'Sunflowers spotted on deck.' }) }, card: { html: euroCard } },
+};
+const gagAt = (id, trigger) => { const g = GAGS[flagOf(pl(id).flag)]; return g && g[trigger] || null; };
+const myGag = trigger => { const g = GAGS[flagOf((S.room && S.room.me && pl(S.room.me).flag) || S.flag)]; return g && g[trigger] || null; };
+const gagText = (v, o) => typeof v === 'function' ? v(o) : v || '';
+// When this browser first drew each occurrence, so its entrance plays once (like fxAge for ship effects).
+const gagFirstSeen = new Map();
+function gagAge(k) {
+  const now = Date.now();
+  if (!gagFirstSeen.has(k)) { if (gagFirstSeen.size > 300) gagFirstSeen.clear(); gagFirstSeen.set(k, now); }
+  return (now - gagFirstSeen.get(k)) / 1000;
+}
+// Which results triggers apply to one captain in one round, read from the engine's steps.
+function resultTriggers(id, lr) {
+  const t = ['round'];
+  for (const s of lr.steps || []) {
+    if (((s.t === 'win' || s.t === 'last') && s.id === id) || (s.t === 'tie' && (s.ids || []).includes(id))) t.push('won');
+    if (s.t === 'win' && s.id === id && s.premium > 0) t.push('paid');
+    if (s.t === 'bust' && s.id === id) t.push('bust'); // an overbid they couldn't pay (engine.js resolveAuction)
+  }
+  return t;
+}
+// A results row's gags: a stamp across the row, then lines under it (the row carries --age).
+function gagRow(id, inv, triggers) {
+  const hits = [...new Set(triggers)].map(t => gagAt(id, t)).filter(Boolean);
+  const stamp = hits.find(h => h.stamp), lines = hits.map(h => gagText(h.line, { id, inv })).filter(Boolean);
+  return (stamp ? `<span class="gag-stamp">${esc(stamp.stamp)}</span>` : '')
+    + (lines.length ? `<span class="gagrow">${lines.map(l => `<span class="gagline">${l}</span>`).join('')}</span>` : '');
+}
+// Your own big ship scene's gag for this round (GAGS.pa), starting from this round's first draw.
+function heroGag(id) {
+  const g = gagAt(id, 'hero');
+  return g ? `<g style="--age:${gagAge(`${S.room.code}|hero|${S.room.round}|${id}`).toFixed(2)}s">${g.art()}</g>` : '';
+}
+// Art, in ship coordinates (220 wide, waterline near y 92) unless noted.
+// A grey escort ship flying a dark-blue pennant with a white compass star: beside the hull in a big scene, in front of it on a tile.
+function escortArt(g) {
+  const at = g.wide ? 'translate(226 101)' : 'translate(152 108)';
+  return `<g transform="${at}"><g class="gag-escort" style="--d:.2s"><g class="gag-escortbob">
+    <path d="M0-7H50L44 2H5Z" fill="#6B7785" stroke="#3F4A55" stroke-width="1"/><path d="M3-3H47" stroke="#4A5562" stroke-width="1.2"/>
+    <rect x="13" y="-15" width="20" height="8" rx="1" fill="#8A96A3" stroke="#3F4A55" stroke-width=".8"/><rect x="17" y="-21" width="10" height="6" rx="1" fill="#9BA6B2" stroke="#3F4A55" stroke-width=".8"/>
+    <path d="M19-19h6" stroke="#2E3A46" stroke-width="1.4"/><path d="M36-7v-4h8" stroke="#4A5562" stroke-width="1.6" fill="none"/>
+    <path d="M22-21v-14" stroke="#3F4A55" stroke-width="1.2"/><rect x="22" y="-35" width="13" height="9" fill="#0B2A5B"/>
+    <path d="M28.5-33.6l.8 2.3 2.3.8-2.3.8-.8 2.3-.8-2.3-2.3-.8 2.3-.8Z" fill="#fff"/></g></g></g>`;
+}
+// A crown wobbling down onto the cargo pile.
+function crownArt(g) {
+  const y = Math.max(g.cargoTop, 14).toFixed(1);
+  return `<g transform="translate(0 ${y})"><g class="gag-crown" style="--d:.6s"><path d="M86 0l-4-24 14 11 14-17 14 17 14-11-4 24Z" fill="#FFD60A" stroke="#B8860B" stroke-width="1.8" stroke-linejoin="round"/>
+    <rect x="86" y="-5" width="48" height="5" fill="#E5A100"/><circle cx="110" cy="-12" r="3" fill="#E0505B"/><circle cx="95" cy="-9" r="2" fill="#3FD0E0"/><circle cx="125" cy="-9" r="2" fill="#3FD0E0"/>
+    ${[82, 96, 110, 124, 138].map((x, i) => `<circle cx="${x}" cy="${i % 2 ? -13 : i === 2 ? -30 : -24}" r="2.4" fill="#FFF3B0" stroke="#B8860B" stroke-width=".8"/>`).join('')}</g></g>`;
+}
+// A customs sticker slapped on the hull.
+function madeInChinaArt() {
+  return `<g class="gag-bloom" style="--d:.7s"><g transform="rotate(-5 110 64)"><rect x="70" y="56" width="80" height="15" rx="2" fill="#fff" stroke="#D93842" stroke-width="2"/>
+    <text x="110" y="67.4" text-anchor="middle" font-size="9.5" font-weight="800" fill="#D93842" font-family="Figtree,system-ui,sans-serif">MADE IN CHINA</text></g></g>`;
+}
+// Sunflowers blooming along the deck.
+function sunflowerArt() {
+  return [66, 88, 110, 132, 154, 176].map((x, i) => {
+    const y = deckAt(x) + 1;
+    return `<g class="gag-bloom" style="--d:${(0.6 + i * 0.12).toFixed(2)}s"><path d="M${x} ${y.toFixed(1)}v-17" stroke="#2A9457" stroke-width="2.2"/><path d="M${x} ${(y - 7).toFixed(1)}q6-5 9-1q-5 4-9 1Z" fill="#2BB673"/>
+      <circle cx="${x}" cy="${(y - 22).toFixed(1)}" r="6.5" fill="#FFD500" stroke="#F4A100" stroke-width="3" stroke-dasharray="2.2 1.6"/><circle cx="${x}" cy="${(y - 22).toFixed(1)}" r="3.2" fill="#5B3A1A"/></g>`;
+  }).join('');
+}
+// Hero-scene coordinates (360×196): a tiny ship crossing the front of the bay with a toll sign. Reduced motion parks it bottom right.
+function canalArt() {
+  return `<g class="gag-canal" aria-hidden="true"><path d="M296 180v-17" stroke="#5B4214" stroke-width="1.4"/><rect x="273" y="152" width="46" height="12" rx="2" fill="#FFD60A" stroke="#3A2F00" stroke-width="1"/>
+    <text x="296" y="160.6" text-anchor="middle" font-size="6.6" font-weight="800" fill="#3A2F00" font-family="Figtree,system-ui,sans-serif">CANAL TOLL</text>
+    <rect x="281" y="170" width="8" height="6" fill="#fff" stroke="#3F4A55" stroke-width=".6"/><path d="M276 176h40l-5 7h-31Z" fill="#2A9457" stroke="#1E6B40" stroke-width=".8"/></g>`;
+}
+// Eurovision-style jury card on the end screen.
+function euroCard(o) {
+  return `<div class="gag-euro" role="note" style="--age:${o.age.toFixed(2)}s"><span class="lbl">And the jury awards…</span><span class="pts">12 points!</span>
+    <span class="lbl">🇺🇦 ${esc(nickOf(o.id))}</span></div>`;
+}
+// Dev hook, console only (no UI): gagDemo('ru') fakes an offline room so each gag can be checked alone.
+// Your ship flies `flag`. scene: 'results' (round sheet: you win and pay a gap, or bust with 'gr'),
+// 'game' (in play, a shark on your ship), 'over' (end screen, you lost, torpedo show),
+// 'battle' (end screen seen by the winner: torpedoes at your flagged ship). Leave or reload to exit.
+function gagDemo(flag = 'ru', scene = 'results') {
+  if (S.es) S.es.close();
+  S.es = null; gagFirstSeen.clear(); closePaper(true);
+  const P = (id, nick, hull, f) => ({ id, nick, hull, cabin: 'white', flag: f, bling: [], locked: false });
+  const players = [P('p1', S.nick || 'You', S.hull, flag), P('p2', 'Rival', 'coral', ''), P('p3', 'Rival 2', 'palm', '')];
+  const bust = flagOf(flag) === 'gr';
+  const lastResult = bust
+    ? { round: 3, pot: 40, bids: { p1: 120, p2: 30, p3: 10 }, before: { p1: 10, p2: 60, p3: 40 }, after: { p1: 0, p2: 80, p3: 60 },
+        steps: [{ t: 'bust', id: 'p1', bid: 120, premium: 90, lost: 10, keeps: false }, { t: 'win', id: 'p2', bid: 30, gain: 40, premium: 20, to: ['p3'], second: 10, share: 20 }] }
+    : { round: 3, pot: 60, bids: { p1: 45, p2: 30, p3: 10 }, before: { p1: 60, p2: 50, p3: 30 }, after: { p1: 105, p2: 65, p3: 30 },
+        steps: [{ t: 'win', id: 'p1', bid: 45, gain: 60, premium: 15, to: ['p2'], second: 30, share: 15 }] };
+  const over = scene === 'over' || scene === 'battle';
+  S.code = 'DEMO';
+  S.room = { code: 'DEMO', status: over ? 'over' : 'playing', round: over ? 9 : scene === 'game' ? 4 : 4, pot: 105,
+    me: scene === 'battle' ? 'p2' : 'p1', isHost: true, hostId: 'p1', players, order: ['p1', 'p2', 'p3'],
+    inventories: over ? { p1: 37, p2: 204, p3: 12 } : lastResult.after, myBid: null, lastResult, history: [],
+    winners: over ? ['p2'] : [], torpedo: over, taunts: {}, shop: true, market: [], earned: {}, wallet: null,
+    effects: scene === 'game' ? [{ kind: 'shark', from: 'p2', target: 'p1', at: Date.now(), round: 4 }] : [] };
+  S.sheetFor = scene === 'results' ? 3 : null; S.seen = 3; S.celebrated = null; S.targeting = null; S.shopSheet = null;
+  document.getElementById('party')?.remove();
+  render();
+  return `Demo room for "${flag}" (${scene}). Leave or reload to exit.`;
+}
+
+// ---------- The Banana Times: breaking-news front pages (visual only; never touches scores) ----------
+// showPaper draws one front page into #bt, outside #app, so re-renders never destroy it. Tap (or Escape) closes it;
+// it closes itself after PAPER_MS unless it has action buttons. Every text field is plain text and escaped here.
+const PAPER_MS = 9000;
+let paperEl = null, paperTimer = null, paperReturn = null, paperOnClose = null;
+function showPaper({ headline, sub = '', photo, caption = '', kicker = 'BREAKING', actions, round, onClose } = {}) {
+  closePaper(true);
+  const r = S.room, rd = round ?? (r && r.status === 'playing' ? r.round : r && r.lastResult ? r.lastResult.round : 0);
+  let pic = '';
+  if (photo) {
+    const lk = photo.look || (photo.id && r ? lookOfId(photo.id) : {});
+    pic = `<div class="photo">${heroScene(Math.max(0, photo.fill ?? 0.6), 'paper', lk)}</div>`;
+  }
+  const el = document.createElement('div');
+  el.id = 'bt'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true');
+  el.setAttribute('aria-label', `The Banana Times: ${headline}`);
+  el.innerHTML = `<div class="paper" tabindex="-1"><div class="mast">The Banana Times</div>
+    <div class="meta"><span>Puerto Banana · ${rd ? `Round ${esc(rd)}` : 'Special edition'}</span><span>Price: 1 🍌</span></div>
+    <span class="breaking${kicker === 'BREAKING' ? '' : ' gossip'}">${esc(kicker)}</span><h1>${esc(headline)}</h1>${sub ? `<p class="sub">${esc(sub)}</p>` : ''}
+    ${pic}${caption ? `<div class="cap">${esc(caption)}</div>` : ''}<div class="cols" aria-hidden="true">${'<i></i>'.repeat(12)}</div>
+    ${actions && actions.length ? `<div class="acts">${actions.map((a, i) => `<button type="button" data-i="${i}"${a.primary ? ' class="primary"' : ''}>${esc(a.label)}</button>`).join('')}</div>`
+      : '<div class="tap">Tap anywhere to keep sailing</div>'}</div>`;
+  el.addEventListener('click', e => {
+    const b = e.target.closest && e.target.closest('button[data-i]');
+    if (b) { const a = actions[+b.dataset.i]; closePaper(); if (a.run) a.run(); return; }
+    if (actions && actions.length && e.target.closest && e.target.closest('.paper')) return; // decide with the buttons
+    closePaper();
+  });
+  paperReturn = document.activeElement; paperOnClose = onClose || null;
+  document.body.appendChild(el); paperEl = el;
+  const focus = el.querySelector('.acts button') || el.querySelector('.paper');
+  try { focus.focus({ preventScroll: true }); } catch (e) {}
+  if (!(actions && actions.length)) paperTimer = setTimeout(() => closePaper(), PAPER_MS);
+  return el;
+}
+// silent: replaced or dropped, so nothing queued behind it should show yet.
+function closePaper(silent) {
+  clearTimeout(paperTimer); paperTimer = null;
+  if (!paperEl) return;
+  paperEl.remove(); paperEl = null;
+  const back = paperReturn, done = paperOnClose; paperReturn = null; paperOnClose = null;
+  if (back && back.isConnected && back !== document.body) try { back.focus({ preventScroll: true }); } catch (e) {}
+  if (done) done();
+  if (!silent) setTimeout(paperPump, 0);
+}
+// The victory/storm show ended (timed out or tapped away): news can follow.
+function endParty() { document.getElementById('party')?.remove(); setTimeout(paperPump, 0); }
+
+// ---------- stories: derived from room state, so every screen prints the same paper ----------
+// Each occurrence has a key ("<room>|<game>|<round>|<kind>|<id>") in S.papers and shows once. The first view after
+// connecting or reloading seeds the keys silently, so old news never replays. Throttle:
+//  - round results: at most ONE paper per round. Priority: game over (incl. torpedo) > bankrupt > politics gag >
+//    comeback > record bid; the rest fall back to the results-row stamps and lines. Shown once the sheet's reveal
+//    has finished (or when it closes, if sooner); game over waits until the victory/storm show is over.
+//  - mid-round (sabotage, blocked attack, big gift): at most one per round, never over another paper, never during the
+//    sheet's reveal or the victory show; the rest stay toasts. A paper replaces its own toast.
+//  - after the game-over paper: at most one gossip paper (a rare taunt). On a rematch: "The rematch".
+const nm = id => nickOf(id);
+const invOf = (r, id) => (r.inventories && r.inventories[id]) ?? 0;
+const photoOf = (r, id, extra = {}, fill) => ({ id, fill: fill ?? Math.max(invOf(r, id), 1) / GOAL, look: { ...lookOfId(id), ...extra } });
+const paperGame = r => `${r.code}|${S.gameSeq || 0}`;
+const celebKey = r => r.code + ':' + (r.history || []).length;
+// A gag trigger's paper, as a story.
+function gagStory(r, id, trig, key, o = {}, extra = {}) {
+  const t = gagAt(id, trig);
+  if (!t || !t.paper) return null;
+  const p = t.paper({ id, n: nm(id), inv: invOf(r, id), ...o });
+  return { key, kind: 'gag', perGame: t.once === 'game', headline: p.headline, sub: p.sub, caption: p.caption,
+    photo: photoOf(r, id, extra, p.fill) };
+}
+function overStory(r, lr, g) {
+  const w = r.winners || [], names = w.map(nm).join(' & '), n = invOf(r, w[0]), many = w.length > 1;
+  const rivals = r.order.filter(id => !w.includes(id)), torpedo = r.torpedo && rivals.length > 0;
+  const base = { key: `${g}|${lr.round}|over|${w.join(',')}`, kind: 'over', round: lr.round };
+  const swiss = torpedo && rivals.find(id => gagAt(id, 'torpedo'));
+  if (swiss) return { ...gagStory(r, swiss, 'torpedo', base.key), ...base };
+  if (torpedo) return { ...base, headline: 'Torpedoes in the harbour', sub: `${names} ${many ? 'sink' : 'sinks'} the fleet. Insurers weep.`,
+    photo: photoOf(r, w[0]), caption: `The winning flagship, ${n} bananas aboard.` };
+  if (!many && gagAt(w[0], 'over') && gagAt(w[0], 'over').paper) return { ...gagStory(r, w[0], 'over', base.key), ...base };
+  return { ...base, headline: `${names} ${many ? 'corner' : 'corners'} the banana market`, sub: `${n} bananas. Rivals in shambles.`,
+    photo: photoOf(r, w[0]), caption: `${names}'s ship, riding low with the spoils.` };
+}
+// Every story this round result could print, best first.
+function roundStories(r, lr, g) {
+  const out = [], steps = lr.steps || [];
+  if (r.status === 'over' && (r.winners || []).length) out.push(overStory(r, lr, g));
+  for (const s of steps) {
+    if (s.t !== 'bust' || s.keeps) continue; // engine.js: a 3+ captain overbid that can't pay loses the whole stash
+    const key = `${g}|${lr.round}|bust|${s.id}`;
+    out.push({ ...(gagStory(r, s.id, 'bust', key, { bid: s.bid }) || { headline: `Captain ${nm(s.id)} goes bust`,
+      sub: `Bid ${s.bid}, couldn't pay, lost all ${bn(s.lost)}. Last seen rowing home.`, caption: `${nm(s.id)}'s ship. Empty hold, for sale.`, photo: photoOf(r, s.id, {}, 0) }),
+      key, kind: 'bust', perGame: false });
+  }
+  // Politics gags, round winners first. Persistent ones (once: 'game') wait for a free round.
+  const ids = Object.keys(lr.before || {}).filter(id => r.order.includes(id)).sort((a, b) => lr.bids[b] - lr.bids[a]);
+  for (const id of ids) {
+    const trig = resultTriggers(id, lr).concat(r.status === 'playing' ? ['list', 'hero'] : []);
+    for (const t of ['won', 'paid', 'round', 'list', 'hero']) {
+      if (!trig.includes(t)) continue;
+      const gt = gagAt(id, t);
+      if (!gt || !gt.paper) continue;
+      const key = gt.once === 'game' ? `${g}|game|${t}|${id}` : `${g}|${lr.round}|${t}|${id}`;
+      out.push(gagStory(r, id, t, key, {}, t === 'won' ? { gagWon: true } : t === 'hero' ? { heroGag: `<g style="--age:0s">${gt.art()}</g>` } : {}));
+    }
+  }
+  // Comeback: last place on bananas before the round takes the auction.
+  const win = steps.find(s => s.t === 'win' || s.t === 'last');
+  const before = lr.before || {}, others = win ? Object.keys(before).filter(id => id !== win.id) : [];
+  if (win && others.length && others.every(id => before[id] > before[win.id]))
+    out.push({ key: `${g}|${lr.round}|comeback|${win.id}`, kind: 'comeback', headline: 'Underdog strikes', sub: `${nm(win.id)} climbs off the bottom.`,
+      caption: `${nm(win.id)}'s ship, ${invOf(r, win.id)} bananas aboard and rising.`, photo: photoOf(r, win.id, { gagWon: true }) });
+  // Record bid: the game's highest yet, beating a previous record of at least RECORD_MIN.
+  const prev = Math.max(0, ...(r.history || []).filter(h => h.round !== lr.round).flatMap(h => Object.values(h.bids || {})));
+  const top = Math.max(0, ...Object.values(lr.bids || {})), who = Object.keys(lr.bids || {}).find(id => lr.bids[id] === top);
+  if (prev >= RECORD_MIN && top > prev && who)
+    out.push({ key: `${g}|${lr.round}|record|${who}`, kind: 'record', headline: `Record bid: ${nm(who)} splashes ${top} bananas`,
+      sub: `On a ${lr.pot}-banana pot. Economists baffled.`, caption: `The old record, ${prev}, lies in pieces.`, photo: photoOf(r, who) });
+  return out.filter(Boolean);
+}
+const RECORD_MIN = 20;
+// A rare loser's taunt as a gossip column, the viewer's own first.
+function gossipStory(r) {
+  const rare = Object.keys(r.taunts || {}).filter(id => r.taunts[id] && r.taunts[id].rare === true && tauntFor(id));
+  const id = rare.includes(r.me) ? r.me : rare[0];
+  if (!id) return null;
+  return { kicker: 'THE BANANA GOSSIP', headline: 'Overheard on the docks', sub: `About ${nm(id)}: “${tauntFor(id)}”`,
+    caption: `${nm(id)}'s ship, ${invOf(r, id)} bananas aboard.`, photo: photoOf(r, id) };
+}
+function rematchStory(r) {
+  const id = r.players.some(p => p.id === S.lastWinner) ? S.lastWinner : r.hostId;
+  return { headline: 'The rematch', sub: 'Rivals return to port. Bananas tremble.', caption: 'Last game\'s champion, back at the start line.',
+    photo: photoOf(r, id), round: r.round };
+}
+// Mid-round shop stories. Names are local so the papers don't depend on the catalogue having loaded.
+const SAB_PAPER = {
+  kraken: (t, f) => [`Kraken seizes ${t}'s freighter`, `${f} denies everything. Tentacles everywhere.`],
+  bomb: (t, f) => [`Bomb aboard ${t}'s ship`, `Smoke seen for miles. ${f} claims to have been “nowhere near it”.`],
+  cloud: (t, f) => [`Rain cloud parks over ${t}`, `Forecast: soggy bananas. ${f} seen near a weather machine.`],
+  shark: (t, f) => [`Shark circles ${t}`, `Swimmers told to stay ashore. ${f} spotted feeding it bananas.`],
+  gulls: (t, f) => [`Gulls loot ${t}'s bananas`, `Police suspect ${f}. The gulls aren't talking.`],
+};
+const SAB_NAME = { kraken: 'kraken', bomb: 'bomb', cloud: 'rain cloud', shark: 'shark', gulls: 'seagull raid' };
+const BLOCK_PAPER = {
+  hose: (t, f) => [`Fire hose saves ${t}'s ship`, `${f}'s bomb fizzles out. Soot everywhere, bananas fine.`],
+  umbrella: (t, f) => [`Umbrella foils rain cloud`, `${t} stays dry. ${f}'s weather plot is a washout.`],
+  bubble: (t, f, k) => [`Bubble shield holds`, `${f}'s ${SAB_NAME[k] || 'attack'} bounces off ${t}'s ship.`],
+};
+const GIFT_PAPER = {
+  diamond: (t, f) => [`Society pages`, `${f} showers ${t} with diamonds. Rumours swirl.`, `${t}'s ship, sparkling.`],
+  fireworks: (t, f) => [`Society pages`, `${f} lights up the sky for ${t}. Neighbours complain; rumours swirl.`, `${t}'s ship, under a shower of sparks.`],
+};
+function fxStory(e, r = S.room) {
+  if (!r || e.kind === 'emote' || !e.target) return null;
+  const t = nm(e.target), f = nm(e.from), fill = Math.max(invOf(r, e.target), 1) / GOAL;
+  const fx = (sab, blocked, gifts) => ({ fx: { sab, blocked, gifts, emote: null, age: { [blocked[0] || sab[0] || gifts[0]]: 0 } } });
+  let h;
+  if (e.blocked && BLOCK_PAPER[e.blocked]) {
+    h = BLOCK_PAPER[e.blocked](t, f, e.kind);
+    return { kind: 'blocked', headline: h[0], sub: h[1], caption: `${t}'s ship, untouched.`, photo: photoOf(r, e.target, fx([], [e.blocked], []), fill), round: e.round || undefined };
+  }
+  if (e.blocked) return null;
+  if (SAB_PAPER[e.kind]) {
+    const ally = gagStory(r, e.target, 'sabotaged', '', { from: f, item: SAB_NAME[e.kind] }, fx([e.kind], [], []));
+    h = SAB_PAPER[e.kind](t, f);
+    return { kind: 'sabotage', headline: ally ? ally.headline : h[0], sub: ally ? ally.sub : h[1], caption: ally ? ally.caption : `${t}'s ship, this morning.`,
+      photo: photoOf(r, e.target, fx([e.kind], [], []), fill), round: e.round || undefined };
+  }
+  if (GIFT_PAPER[e.kind]) {
+    h = GIFT_PAPER[e.kind](t, f);
+    return { kind: 'gift', headline: h[0], sub: h[1], caption: h[2], photo: photoOf(r, e.target, fx([], [], [e.kind]), fill), round: e.round || undefined };
+  }
+  return null;
+}
+// Is the results sheet still flipping its rows in? Then wait (and come back when it's done).
+function revealing(lr) {
+  if (S.sheetFor !== lr.round) return false;
+  const need = 0.12 * Math.max(0, S.room.order.length - 1) + 1.3, age = gagAge(`${S.room.code}|sheet|${lr.round}`);
+  if (age >= need) return false;
+  clearTimeout(S.paperWait); S.paperWait = setTimeout(paperPump, (need - age) * 1000 + 30);
+  return true;
+}
+// Called from fxToasts for each new effect: true if it went out as a paper (then no toast).
+function fxPaper(e) {
+  const r = S.room;
+  if (!r || S.code === 'DEMO' || paperEl || document.getElementById('party')) return false;
+  if (r.lastResult && revealing(r.lastResult)) return false;
+  const budget = `${paperGame(r)}|${e.round ?? 0}|mid`;
+  if (S.papers.has(budget)) return false;
+  const st = fxStory(e);
+  if (!st) return false;
+  S.papers.add(budget); showPaper(st);
+  return true;
+}
+// Decide whether a paper is due now. Runs after every render, when a paper closes and when the victory show ends.
+function paperPump() {
+  clearTimeout(S.paperWait); S.paperWait = null;
+  const r = S.room;
+  if (!r || !S.code || S.code === 'DEMO') return;
+  const g = paperGame(r), lr = r.lastResult;
+  if (!S.paperSeeded) { // first view on this connection: what's already happened is old news
+    if (lr) { S.papers.add(`${g}|${lr.round}|round`); for (const c of roundStories(r, lr, g)) S.papers.add(c.key); }
+    if (r.status === 'over') S.papers.add(`${g}|gossip`);
+    S.rematchFor = null; S.paperSeeded = true;
+    return;
+  }
+  if (paperEl || document.getElementById('party')) return;
+  if (S.rematchFor === g) {
+    S.rematchFor = null;
+    if (!S.papers.has(`${g}|rematch`)) { S.papers.add(`${g}|rematch`); showPaper(rematchStory(r)); return; }
+  }
+  if (lr && !S.papers.has(`${g}|${lr.round}|round`)) {
+    const over = r.status === 'over';
+    if (over ? S.sheetFor != null || S.celebrated !== celebKey(r) : revealing(lr)) return;
+    const cands = roundStories(r, lr, g), pick = cands.find(c => !S.papers.has(c.key));
+    S.papers.add(`${g}|${lr.round}|round`);
+    for (const c of cands) if (!c.perGame) S.papers.add(c.key); // one per round: the rest stay as row stamps
+    if (pick) { S.papers.add(pick.key); if (pick.kind === 'over') S.overShown = g; showPaper(pick); return; }
+  }
+  if (r.status === 'over' && S.overShown === g && S.tauntBook && !S.papers.has(`${g}|gossip`)) {
+    S.papers.add(`${g}|gossip`);
+    const st = gossipStory(r);
+    if (st) showPaper(st);
+  }
+}
+
+// Dev hook, console only (no UI): paperDemo(kind, arg) fakes an offline room and prints one front page.
+// kinds: 'over', 'torpedo', 'bust', 'record', 'comeback', 'gossip', 'rematch', 'sabotage' (arg: bomb|kraken|cloud|shark|gulls),
+// 'blocked' (arg: hose|umbrella|bubble), 'gift' (arg: diamond|fireworks), 'gag' (arg: any GAGS flag, e.g. 'ru', 'gb', 'ch'),
+// 'leave' (the UK Leave paper). paperDemo('all') lists them. Leave or reload to exit.
+const PAPER_KINDS = ['over', 'torpedo', 'bust', 'record', 'comeback', 'gossip', 'rematch', 'sabotage', 'blocked', 'gift', 'gag', 'leave'];
+function paperDemo(kind = 'over', arg) {
+  if (kind === 'all') return `paperDemo(kind, arg): ${PAPER_KINDS.join(', ')}. gag flags: ${Object.keys(GAGS).join(', ')}`;
+  if (S.es) S.es.close();
+  S.es = null; closePaper(true); document.getElementById('party')?.remove();
+  const flag = kind === 'leave' ? 'gb' : kind === 'gag' ? flagOf(arg || 'ru') : '';
+  const P = (id, nick, hull, f) => ({ id, nick, hull, cabin: 'white', flag: f, bling: [], locked: false });
+  const players = [P('p1', S.nick || 'Bo', S.hull, flag), P('p2', 'Cy', 'coral', ''), P('p3', 'Ingrid', 'palm', ''), P('p4', 'Jack', 'mango', '')];
+  // p1 wins round 6 and pays a gap; p4 started it last
+  let lr = { round: 6, pot: 40, bids: { p1: 45, p2: 30, p3: 10, p4: 5 }, before: { p1: 60, p2: 50, p3: 30, p4: 70 }, after: { p1: 85, p2: 65, p3: 30, p4: 70 },
+    steps: [{ t: 'win', id: 'p1', bid: 45, gain: 40, premium: 15, to: ['p2'], second: 30, share: 15 }] };
+  const hist = [{ round: 5, pot: 40, bids: { p1: 12, p2: 25, p3: 8, p4: 3 } }, { round: 6, pot: 40, bids: lr.bids }];
+  let status = 'playing', winners = [], torpedo = false, taunts = {}, inv = lr.after;
+  if (kind === 'bust' || (kind === 'gag' && flag === 'gr')) {
+    lr = { ...lr, bids: { p1: 120, p2: 30, p3: 10, p4: 5 }, after: { p1: 0, p2: 80, p3: 50, p4: 70 },
+      steps: [{ t: 'bust', id: 'p1', bid: 120, premium: 90, lost: 60, keeps: false }, { t: 'win', id: 'p2', bid: 30, gain: 40, premium: 20, to: ['p3'], second: 10, share: 20 }] };
+    inv = lr.after;
+  }
+  if (kind === 'record') { lr = { ...lr, bids: { p1: 120, p2: 30, p3: 10, p4: 5 } }; hist[1].bids = lr.bids; }
+  if (kind === 'comeback') { lr = { ...lr, before: { p1: 10, p2: 50, p3: 30, p4: 70 }, after: { p1: 35, p2: 65, p3: 30, p4: 70 } }; inv = lr.after; }
+  const endGame = kind === 'over' || kind === 'torpedo' || kind === 'gossip' || (kind === 'gag' && (flag === 'ch' || flag === 'no'));
+  if (endGame) {
+    status = 'over'; inv = { p1: 214, p2: 120, p3: 8, p4: 40 }; winners = flag === 'ch' ? ['p2'] : ['p1'];
+    torpedo = kind === 'torpedo' || flag === 'ch';
+    taunts = { p2: { rare: kind === 'gossip', n: 3 }, p3: { rare: false, n: 1 }, p4: { rare: false, n: 2 } };
+  }
+  S.code = 'DEMO';
+  S.room = { code: 'DEMO', status, round: endGame ? 7 : kind === 'rematch' ? 1 : 7, pot: 105, me: 'p1', isHost: true, hostId: 'p1', players,
+    order: ['p1', 'p2', 'p3', 'p4'], inventories: kind === 'rematch' ? { p1: 20, p2: 20, p3: 20, p4: 20 } : inv, myBid: null,
+    lastResult: kind === 'rematch' ? null : lr, history: kind === 'rematch' ? [] : hist, winners, torpedo, taunts, shop: true, market: [], earned: {}, wallet: null, effects: [] };
+  S.sheetFor = null; S.seen = 99; S.celebrated = celebKey(S.room); S.targeting = null; S.shopSheet = null; S.lastWinner = 'p1';
+  render();
+  const r = S.room, g = 'DEMO|0';
+  const fxe = (k, blocked) => ({ kind: k, from: 'p2', target: 'p1', round: 7, at: Date.now(), ...(blocked ? { blocked } : {}) });
+  const firstOf = kinds => roundStories(r, lr, g).find(c => kinds.includes(c.kind));
+  let st;
+  if (kind === 'over' || kind === 'torpedo') st = overStory(r, lr, g);
+  else if (kind === 'bust') st = firstOf(['bust']);
+  else if (kind === 'record') st = firstOf(['record']);
+  else if (kind === 'comeback') st = firstOf(['comeback']);
+  else if (kind === 'rematch') st = rematchStory(r);
+  else if (kind === 'sabotage') st = fxStory(fxe(SAB_PAPER[arg] ? arg : 'kraken'));
+  else if (kind === 'blocked') { const b = BLOCK_PAPER[arg] ? arg : 'bubble'; st = fxStory(fxe(b === 'hose' ? 'bomb' : b === 'umbrella' ? 'cloud' : 'kraken', b)); }
+  else if (kind === 'gift') st = fxStory(fxe(GIFT_PAPER[arg] ? arg : 'diamond'));
+  else if (kind === 'leave') { leaveTap(); return 'UK Leave paper. "Get Leave done" really leaves the demo room.'; }
+  else if (kind === 'gossip') {
+    const show = () => showPaper(gossipStory(r) || { kicker: 'THE BANANA GOSSIP', headline: 'Overheard on the docks', sub: 'About Cy: “(taunts could not load)”' });
+    if (S.tauntBook) show(); else loadTaunts().then(show);
+    return 'Gossip paper (Cy has a rare taunt).';
+  } else if (kind === 'gag') {
+    if (flag === 'gb') { leaveTap(); return 'gb: the Leave paper.'; }
+    if (flag === 'se' || flag === 'fi') st = fxStory(fxe('kraken'));
+    else if (flag === 'ch' || flag === 'no') st = overStory(r, lr, g);
+    else if (flag === 'gr') st = firstOf(['bust']);
+    else st = firstOf(['gag']);
+  }
+  if (!st) return `No "${kind}" story for that.`;
+  showPaper(st);
+  return `${kind}${arg ? ' ' + arg : ''}: ${st.headline}`;
+}
+
 // ---------- victory show (visual only; never touches scores) ----------
 // Torpedo battle pacing (seconds): first shot after START, one shot every GAP, each torpedo runs TRAVEL,
 // a hit ship takes SINK to go under, and the panel lingers LINGER after the last one before the party.
@@ -1188,7 +1705,7 @@ const rand = (lo, hi) => lo + Math.random() * (hi - lo);
 function maybeCelebrate() {
   const r = S.room;
   if (!r || r.status !== 'over' || S.sheetFor != null) return;
-  const key = r.code + ':' + (r.history || []).length;
+  const key = celebKey(r);
   if (S.celebrated === key) return;
   S.celebrated = key;
   celebrate(r);
@@ -1201,21 +1718,25 @@ function celebrate(r) {
   const rivals = r.order.filter(id => !r.winners.includes(id));
   const torpedo = r.torpedo && rivals.length > 0;
   const names = ids => ids.map(id => esc(nickOf(id))).join(' and ');
-  const sankLine = `💥 Torpedoes sank ${names(rivals)}!`;
+  // A captain whose flag has a torpedo gag (GAGS.ch) isn't sunk: the torpedo swerves around them.
+  const dodge = id => gagAt(id, 'torpedo'), dodgers = rivals.filter(dodge), sunk = rivals.filter(id => !dodge(id));
+  const sankLine = (sunk.length ? `💥 Torpedoes sank ${names(sunk)}!` : '💥 Torpedoes away!')
+    + (dodgers.length ? `<br>${dodgers.map(id => `🇨🇭 ${esc(nickOf(id))}: ${esc(dodge(id).caption)}`).join('<br>')}` : '');
   // Winners (and spectators) get the party; losers get a storm, and in torpedo games a close-up of their own sinking.
   const lost = r.order.includes(r.me) && !r.winners.includes(r.me);
   const winnerName = names(r.winners);
+  const hitMe = dodge(r.me) ? `💥 ${winnerName} fired at your ship. It swerved: ${esc(dodge(r.me).caption)}` : `💥 ${winnerName} torpedoed your ship!`;
   if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
     party.innerHTML = lost
-      ? `<div class="party-banner">⛈ ${winnerName} ${r.winners.length > 1 ? 'take' : 'takes'} the bananas.${torpedo ? `<br>💥 ${winnerName} torpedoed your ship!` : ''}</div>`
+      ? `<div class="party-banner">⛈ ${winnerName} ${r.winners.length > 1 ? 'take' : 'takes'} the bananas.${torpedo ? `<br>${hitMe}` : ''}</div>`
       : `<div class="party-banner">🎉 ${winnerName} ${r.winners.length > 1 ? 'win' : 'wins'}!${torpedo ? '<br>' + sankLine : ''}</div>`;
-    return setTimeout(() => party.remove(), 5000);
+    return setTimeout(() => { if (party.isConnected) endParty(); }, 5000);
   }
   if (lost) {
     const t = torpedo ? BATTLE.start + BATTLE.travel + BATTLE.sink + BATTLE.linger : 0;
-    if (torpedo) party.insertAdjacentHTML('beforeend', battleView(r, [r.me], `💥 ${winnerName} torpedoed your ship!`, true));
+    if (torpedo) party.insertAdjacentHTML('beforeend', battleView(r, [r.me], hitMe, true));
     setTimeout(() => { party.querySelector('.battle')?.remove(); party.insertAdjacentHTML('beforeend', stormView(r, winnerName)); }, t * 1000);
-    setTimeout(() => party.remove(), (t + 7.5) * 1000);
+    setTimeout(() => { if (party.isConnected) endParty(); }, (t + 7.5) * 1000);
     return;
   }
   let t = 0;
@@ -1224,7 +1745,7 @@ function celebrate(r) {
     party.querySelector('.battle')?.remove();
     party.insertAdjacentHTML('beforeend', rainView() + fireworksView());
   }, t * 1000);
-  setTimeout(() => party.remove(), (t + 7) * 1000);
+  setTimeout(() => { if (party.isConnected) endParty(); }, (t + 7) * 1000);
 }
 function rainView() {
   let h = '';
@@ -1245,7 +1766,7 @@ function stormView(r, winnerName) {
   }
   const cloud = (x, y, k) => `<g transform="translate(${x} ${y}) scale(${k})"><ellipse cx="0" cy="20" rx="70" ry="22"/><ellipse cx="-34" cy="10" rx="34" ry="24"/><ellipse cx="22" cy="0" rx="42" ry="30"/></g>`;
   const mine = r.inventories[r.me] || 0;
-  return `<div class="storm" onclick="document.getElementById('party')?.remove()"><div class="storm-tint"></div>
+  return `<div class="storm" onclick="endParty()"><div class="storm-tint"></div>
     <div class="storm-ship">${heroScene(Math.max(mine, 1) / GOAL, 'storm', lookOfId(r.me))}
       <p>${winnerName} ${r.winners.length > 1 ? 'take' : 'takes'} the bananas.<br>Better luck next voyage, captain.</p></div>
     <div class="storm-flash"></div>
@@ -1270,8 +1791,17 @@ function battleView(r, rivals, line, focus = false) {
   let rivalsSvg = '', shots = '';
   rivals.forEach((id, i) => {
     const x = 150 + i * gap + (gap - 220 * s) / 2, cx = x + 110 * s, hit = BATTLE.start + i * BATTLE.gap + BATTLE.travel;
+    const dodge = gagAt(id, 'torpedo'); // GAGS.ch: the torpedo swerves under the ship, which stays afloat
     rivalsSvg += `<g transform="translate(${x.toFixed(1)} ${(sea - 92 * s).toFixed(1)}) scale(${s.toFixed(3)})"${lookStyle(lookOfId(id))}>
-      <g class="sinking" style="--d:${hit.toFixed(2)}s;--t:${BATTLE.sink}s">${shipBody(r.inventories[id] / GOAL, 'sunk' + id, lookOfId(id)).ship}</g></g>`;
+      <g${dodge ? '' : ` class="sinking" style="--d:${hit.toFixed(2)}s;--t:${BATTLE.sink}s"`}>${shipBody(r.inventories[id] / GOAL, 'sunk' + id, lookOfId(id)).ship}</g></g>`;
+    if (dodge) {
+      const capX = Math.min(W - 54, Math.max(54, cx)), capY = sea - 92 * s - 6;
+      shots += `<g class="torp swerve" style="--d:${(hit - BATTLE.travel).toFixed(2)}s;--t:${(BATTLE.travel * 1.6).toFixed(2)}s;--dx:${(cx - 118).toFixed(0)}px"><path d="M100 ${sea + 5}h14" stroke="#fff" stroke-width="2" opacity=".8"/>
+        <rect x="112" y="${sea + 3}" width="12" height="4" rx="2" fill="#22313F"/></g>
+        <g class="gag-caption" style="--d:${hit.toFixed(2)}s"><rect x="${capX - 52}" y="${(capY - 15).toFixed(1)}" width="104" height="16" rx="8" fill="#fff" stroke="#D52B1E" stroke-width="1.5"/>
+        <text x="${capX}" y="${(capY - 4).toFixed(1)}" text-anchor="middle" font-size="9.5" font-weight="800" fill="#D52B1E" font-family="Figtree,system-ui,sans-serif">${esc(dodge.caption)}</text></g>`;
+      return;
+    }
     shots += `<g class="torp" style="--d:${(hit - BATTLE.travel).toFixed(2)}s;--t:${BATTLE.travel}s;--dx:${(cx - 118).toFixed(0)}px"><path d="M100 ${sea + 5}h14" stroke="#fff" stroke-width="2" opacity=".8"/>
       <rect x="112" y="${sea + 3}" width="12" height="4" rx="2" fill="#22313F"/></g>
       <circle class="boom" style="--d:${hit.toFixed(2)}s" cx="${cx.toFixed(0)}" cy="${sea - 4}" r="16" fill="#FF9F1C"/>
@@ -1289,15 +1819,16 @@ function sheetView() {
   const r = S.room.lastResult;
   if (S.sheetFor == null || !r || r.round !== S.sheetFor) return '';
   const ids = S.room.order.slice().sort((a, b) => r.bids[b] - r.bids[a]);
-  const top = r.bids[ids[0]];
+  const top = r.bids[ids[0]], age = gagAge(`${S.room.code}|sheet|${r.round}`).toFixed(2);
   return `<div class="sheet-bg" onclick="if(event.target===this)closeSheet()"><div class="sheet" role="dialog" aria-label="Round results">
     <h2>Round ${r.round} results</h2>
     ${bongoSays(r.steps.flatMap(stepLines).map(l => `<p>${l}</p>`).join(''), 'wide')}
     <ul class="reveal">${ids.map((id, i) => { const b = r.before[id], a = r.after[id], d = a - b;
-      return `<li class="${r.bids[id]===top?'top':''}" style="animation-delay:${i*0.12}s">${tile(a / GOAL, true, id, lookOfId(id))}
+      const trig = resultTriggers(id, r);
+      return `<li class="${r.bids[id]===top?'top':''}" style="animation-delay:${(i * 0.12 - age).toFixed(2)}s;--age:${age}s">${tile(a / GOAL, true, id, { ...lookOfId(id), gagWon: trig.includes('won') })}
         <span class="who"><b>${esc(nickOf(id))}${id===S.room.me?' (you)':''}</b>
         <span class="small">Bananas ${b} → <b>${a}</b> <span class="delta ${d>0?'up':d<0?'down':''}">(${d>0?'+'+d:d<0?'−'+(-d):'no change'})</span></span></span>
-        <span class="bid"><span class="small muted">Bid</span><span class="num">${r.bids[id]}</span></span></li>`; }).join('')}</ul>
+        <span class="bid"><span class="small muted">Bid</span><span class="num">${r.bids[id]}</span></span>${gagRow(id, a, trig)}</li>`; }).join('')}</ul>
     <button class="primary wide" onclick="closeSheet()">${S.room.status !== 'over' ? 'Next round'
       : S.room.winners.includes(S.room.me) ? 'Enjoy the victory' : S.room.order.includes(S.room.me) ? 'Mourn the defeat' : 'See the winner'}</button></div></div>`;
 }
@@ -1395,6 +1926,7 @@ function fxToasts() {
     const key = fxKey(e);
     if (S.seenFx.has(key)) continue;
     S.seenFx.add(key);
+    if (fxPaper(e)) continue; // a sabotage, blocked attack or big gift made the front page instead
     const t = fxText(e); if (t) toast(t.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&'));
   }
 }
@@ -1455,6 +1987,7 @@ function pickFlag(k) {
 document.addEventListener('keydown', e => {
   if (e.key === 'Enter' && e.target.id === 'bid') lockBid();
   if ((e.key === 'Enter' || e.key === ' ') && e.target.classList && e.target.classList.contains('aim')) { e.preventDefault(); e.target.click(); }
+  if (e.key === 'Escape' && paperEl) { closePaper(); return; }
   if (e.key === 'Escape') { if (S.flagSheet) closeFlags(); else if (S.shopSheet) closeShop(); else if (S.targeting) { S.targeting = null; render(); } else if (S.sheetFor != null) closeSheet(); }
 });
 
