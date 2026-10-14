@@ -245,8 +245,8 @@ const tests = {
   async 'players carry their cabin colour; unknown colours fall back to white'() {
     await withServer(null, async port => {
       const host = tok(), mate = tok();
-      const { body: { code } } = await api(port, { action: 'create', token: host, nick: 'Cap', cabin: 'mint' });
-      await api(port, { action: 'join', token: mate, code, nick: 'Mate', cabin: 'url(x)' });
+      const { body: { code } } = await api(port, { action: 'create', token: host, nick: 'Cap', cabin: 'mint' , picked: true });
+      await api(port, { action: 'join', token: mate, code, nick: 'Mate', cabin: 'url(x)' , picked: true });
       const v = await view(port, code, host);
       a.deepEqual(v.players.map(p => [p.nick, p.cabin]), [['Cap', 'mint'], ['Mate', 'white']]);
     });
@@ -271,20 +271,48 @@ const tests = {
   async 'players carry their hull colour; unknown colours fall back to navy'() {
     await withServer(null, async port => {
       const host = tok(), mate = tok();
-      const { body: { code } } = await api(port, { action: 'create', token: host, nick: 'Cap', hull: 'coral' });
-      await api(port, { action: 'join', token: mate, code, nick: 'Mate', hull: 'red;background:url(x)' });
+      const { body: { code } } = await api(port, { action: 'create', token: host, nick: 'Cap', hull: 'coral' , picked: true });
+      await api(port, { action: 'join', token: mate, code, nick: 'Mate', hull: 'red;background:url(x)' , picked: true });
       let v = await view(port, code, host);
       a.deepEqual(v.players.map(p => [p.nick, p.hull]), [['Cap', 'coral'], ['Mate', 'navy']]);
-      await api(port, { action: 'join', token: mate, code, nick: 'Mate', hull: 'mango' });
+      await api(port, { action: 'join', token: mate, code, nick: 'Mate', hull: 'mango' , picked: true });
       v = await view(port, code, host);
       a.equal(v.players.find(p => p.nick === 'Mate').hull, 'mango');
+    });
+  },
+  async 'captains who never picked colours get a random fruit nobody in the room has; it sticks on rejoin'() {
+    await withServer(null, async port => {
+      const { FRUITS } = require('./players');
+      const toks = [tok(), tok(), tok(), tok()];
+      const { body: { code } } = await api(port, { action: 'create', token: toks[0], nick: 'A' });
+      for (const [i, t] of toks.slice(1).entries()) await api(port, { action: 'join', token: t, code, nick: 'P' + i });
+      let v = await view(port, code, toks[0]);
+      const pairs = v.players.map(p => p.hull + '|' + p.cabin);
+      a.equal(new Set(pairs).size, 4, 'all different');
+      for (const pr of pairs) a.ok(FRUITS.some(([, h, c]) => h + '|' + c === pr), `${pr} is a fruit`);
+      await api(port, { action: 'join', token: toks[1], code, nick: 'P0' }); // reconnect
+      v = await view(port, code, toks[0]);
+      a.equal(v.players.find(p => p.nick === 'P0').hull + '|' + v.players.find(p => p.nick === 'P0').cabin, pairs[1]);
+    });
+  },
+  async 'a picked colour is kept unless someone in the room already has it'() {
+    await withServer(null, async port => {
+      const host = tok(), same = tok(), own = tok();
+      const { body: { code } } = await api(port, { action: 'create', token: host, nick: 'Cap', hull: 'coconut', cabin: 'white', picked: true });
+      await api(port, { action: 'join', token: same, code, nick: 'Same', hull: 'coconut', cabin: 'white', picked: true });
+      await api(port, { action: 'join', token: own, code, nick: 'Own', hull: 'coral', cabin: 'sky', picked: true });
+      const v = await view(port, code, host);
+      const look = n => { const p = v.players.find(x => x.nick === n); return p.hull + '|' + p.cabin; };
+      a.equal(look('Cap'), 'coconut|white');
+      a.notEqual(look('Same'), 'coconut|white');
+      a.equal(look('Own'), 'coral|sky');
     });
   },
   async 'fruit colours are accepted for hull and cabin (coconut: brown hull, white cabin)'() {
     await withServer(null, async port => {
       const host = tok(), mate = tok();
-      const { body: { code } } = await api(port, { action: 'create', token: host, nick: 'Cap', hull: 'coconut', cabin: 'white' });
-      await api(port, { action: 'join', token: mate, code, nick: 'Mate', hull: 'pineapple', cabin: 'leaf' });
+      const { body: { code } } = await api(port, { action: 'create', token: host, nick: 'Cap', hull: 'coconut', cabin: 'white', picked: true });
+      await api(port, { action: 'join', token: mate, code, nick: 'Mate', hull: 'pineapple', cabin: 'leaf', picked: true });
       const v = await view(port, code, host);
       a.deepEqual(v.players.map(p => [p.hull, p.cabin]), [['coconut', 'white'], ['pineapple', 'leaf']]);
     });
@@ -373,8 +401,8 @@ const tests = {
   async 'a finished game is saved once to the history with wins and hulls; spectators are not'() {
     await withServer(null, async port => {
       const host = tok(), mate = tok(), watcher = tok();
-      const { body: { code } } = await api(port, { action: 'create', token: host, nick: 'Anna', hull: 'coral' });
-      await api(port, { action: 'join', token: mate, code, nick: 'Bo', hull: 'mango' });
+      const { body: { code } } = await api(port, { action: 'create', token: host, nick: 'Anna', hull: 'coral' , picked: true });
+      await api(port, { action: 'join', token: mate, code, nick: 'Bo', hull: 'mango' , picked: true });
       await api(port, { action: 'start', token: host, code });
       await api(port, { action: 'join', token: watcher, code, nick: 'Cy' }); // joined after start: spectator
       let v;

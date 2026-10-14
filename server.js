@@ -13,7 +13,7 @@ const { createWalletsStore } = require('./wallets-store');
 
 const PORT = process.env.PORT || 8080;
 const GOAL = 200, START = 10, MAX_PLAYERS = 6;
-const { hullOf, cabinOf, flagOf } = require('./players'); // hull keys; the client maps each to a colour
+const { hullOf, cabinOf, flagOf, FRUITS } = require('./players'); // hull keys; the client maps each to a colour
 const RARE_TAUNT_ODDS = 1 / 8; // each flag's last two taunts are rare (client-side lists)
 const TORPEDO_ODDS = 0.2; // share of finished games where the winner's victory show torpedoes the rivals (visual only)
 let random = Math.random;  // swappable in tests
@@ -190,8 +190,18 @@ const actions = {
     const room = rooms.get(String(b.code || '').toUpperCase());
     if (!room) throw new Error('No room with that code.');
     const nick = String(b.nick || '').trim().slice(0, 20) || 'Player';
-    const hull = hullOf(b.hull), cabin = cabinOf(b.cabin), flag = flagOf(b.flag);
-    if (!room.players[token]) room.players[token] = { token, id: rid(4), nick, hull, cabin, flag, joinedAt: Date.now() };
+    const flag = flagOf(b.flag);
+    let hull = hullOf(b.hull), cabin = cabinOf(b.cabin);
+    // Colours: a captain who never picked keeps whatever fruit they were dealt; anyone unpicked or clashing with
+    // another captain in the room is dealt a random fruit nobody here has yet.
+    const prev = room.players[token];
+    const taken = new Set(Object.values(room.players).filter(p => p.token !== token).map(p => p.hull + '|' + p.cabin));
+    if (!b.picked && prev) ({ hull, cabin } = prev);
+    if (!b.picked && !prev || taken.has(hull + '|' + cabin)) {
+      const free = FRUITS.filter(([, h, c]) => !taken.has(h + '|' + c));
+      [, hull, cabin] = (free.length ? free : FRUITS)[Math.floor(random() * (free.length || FRUITS.length))];
+    }
+    if (!prev) room.players[token] = { token, id: rid(4), nick, hull, cabin, flag, joinedAt: Date.now() };
     else Object.assign(room.players[token], { nick, hull, cabin, flag });
     if (walletsRef && walletsRef.available) room.players[token].bling = walletsRef.get(token).worn;
     broadcast(room); return { code: room.code };

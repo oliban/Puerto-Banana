@@ -796,6 +796,8 @@ function fxFor(id) {
 const look = p => ({ hull: p.hull, cabin: p.cabin, flag: p.flag, bling: S.room && S.room.shop === false ? [] : p.bling || [],
   fx: p.id && S.room ? fxFor(p.id) : null });
 const myLook = () => look(S);
+// What we send when joining: picked tells the server the player chose these colours (else it deals a free fruit).
+const joinLook = () => ({ ...myLook(), picked: !!(ls.get('pb_hull') || ls.get('pb_cabin')) });
 const lookOfId = id => look(pl(id));
 const lookStyle = l => {
   const hull = l.bling && l.bling.includes('gold') ? '#D4AF37' : HULLS[l.hull] && HULLS[l.hull][1];
@@ -847,14 +849,14 @@ function heroScene(fill = 0.75, key = 'hero', look = {}, mine) {
 // ---------- rooms ----------
 function createRoom() {
   if (!S.nick.trim()) { S.error = 'Pick a name first.'; return render(); }
-  act(async () => { const { code } = await api('create', { nick: S.nick, ...myLook(), shop: S.shopOn }); connect(code); });
+  act(async () => { const { code } = await api('create', { nick: S.nick, ...joinLook(), shop: S.shopOn }); connect(code); });
 }
 function enterRoom(code, silent) {
   code = String(code || '').trim().toUpperCase();
   if (!/^[A-Z]{4}$/.test(code)) { if (!silent) { S.error = 'Room codes are 4 letters.'; render(); } return; }
   if (!silent && !S.nick.trim()) { S.error = 'Pick a name first.'; return render(); }
   act(async () => {
-    try { await api('join', { code, nick: S.nick, ...myLook() }); connect(code); }
+    try { await api('join', { code, nick: S.nick, ...joinLook() }); connect(code); }
     catch (e) { ls.del('pb_code'); if (!silent) throw e; }
   });
 }
@@ -877,7 +879,7 @@ function connect(code) {
 function reconnect(code, attempt = 0) {
   setTimeout(async () => {
     if (S.code !== code) return; // left in the meantime
-    try { await api('join', { code, nick: S.nick, ...myLook() }); connect(code); }
+    try { await api('join', { code, nick: S.nick, ...joinLook() }); connect(code); }
     catch (e) {
       if (/no room/i.test(e.message) || attempt >= 7) { dropRoom(); S.reconnecting = false; S.error = 'That room is gone. Create a new one.'; render(); }
       else reconnect(code, attempt + 1);
@@ -2016,7 +2018,7 @@ function pickFlag(k) {
     ls.set('pb_found', JSON.stringify([...foundFlags(), S.flag]));
     toast(`🎉 Special flag found: ${FLAG_EGGS[S.flag][0]}!`);
   }
-  if (S.code) api('join', { code: S.code, nick: S.nick, ...myLook() }).catch(() => {}); // opponents see it too
+  if (S.code) api('join', { code: S.code, nick: S.nick, ...joinLook() }).catch(() => {}); // opponents see it too
   S.flagSheet = false; // tapping a flag is the choice; no Done needed
   render();
   if (FLAG_EGGS[S.flag]) document.querySelectorAll('.harbor .scene, .myship .scene').forEach(el => { el.classList.add('wiggle'); setTimeout(() => el.classList.remove('wiggle'), 1300); });

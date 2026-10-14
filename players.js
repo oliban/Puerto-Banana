@@ -4,6 +4,9 @@ const HULLS = ['navy', 'coral', 'mango', 'hibiscus', 'palm', 'turquoise', 'purpl
 const hullOf = h => HULLS.includes(h) ? h : 'navy';
 const CABINS = ['white', 'sand', 'sunshine', 'mint', 'sky', 'pink', 'leaf', 'lime', 'coconut'];
 const cabinOf = c => CABINS.includes(c) ? c : 'white';
+// Fruit ships: [key, hull, cabin]. A captain who never picked colours gets one nobody in the room has.
+const FRUITS = [['coconut', 'coconut', 'white'], ['watermelon', 'rind', 'pink'], ['pineapple', 'pineapple', 'leaf'], ['mango', 'mango', 'leaf'],
+  ['dragon', 'dragon', 'white'], ['kiwi', 'kiwi', 'lime'], ['lime', 'lime', 'white'], ['passion', 'purple', 'sunshine'], ['banana', 'banana', 'coconut']];
 const NAME_MAX = 20;
 // Ship flags: a country/region code from the flag-icons set (e.g. "se", "gb-sct") or a hand-drawn
 // easter egg. Anything else is '' (the default pennant). Codes only ever reach a CDN image path.
@@ -18,4 +21,4 @@ const flagOf = f => typeof f !== 'string' ? ''
 // "  Anna   Bell " and "anna bell" are the same captain.
 const nameKey = s => String(s ?? '').trim().replace(/\s+/g, ' ').toLowerCase();
 
-module.exports = { HULLS, hullOf, CABINS, cabinOf, nameKey, NAME_MAX, FLAG_EGGS, LANDSKAP, flagOf };
+module.exports = { HULLS, hullOf, CABINS, cabinOf, FRUITS, nameKey, NAME_MAX, FLAG_EGGS, LANDSKAP, flagOf };
