@@ -1,7 +1,8 @@
 // Shared player rules: ship hull colours and the name key that matches captains across games.
-const HULLS = ['navy', 'coral', 'mango', 'hibiscus', 'palm', 'turquoise', 'purple', 'charcoal'];
+const HULLS = ['navy', 'coral', 'mango', 'hibiscus', 'palm', 'turquoise', 'purple', 'charcoal',
+  'coconut', 'rind', 'pineapple', 'dragon', 'kiwi', 'lime', 'banana'];
 const hullOf = h => HULLS.includes(h) ? h : 'navy';
-const CABINS = ['white', 'sand', 'sunshine', 'mint', 'sky', 'pink'];
+const CABINS = ['white', 'sand', 'sunshine', 'mint', 'sky', 'pink', 'leaf', 'lime', 'coconut'];
 const cabinOf = c => CABINS.includes(c) ? c : 'white';
 const NAME_MAX = 20;
 // Ship flags: a country/region code from the flag-icons set (e.g. "se", "gb-sct") or a hand-drawn

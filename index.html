@@ -59,7 +59,8 @@
 
 }
 *,*::before,*::after{box-sizing:border-box}
-html,body{margin:0;min-height:100%}
+/* No double-tap zoom anywhere (quick taps on bids and sheets kept zooming by mistake); pinch zoom still works. */
+html,body{margin:0;min-height:100%;touch-action:manipulation}
 body{background:var(--bg) linear-gradient(var(--bg-2),var(--bg) 480px) no-repeat;color:var(--ink);font:400 17px/1.45 Figtree,system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden}
 #app{max-width:460px;margin:0 auto;
   padding:calc(16px + env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) calc(40px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
@@ -82,6 +83,18 @@ input.code{text-transform:uppercase;font-family:Bungee,sans-serif;letter-spacing
 label,.label{display:block;font-weight:600;margin:0 0 6px}
 .swatches{display:grid;grid-template-columns:repeat(var(--cols,4),44px);gap:var(--gap,8px)}
 .swatch{min-height:44px;width:44px;padding:0;border-radius:50%;background:var(--c);box-shadow:inset 0 0 0 3px rgba(255,255,255,.35),0 0 0 1px var(--line)}
+.custom summary{cursor:pointer;font-weight:800;min-height:44px;display:flex;align-items:center;gap:6px;list-style:none}
+.custom summary::-webkit-details-marker{display:none}
+.custom summary::before{content:'▸';display:inline-block;transition:transform .2s}
+.custom[open] summary::before{transform:rotate(90deg)}
+.custom[open]>div{margin-top:8px}
+.fruit-hint{margin:-2px 0 8px}
+.sheet-cargo{display:flex;align-items:baseline;gap:8px;margin:-4px 0 12px;padding:8px 12px;border-radius:12px;background:var(--sea-deep,#1D4E89);color:#fff;font-weight:700}
+.sheet-cargo .num{font:400 22px Bungee,sans-serif}
+.fruits{display:grid;grid-template-columns:repeat(9,minmax(0,40px));gap:4px;justify-content:space-between}
+.fruit{width:100%;min-height:0;aspect-ratio:1;padding:0;border-radius:50%;font-size:min(22px,5.6vw);line-height:1;display:grid;place-items:center;background:var(--surface);box-shadow:inset 0 0 0 2px var(--line)}
+.fruit svg{width:62%;height:62%}
+.fruit[aria-pressed="true"]{box-shadow:0 0 0 2px var(--bg),0 0 0 4px var(--ink)}
 .swatch[aria-checked="true"]{box-shadow:0 0 0 3px var(--bg),0 0 0 6px var(--ink)}
 .stack>*+*{margin-top:12px}
 .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
@@ -740,10 +753,23 @@ function shipBody(f, key = '', look = {}, mine = false) {
 }
 // Hull colours players pick on the home screen; keys match HULLS in server.js.
 const HULLS = { navy: ['Navy', '#1D4E89'], coral: ['Coral', '#E0505B'], mango: ['Mango', '#EE8A1E'], hibiscus: ['Hibiscus', '#D63A85'],
-  palm: ['Palm green', '#2A9457'], turquoise: ['Turquoise', '#0E97A5'], purple: ['Purple', '#6A4C93'], charcoal: ['Charcoal', '#33414E'] };
+  palm: ['Palm green', '#2A9457'], turquoise: ['Turquoise', '#0E97A5'], purple: ['Purple', '#6A4C93'], charcoal: ['Charcoal', '#33414E'],
+  coconut: ['Coconut brown', '#6B4226'], rind: ['Watermelon rind', '#2F7A3A'], pineapple: ['Pineapple gold', '#E2A70F'], dragon: ['Dragon fruit', '#C2185B'],
+  kiwi: ['Kiwi brown', '#8D6E4A'], lime: ['Lime', '#6FAF2E'], banana: ['Banana yellow', '#F2C21B'] };
 // Cabin colours players can pick; keys match CABINS in players.js.
 const CABINS = { white: ['White', '#FFFFFF'], sand: ['Sand', '#F6DFB0'], sunshine: ['Sunshine', '#FFE873'], mint: ['Mint', '#BFF0D4'],
-  sky: ['Sky', '#BDE4FF'], pink: ['Flamingo', '#FFC4DA'] };
+  sky: ['Sky', '#BDE4FF'], pink: ['Flamingo', '#FFC4DA'], leaf: ['Leaf green', '#7BC96F'], lime: ['Lime', '#D4F58A'], coconut: ['Coconut brown', '#7A4E2D'] };
+// Fruit presets: one tap sets hull and cabin together. Fruits without a dependable emoji get a tiny drawing.
+const FRUITS = [
+  ['coconut', 'Coconut', '🥥', 'coconut', 'white'], ['watermelon', 'Watermelon', '🍉', 'rind', 'pink'],
+  ['pineapple', 'Pineapple', '🍍', 'pineapple', 'leaf'], ['mango', 'Mango', '🥭', 'mango', 'leaf'],
+  ['dragon', 'Dragon fruit', '<svg viewBox="0 0 24 24"><path d="M12 3c5 2 7 6 7 10s-3 8-7 8-7-4-7-8 2-8 7-10Z" fill="#E0307A"/><path d="M12 3l-2 4 2-1 2 1Zm-6 8 3 1-2 2Zm12 0-3 1 2 2Zm-6 9-1-3h2Z" fill="#6CC04A"/></svg>', 'dragon', 'white'],
+  ['kiwi', 'Kiwi', '🥝', 'kiwi', 'lime'],
+  ['lime', 'Lime', '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="#6FAF2E"/><circle cx="12" cy="12" r="6.5" fill="#D4F58A"/><path d="M12 6v12M6 12h12M7.6 7.6l8.8 8.8M16.4 7.6l-8.8 8.8" stroke="#6FAF2E" stroke-width="1"/></svg>', 'lime', 'white'],
+  ['passion', 'Passion fruit', '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="#5B2A6E"/><circle cx="12" cy="12" r="6" fill="#FFD23F"/><g fill="#3A2340"><circle cx="10" cy="10" r="1"/><circle cx="14" cy="11" r="1"/><circle cx="11" cy="14" r="1"/><circle cx="14.5" cy="14.5" r=".9"/></g></svg>', 'purple', 'sunshine'],
+  ['banana', 'Banana', '🍌', 'banana', 'coconut'],
+];
+function pickFruit(k) { const f = FRUITS.find(x => x[0] === k); if (!f) return; S.hull = f[3]; S.cabin = f[4]; ls.set('pb_hull', f[3]); ls.set('pb_cabin', f[4]); render(); }
 // When this browser first drew each effect, so an entrance animation plays once and later renders show it settled.
 // (Local time, not the server's `at`, so a skewed clock can't skip or stall them.)
 const fxFirstSeen = new Map();
@@ -964,12 +990,17 @@ function homeView() {
   </header>
   <div class="stack">
     <div><label for="nick">Your name</label><input id="nick" class="text" maxlength="20" value="${esc(S.nick)}" oninput="S.nick=this.value;ls.set('pb_nick',this.value)" onchange="loadRivals()" autocomplete="nickname"></div>
+    <div><span class="label" id="fruit-l">Pick a fruit</span>
+    <p class="small muted fruit-hint" id="fruit-d">Your ship's colors will match the fruit's colors</p>
+    <div class="fruits" role="group" aria-labelledby="fruit-l" aria-describedby="fruit-d">${FRUITS.map(([k, name, icon, h, c]) =>
+      `<button class="fruit" aria-pressed="${S.hull === h && S.cabin === c}" aria-label="${name} ship" title="${name}" onclick="pickFruit('${k}')">${icon}</button>`).join('')}</div></div>
+    <details class="custom"${S.customOpen ? ' open' : ''} ontoggle="S.customOpen=this.open"><summary>Custom colours</summary>
     <div><span class="label" id="hull-l">Hull colour</span>
-    <div class="swatches" role="radiogroup" aria-labelledby="hull-l">${Object.entries(HULLS).map(([k, [name, c]]) =>
+    <div class="swatches" style="--cols:7;--gap:4px" role="radiogroup" aria-labelledby="hull-l">${Object.entries(HULLS).map(([k, [name, c]]) =>
       `<button id="hull-${k}" class="swatch" role="radio" aria-checked="${S.hull === k}" aria-label="${name}" style="--c:${c}" onclick="pickHull('${k}')"></button>`).join('')}</div></div>
     <div><span class="label" id="cabin-l">Cabin colour</span>
-    <div class="swatches" style="--cols:6;--gap:4px" role="radiogroup" aria-labelledby="cabin-l">${Object.entries(CABINS).map(([k, [name, c]]) =>
-      `<button id="cabin-${k}" class="swatch" role="radio" aria-checked="${S.cabin === k}" aria-label="${name}" style="--c:${c}" onclick="pickCabin('${k}')"></button>`).join('')}</div></div>
+    <div class="swatches" style="--cols:7;--gap:4px" role="radiogroup" aria-labelledby="cabin-l">${Object.entries(CABINS).map(([k, [name, c]]) =>
+      `<button id="cabin-${k}" class="swatch" role="radio" aria-checked="${S.cabin === k}" aria-label="${name}" style="--c:${c}" onclick="pickCabin('${k}')"></button>`).join('')}</div></div></details>
   </div>
   <div class="divider"></div>
   <label for="join">${invited ? "You're invited! Room code" : 'Join with a code'}</label>
@@ -980,7 +1011,8 @@ function homeView() {
   <button class="primary wide" onclick="createRoom()" ${S.busy?'disabled':''}>Create a room</button>`}
   ${S.error ? `<p class="err" style="margin-top:12px">${esc(S.error)}</p>` : ''}
   <div class="divider"></div>
-  ${bongoSays(`<p>Every round a <b>banana cargo</b> is up for auction, as big as the richest captain's stash. Everyone bids <b>in secret</b>, even more than they own.</p>
+  ${bongoSays(`<p>I'm <b>Captain Bongo</b>, harbour master of Puerto Banana.</p>
+  <p>Every round a <b>banana cargo</b> is up for auction, as big as the richest captain's stash. Everyone bids <b>in secret</b>, even more than they own.</p>
   <p>The highest bid takes the cargo, then pays the runner-up the <b>gap</b> between their bids. A tie for highest? They split it and pay nothing.</p>
   <p>Can't pay? With 3+ captains you lose your whole stash and the next bidder wins; with 2 you just sit that auction out. First to <b>${GOAL} bananas</b> wins!</p>`, 'happy', 'Ahoy, captain! Here is how it works')}
   <div class="divider"></div>
@@ -1246,19 +1278,21 @@ function stepLines(s) {
   const and = (ids, f = n) => ids.map((id, i) => i ? to(id) : f(id)).join(' and ');
   switch (s.t) {
     case 'win': return [
-      `${n(s.id)} ${v(s.id, 'win')} the auction with the highest bid, ${s.bid}.`,
-      `${n(s.id)} ${v(s.id, 'gain')} the ${bn(s.gain)} up for auction.`,
+      `${n(s.id)} ${v(s.id, 'win')} with the top bid: ${s.bid}.`,
+      `${n(s.id)} ${v(s.id, 'take')} the ${s.gain} 🍌 cargo.`,
       s.premium
-        ? `${n(s.id)} ${v(s.id, 'pay')} ${bn(s.premium)} to ${s.to.map(to).join(' and ')}${s.to.length > 1 ? `, ${s.share} each` : ''}: the gap between ${s.bid} and the next bid, ${s.second}.`
-        : `${n(s.id)} ${v(s.id, 'pay')} nothing: the next bid was also ${s.second}.`];
+        ? (s.to.length > 1 ? `${and(s.to)} split the ${s.premium} 🍌 gap.`
+          : `${n(s.id)} ${v(s.id, 'pay')} ${to(s.to[0])} the ${s.premium} 🍌 gap.`)
+        : `Next bid was ${s.second} too: no gap.`];
     case 'tie': return [
-      `${and(s.ids)} tied with the highest bid, ${s.bid}.`,
-      `They split the auction: each gains ${bn(s.share)}. Nobody pays.`];
+      `${and(s.ids)} tie at ${s.bid}.`,
+      `${s.ids.includes(S.room.me) ? 'You each' : 'They each'} get ${s.share} ${s.share === 1 ? 'banana' : 'bananas'}.`,
+      `Nobody pays a gap on a tie.`];
     case 'bust': return [
-      `${n(s.id)} ${v(s.id, 'bid')} ${s.bid} but can't pay the ${bn(s.premium)} owed.`,
-      s.keeps ? `${n(s.id)} ${v(s.id, 'drop', 'drops')} out of this auction and ${v(s.id, 'keep')} ${me(s.id) ? 'your' : 'their'} bananas.`
-        : `${n(s.id)} ${v(s.id, 'lose')} all ${bn(s.lost)}.`];
-    case 'last': return [`${n(s.id)} ${v(s.id, 'are', 'is')} the last bidder left and ${v(s.id, 'gain')} all ${bn(s.gain)}.`];
+      `${n(s.id)} ${v(s.id, 'bid')} ${s.bid}, can't pay ${s.premium} 🍌.`,
+      s.keeps ? `${n(s.id)} ${v(s.id, 'sit')} this one out, stash kept.`
+        : `${n(s.id)} ${v(s.id, 'lose')} all ${s.lost} 🍌.`];
+    case 'last': return [`${n(s.id)} ${v(s.id, 'are', 'is')} the last bidder: +${s.gain} 🍌.`];
     default: return ['Nobody won the auction.'];
   }
 }
@@ -1824,7 +1858,7 @@ function sheetView() {
   const ids = S.room.order.slice().sort((a, b) => r.bids[b] - r.bids[a]);
   const top = r.bids[ids[0]], age = gagAge(`${S.room.code}|sheet|${r.round}`).toFixed(2);
   return `<div class="sheet-bg" onclick="if(event.target===this)closeSheet()"><div class="sheet" role="dialog" aria-label="Round results">
-    <h2>Round ${r.round} results</h2>
+    <h2>Round ${r.round} results</h2><p class="sheet-cargo"><span class="num">${r.pot} 🍌</span> were up for auction this round</p>
     ${bongoSays(r.steps.flatMap(stepLines).map(l => `<p>${l}</p>`).join(''), 'wide')}
     <ul class="reveal">${ids.map((id, i) => { const b = r.before[id], a = r.after[id], d = a - b;
       const trig = resultTriggers(id, r);

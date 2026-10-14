@@ -280,6 +280,15 @@ const tests = {
       a.equal(v.players.find(p => p.nick === 'Mate').hull, 'mango');
     });
   },
+  async 'fruit colours are accepted for hull and cabin (coconut: brown hull, white cabin)'() {
+    await withServer(null, async port => {
+      const host = tok(), mate = tok();
+      const { body: { code } } = await api(port, { action: 'create', token: host, nick: 'Cap', hull: 'coconut', cabin: 'white' });
+      await api(port, { action: 'join', token: mate, code, nick: 'Mate', hull: 'pineapple', cabin: 'leaf' });
+      const v = await view(port, code, host);
+      a.deepEqual(v.players.map(p => [p.hull, p.cabin]), [['coconut', 'white'], ['pineapple', 'leaf']]);
+    });
+  },
   async 'empty leaderboard is an empty JSON array'() {
     await withServer(null, async port => {
       const r = await scores(port);
