@@ -1130,7 +1130,7 @@ function gameView() {
   else if (r.myBid !== null) action = `<div class="card locked"><div class="muted small">Your bid is sealed and lashed down</div><div class="num">${r.myBid}</div>
     <div class="muted small">Waiting for ${waiting} more</div></div>`;
   else action = `<div class="pad" id="padslot">${S.strokes.length ? '' : '<div class="hint">Write your secret bid here</div>'}
-      <div class="tools"><button onclick="undoStroke()" ${S.strokes.length ? '' : 'disabled'}>Undo</button><button onclick="clearPad()" ${S.strokes.length ? '' : 'disabled'}>Clear</button></div>
+      <div class="tools"><button onclick="undoStroke()" ${S.strokes.length ? '' : 'disabled'}>Undo</button></div>
       ${S.read && S.read.unsure ? '<p class="unsure-note small err">Not sure about that. Rewrite it or fix the number below.</p>' : ''}</div>
     <div class="bidbox"><button aria-label="Lower bid" onclick="nudge(-1)">−</button>
     <input id="bid" aria-label="Your secret bid" class="${S.read && S.read.unsure ? 'unsure' : ''}" inputmode="numeric" pattern="[0-9]*" value="${esc(S.bidDraft)}" placeholder="0" oninput="typed(this.value)">
@@ -1210,7 +1210,6 @@ function readStrokes() {
 }
 function readPad() { S.readTimer = null; readStrokes(); render(); }
 function undoStroke() { S.strokes.pop(); readPad(); }
-function clearPad() { S.strokes = []; S.read = null; S.bidDraft = ''; render(); }
 function overView() {
   const r = S.room, w = r.winners || [];
   return `<div class="card winner">${tile(Math.max(1.6, r.inventories[w[0]] / GOAL), false, w[0], lookOfId(w[0]))}<div class="muted">King of the bananas</div>
