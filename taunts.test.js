@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const { FLAG_EGGS, LANDSKAP, flagOf } = require('./players');
 
-// assets/taunts.json: flag code ("pennant" for no flag) -> 3-5 taunts shown to a loser flying that flag.
+// assets/taunts.json: flag code ("pennant" for no flag) -> 3-5 taunts shown to a loser flying that flag (12-24 for no flag).
 const taunts = JSON.parse(fs.readFileSync(path.join(__dirname, 'assets', 'taunts.json'), 'utf8'));
 
 const tests = {
@@ -17,7 +17,8 @@ const tests = {
   },
   async 'each flag has 3 to 5 distinct, readable taunts'() {
     for (const [k, list] of Object.entries(taunts)) {
-      a.ok(Array.isArray(list) && list.length >= 3 && list.length <= 5, `${k} has ${list.length}`);
+      const [lo, hi] = k === 'pennant' ? [12, 24] : [3, 5]; // the default taunts are seen most, so there are many more
+      a.ok(Array.isArray(list) && list.length >= lo && list.length <= hi, `${k} has ${list.length}`);
       a.equal(new Set(list).size, list.length, `${k} repeats a taunt`);
       for (const t of list) {
         a.equal(typeof t, 'string');
@@ -25,6 +26,9 @@ const tests = {
         a.doesNotMatch(t, /[<>]/, `${k}: markup in taunt`);
       }
     }
+  },
+  async 'default taunts (no flag picked) never mention flags'() {
+    for (const t of taunts.pennant) a.doesNotMatch(t, /flag|pennant|banner/i, t);
   },
   async 'no taunt is copy-pasted between flags'() {
     const seen = new Map();

@@ -437,6 +437,11 @@ summary{cursor:pointer;font-weight:600;color:var(--muted);min-height:44px;displa
 .storm-ship .hs-day,.storm-ship .hs-night,.storm-ship .hs-birdfly{display:none}
 @keyframes mourn{50%{transform:rotate(2.5deg) translateY(3px)}}
 .storm-ship p{margin:14px 0 0;color:#E8EEF5;font-weight:800;font-size:1.1rem;line-height:1.35;text-shadow:0 2px 6px rgba(0,0,0,.5)}
+.storm-taunt{padding:0 16px;text-align:left}
+.storm-taunt .bongo-says{margin:14px 0 0}
+.storm-taunt .bubble{box-shadow:inset 0 0 0 3px var(--coral),0 3px 0 rgba(0,0,0,.3)}
+.storm-taunt .bubble p{margin:0 0 4px;color:var(--ink);text-shadow:none;font-size:1rem;font-weight:600}
+.storm-taunt .bubble p.bubble-title{font-weight:400}
 .storm-tint{position:absolute;inset:0}
 
 .storm-flash{position:absolute;inset:0;background:#F4F8FF;opacity:0;animation:flash 7.5s linear both}
@@ -1245,7 +1250,7 @@ function overView() {
     <div class="num">${w.map(id => esc(nickOf(id))).join(' & ')}</div>
     <div class="muted">${r.inventories[w[0]]} bananas after ${r.round - 1} rounds</div></div>
     ${r.order.map(id => { const g = gagAt(id, 'card'); return g ? g.html({ id, age: gagAge(`${r.code}|card|${(r.history || []).length}|${id}`) }) : ''; }).join('')}
-    ${tauntFor(r.me) ? `<div class="taunt-me" role="status">${bongoSays(`${flagThumb(flagOf(pl(r.me).flag))}<b>${esc(nickOf(r.me))}</b>, ${r.inventories[r.me]} ${r.inventories[r.me] === 1 ? 'banana' : 'bananas'}. ${esc(tauntFor(r.me))}`, 'smug', 'Ha ha ha!')}</div>` : ''}
+    ${tauntFor(r.me) ? `<div class="taunt-me" role="status">${bongoSays(`${flagOf(pl(r.me).flag) ? flagThumb(flagOf(pl(r.me).flag)) : ''}<b>${esc(nickOf(r.me))}</b>, ${r.inventories[r.me]} ${r.inventories[r.me] === 1 ? 'banana' : 'bananas'}. ${esc(tauntFor(r.me))}`, 'smug', 'Ha ha ha!')}</div>` : ''}
     <div class="card" style="margin-top:14px">${playersList(false)}</div>
     ${r.earned && r.earned[r.me] !== undefined ? bongoSays(`You earned <b>+${r.earned[r.me]} 🪙</b> this game.${S.room.wallet ? ` You now have ${S.room.wallet.credits} 🪙.` : ''}`, 'happy') : ''}
     ${S.room.shop ? shopButton() : ''}
@@ -1288,7 +1293,10 @@ const bongoSays = (html, mood, title) => `<div class="bongo-says"><div class="bu
 // player's flag's taunts in assets/taunts.json (loaded only when a game ends), so every screen agrees.
 async function loadTaunts() {
   if (S.tauntBook) return;
-  try { const r = await fetch('/assets/taunts.json'); if (!r.ok) throw new Error(); S.tauntBook = await r.json(); render(); }
+  try {
+    const r = await fetch('/assets/taunts.json'); if (!r.ok) throw new Error(); S.tauntBook = await r.json(); render();
+    const st = document.querySelector('.storm-taunt'); if (st) st.innerHTML = stormTaunt();
+  }
   catch (e) { S.tauntBook = null; }
 }
 function tauntFor(id) {
@@ -1832,6 +1840,11 @@ function rainView() {
 }
 // The losers' weather: full screen, your own ship rocking under dark clouds in slanting rain, two lightning
 // flashes and soggy banana peels. Tap anywhere to skip it.
+// Captain Bongo gloats over your sinking ship with your taunt (the taunt book may still be loading: loadTaunts refills it).
+function stormTaunt() {
+  const t = S.room && tauntFor(S.room.me);
+  return t ? bongoSays(esc(t), 'smug', 'Ha ha ha!') : '<p>Better luck next voyage, captain.</p>';
+}
 function stormView(r, winnerName) {
   let rain = '', peels = '';
   for (let i = 0; i < 70; i++) rain += `<i class="rainline" style="--x:${rand(-10, 105).toFixed(1)}vw;--t:${rand(0.45, 0.8).toFixed(2)}s;--d:${rand(0, 1.2).toFixed(2)}s"></i>`;
@@ -1843,7 +1856,7 @@ function stormView(r, winnerName) {
   const mine = r.inventories[r.me] || 0;
   return `<div class="storm" onclick="endParty()"><div class="storm-tint"></div>
     <div class="storm-ship">${heroScene(Math.max(mine, 1) / GOAL, 'storm', lookOfId(r.me))}
-      <p>${winnerName} ${r.winners.length > 1 ? 'take' : 'takes'} the bananas.<br>Better luck next voyage, captain.</p></div>
+      <p>${winnerName} ${r.winners.length > 1 ? 'take' : 'takes'} the bananas.</p><div class="storm-taunt">${stormTaunt()}</div></div>
     <div class="storm-flash"></div>
     <svg class="storm-clouds" viewBox="0 0 400 110" preserveAspectRatio="xMidYMin slice">${cloud(60, 20, 1.1)}${cloud(200, 10, 1.3)}${cloud(340, 24, 1.15)}</svg>
     ${rain}${peels}</div>`;
