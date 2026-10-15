@@ -932,10 +932,11 @@ function lockBid() {
 
 function onChange() {
   const r = S.room;
-  // Your bid just sealed: jump back to the top to see your ship and who is still bidding.
-  const sealedKey = r.status === 'playing' && r.myBid !== null ? r.code + ':' + r.round : null;
-  if (sealedKey && S.sealedKey !== undefined && sealedKey !== S.sealedKey) setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 0);
-  S.sealedKey = sealedKey;
+  // A new phase (game starts, new round, your bid seals, game over) jumps back to the top: the host's Start
+  // button and Lock in sit low on the screen, and the next view starts with your ship.
+  const phase = [r.code, r.status, r.round, r.myBid !== null].join(':');
+  if (S.phase !== undefined && phase !== S.phase) setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 0);
+  S.phase = phase;
   if (r.status === 'over' && S.lastStatus !== 'over') setTimeout(() => { loadScores(); loadRivals(); }, 600);
   if (r.status === 'over' && Object.keys(r.taunts || {}).length) loadTaunts(); // the server saves the result just after the last round
   // Banana Times bookkeeping: count games (story keys are per game) and spot a rematch after a finished game.
