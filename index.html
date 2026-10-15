@@ -295,6 +295,12 @@ body.og .puff{display:none} /* smoke would drift over the tagline */
 .players{list-style:none;margin:0;padding:0}
 .players li{display:grid;grid-template-columns:64px minmax(0,1fr) auto;grid-template-areas:"ship name inv" "ship status inv";gap:0 12px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
 .players li:last-child{border-bottom:0}
+.players.fit5 li{grid-template-columns:60px minmax(0,1fr) auto;padding:7px 0}
+.players.fit6 li{grid-template-columns:52px minmax(0,1fr) auto;padding:5px 0}
+.players.fit5 .name,.players.fit6 .name{line-height:1.2}
+.players.fit5 .status,.players.fit6 .status{line-height:1.2}
+.players.fit6 .name{font-size:.95rem}
+.players.fit6 .status{font-size:.8rem}
 .players .tile,.players .tilebox{grid-area:ship}
 .tilebox{position:relative;display:block}
 .flagbadge{position:absolute;right:-5px;top:-5px;width:24px;height:18px;border-radius:4px;overflow:hidden;box-shadow:0 0 0 2px var(--surface),0 1px 3px rgba(0,0,0,.35);pointer-events:none}
@@ -1106,7 +1112,8 @@ function lobbyView() {
 function playersList(withStatus) {
   const r = S.room;
   const ids = r.order.slice().sort((a, b) => r.inventories[b] - r.inventories[a]);
-  return `<ul class="players">${ids.map(id => {
+  const fit = withStatus && ids.length >= 5 ? ` fit${ids.length}` : ''; // 5 or 6 captains: slimmer rows so all fit under your ship
+  return `<ul class="players${fit}">${ids.map(id => {
     const inv = r.inventories[id];
     const taunt = withStatus ? '' : tauntFor(id);
     const st = withStatus ? (pl(id).locked ? `<span class="status ok">Bid locked${id === r.me && r.myBid !== null ? `: ${r.myBid}` : ''}</span>` : `<span class="status">Thinking…</span>`)
