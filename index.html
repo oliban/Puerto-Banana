@@ -333,14 +333,14 @@ body.og .puff{display:none} /* smoke would drift over the tagline */
 .pad .unsure-note{position:absolute;left:12px;right:12px;bottom:6px;margin:0;pointer-events:none}
 .topbar .right{display:flex;align-items:center;gap:12px}
 .topbar .shopbtn{min-height:36px;padding:4px 12px;font-size:.9rem}
-/* A sealed bid is lashed down with rope */
-/* Once your bid is sealed the screen is about the other captains: a slim pot line and seal strip, then everyone's status */
-.potline{display:flex;align-items:center;gap:10px;flex-wrap:wrap;border-radius:16px;background:var(--sea-deep);color:#fff;padding:8px 14px;box-shadow:0 4px 0 var(--line)}
-.potline .num{font-size:1.6rem;line-height:1}
-.potline .sub{font-weight:600}
-.locked{display:flex;align-items:center;gap:10px;padding:10px 14px;border:3px dashed var(--mango)}
+/* Once your bid is sealed, a compact card under your ship shows who's in and who's still thinking */
+.locked{padding:10px 14px;border:3px dashed var(--mango)}
+.locked .head{display:flex;align-items:center;gap:10px}
+.locked .head .grow{flex:1}
 .locked .num{font-size:1.8rem;line-height:1}
-.locked .grow{flex:1}
+.bidders{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.bidders span{border-radius:999px;padding:3px 10px;font-size:.88rem;font-weight:600;background:var(--bg);color:var(--muted);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bidders span.in{color:var(--ok)}
 .sheet-bg{position:fixed;inset:0;background:rgba(4,30,45,.55);display:flex;align-items:flex-end;justify-content:center;z-index:10}
 .sheet{background:var(--bg);width:100%;max-width:460px;max-height:88%;overflow:auto;border-radius:22px 22px 0 0;border-top:6px solid var(--sea);
   padding:20px max(16px,env(safe-area-inset-right,0px)) calc(20px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
@@ -932,7 +932,7 @@ function lockBid() {
 
 function onChange() {
   const r = S.room;
-  // Your bid just sealed: jump to the top, where everyone's status now sits.
+  // Your bid just sealed: jump back to the top to see your ship and who is still bidding.
   const sealedKey = r.status === 'playing' && r.myBid !== null ? r.code + ':' + r.round : null;
   if (sealedKey && S.sealedKey !== undefined && sealedKey !== S.sealedKey) setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 0);
   S.sealedKey = sealedKey;
@@ -1136,7 +1136,8 @@ function gameView() {
   const waiting = r.order.filter(id => !pl(id).locked).length;
   let action;
   if (!inGame()) action = `<p class="muted">You're watching this game.</p>`;
-  else if (r.myBid !== null) action = `<div class="card locked"><span class="grow">🔒 Your bid is sealed<br><span class="muted small">${waiting ? `Waiting for ${waiting} more` : 'Everyone is in'}</span></span><span class="num">${r.myBid}</span></div>`;
+  else if (r.myBid !== null) action = `<div class="card locked"><div class="head"><span class="grow">🔒 Your bid is sealed<br><span class="muted small">${waiting ? `Waiting for ${waiting} more` : 'Everyone is in'}</span></span><span class="num">${r.myBid}</span></div>
+    <div class="bidders">${r.order.map(id => `<span class="${pl(id).locked ? 'in' : ''}">${pl(id).locked ? '✓' : '…'} ${esc(nickOf(id))}${id === r.me ? ' (you)' : ''}</span>`).join('')}</div></div>`;
   else action = `<div class="pad" id="padslot">${S.strokes.length ? '' : '<div class="hint">Write your secret bid here</div>'}
       <div class="tools"><button onclick="undoStroke()" ${S.strokes.length ? '' : 'disabled'}>Undo</button></div>
       ${S.read && S.read.unsure ? '<p class="unsure-note small err">Not sure about that. Rewrite it or fix the number below.</p>' : ''}</div>
@@ -1146,23 +1147,16 @@ function gameView() {
     <button class="primary wide" style="margin-top:10px" onclick="lockBid()" ${S.busy?'disabled':''}>Lock in ${S.bidDraft ? esc(S.bidDraft) : 'bid'}</button>`;
   const skip = r.isHost && waiting > 0 && waiting < r.order.length
     ? `<button class="link" onclick="skipMissing()">Someone gone? Count missing bids as 0</button>` : '';
-  const mine = r.inventories[r.me], bidding = inGame() && r.myBid === null, sealed = inGame() && !bidding;
+  const mine = r.inventories[r.me], playing = inGame(); // in the game, the pot rides on your ship so the pad or everyone's status fits below
   const pot = `<span class="plate">Round ${r.round}</span>`;
-  const players = `<div class="card">${playersList(true)}</div>${skip}`;
-  // Bidding: pot on the ship, then the pad. Sealed: pot line and seal strip, everyone's status, your ship below.
-  if (sealed) return `<div class="potline">${pot}<span class="num">${r.pot} 🍌</span><span class="sub">up for auction</span></div>
-    <div style="margin:12px 0">${action}</div>
-    ${players}
-    ${myShip()}
-    ${historyView()}`;
-  return `${bidding ? '' : `<div class="potcard">${pot}
+  return `${playing ? '' : `<div class="potcard">${pot}
     <div class="num">${r.pot} 🍌</div><div class="sub">up for auction this round</div></div>`}
     ${myShip()}
     <div style="margin:12px 0 18px">${action}</div>
-    ${players}
+    <div class="card">${playersList(true)}</div>${skip}
     ${historyView()}`;
   function myShip() {
-    return inGame() ? `<div class="myship${bidding ? ' withpot' : ''}">${bidding ? `<div class="potbadge">${pot}<span class="num">${r.pot} 🍌</span><span class="sub">up for auction</span></div>` : ''}
+    return playing ? `<div class="myship withpot"><div class="potbadge">${pot}<span class="num">${r.pot} 🍌</span><span class="sub">up for auction</span></div>
     <div role="img" aria-label="Your ship: ${mine} bananas, ${cargoWord(mine / GOAL).toLowerCase()}">${heroScene(mine / GOAL, r.me, { ...lookOfId(r.me), heroGag: heroGag(r.me) }, true)}
     <div class="myship-foot"><span>Your ship<br><b>${cargoWord(mine / GOAL)}</b></span><span class="num">${mine} 🍌</span></div></div></div>` : '';
   }
