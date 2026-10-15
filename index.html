@@ -116,7 +116,6 @@ body.og .puff{display:none} /* smoke would drift over the tagline */
 /* Shop */
 .switch{display:flex;align-items:center;gap:10px;min-height:44px;font-weight:700}
 .switch input{width:22px;height:22px;accent-color:var(--sea-deep)}
-.walletrow{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:10px 0 0}
 .coins{font-family:Bungee,sans-serif;font-size:1.2rem}
 .shopbtn{background:var(--banana);color:var(--banana-ink);box-shadow:0 3px 0 var(--banana-edge)}
 .shoptabs{display:flex;gap:6px;overflow-x:auto;margin:10px 0}
@@ -286,6 +285,11 @@ body.og .puff{display:none} /* smoke would drift over the tagline */
 .potcard .sub{font-weight:600;opacity:.95}
 /* Your own ship: the big animated bay; opponents get small stills in the list */
 .myship{margin-top:12px;border-radius:20px;overflow:hidden;background:linear-gradient(var(--sky-2),var(--sky) 70%);box-shadow:0 4px 0 var(--line)}
+/* While you bid, the pot rides on your ship's sky as a badge so the pad and Lock in fit on a phone screen */
+.myship.withpot{position:relative}
+.potbadge{position:absolute;top:10px;left:10px;display:flex;align-items:center;gap:8px;background:var(--sea-deep);color:#fff;border-radius:999px;padding:4px 14px 4px 4px;box-shadow:0 3px 0 rgba(0,0,0,.2)}
+.potbadge .num{font-size:1.5rem;line-height:1}
+.potbadge .sub{font-size:.85rem;font-weight:600}
 .myship-foot{display:flex;justify-content:space-between;align-items:center;gap:12px;background:var(--sea-deep);color:#fff;margin-top:-1px;padding:2px 16px 12px;line-height:1.25}
 .myship-foot .num{font-size:1.9rem;line-height:1}
 .players{list-style:none;margin:0;padding:0}
@@ -321,12 +325,14 @@ body.og .puff{display:none} /* smoke would drift over the tagline */
 .bidbox input{width:100%;min-width:0;text-align:center;font-family:Bungee,sans-serif;font-size:2.2rem;border-radius:14px;border:2px solid var(--line);background:var(--surface);padding:6px 0}
 .bidbox input.unsure{border-color:var(--coral);color:var(--coral)}
 /* Bid scratchpad (handwritten digits, read by digits.js) */
-.pad{margin-top:10px;position:relative;background:var(--surface);border-radius:14px;box-shadow:inset 0 0 0 2px var(--line);overflow:hidden}
+.pad{margin-bottom:10px;position:relative;background:var(--surface);border-radius:14px;box-shadow:inset 0 0 0 2px var(--line);overflow:hidden}
 .pad canvas{display:block;width:100%;height:160px;touch-action:none;cursor:crosshair}
 .pad .hint{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--muted);pointer-events:none;font-weight:600}
-.reads{display:flex;align-items:center;gap:10px;margin-top:8px}
-.reads .grow{flex:1}
-.reads button{padding:10px 14px}
+.pad .tools{position:absolute;top:6px;right:6px;display:flex;gap:6px}
+.pad .tools button{min-height:36px;padding:4px 12px;font-size:.9rem}
+.pad .unsure-note{position:absolute;left:12px;right:12px;bottom:6px;margin:0;pointer-events:none}
+.topbar .right{display:flex;align-items:center;gap:12px}
+.topbar .shopbtn{min-height:36px;padding:4px 12px;font-size:.9rem}
 /* A sealed bid is lashed down with rope */
 .locked{text-align:center;padding:20px 16px;border:3px dashed var(--mango)}
 .locked .num{font-size:2.6rem}
@@ -979,7 +985,8 @@ function render() {
 function view() {
   if (!S.code || !S.room) return homeView() + flagSheetView() + shopView();
   const body = S.room.status === 'lobby' ? lobbyView() : S.room.status === 'over' ? overView() : gameView();
-  return `<div class="topbar"><span class="muted small">Room <span class="code">${esc(S.code)}</span></span><button class="link" onclick="leaveTap()">Leave</button></div>`
+  const wallet = S.room.status === 'playing' && S.room.shop && S.room.wallet; // in a game the coins and Shop ride in the top bar
+  return `<div class="topbar"><span class="muted small">Room <span class="code">${esc(S.code)}</span></span><span class="right">${wallet ? `<span class="coins">🪙 ${S.room.wallet.credits}</span>${shopButton()}` : ''}<button class="link" onclick="leaveTap()">Leave</button></span></div>`
     + (S.targeting ? `<p class="aimbar">Tap a captain's ship below <button class="link" onclick="S.targeting=null;render()">Cancel</button></p>` : '')
     + (S.reconnecting ? `<p class="reconnecting" role="status">Reconnecting to the room<span class="dots"><i>.</i><i>.</i><i>.</i></span></p>` : '')
     + body + (S.error ? `<p class="err">${esc(S.error)}</p>` : '') + sheetView() + flagSheetView() + shopView();
@@ -1122,23 +1129,23 @@ function gameView() {
   if (!inGame()) action = `<p class="muted">You're watching this game.</p>`;
   else if (r.myBid !== null) action = `<div class="card locked"><div class="muted small">Your bid is sealed and lashed down</div><div class="num">${r.myBid}</div>
     <div class="muted small">Waiting for ${waiting} more</div></div>`;
-  else action = `<label for="bid">Your secret bid</label>
+  else action = `<div class="pad" id="padslot">${S.strokes.length ? '' : '<div class="hint">Write your secret bid here</div>'}
+      <div class="tools"><button onclick="undoStroke()" ${S.strokes.length ? '' : 'disabled'}>Undo</button><button onclick="clearPad()" ${S.strokes.length ? '' : 'disabled'}>Clear</button></div>
+      ${S.read && S.read.unsure ? '<p class="unsure-note small err">Not sure about that. Rewrite it or fix the number below.</p>' : ''}</div>
     <div class="bidbox"><button aria-label="Lower bid" onclick="nudge(-1)">−</button>
-    <input id="bid" class="${S.read && S.read.unsure ? 'unsure' : ''}" inputmode="numeric" pattern="[0-9]*" value="${esc(S.bidDraft)}" placeholder="0" oninput="typed(this.value)">
+    <input id="bid" aria-label="Your secret bid" class="${S.read && S.read.unsure ? 'unsure' : ''}" inputmode="numeric" pattern="[0-9]*" value="${esc(S.bidDraft)}" placeholder="0" oninput="typed(this.value)">
     <button aria-label="Raise bid" onclick="nudge(1)">+</button></div>
-    <div class="pad" id="padslot">${S.strokes.length ? '' : '<div class="hint">…or write your bid here</div>'}</div>
-    <div class="reads"><span class="grow small ${S.read && S.read.unsure ? 'err' : 'muted'}">${S.read && S.read.unsure ? 'Not sure about that. Rewrite it or fix the number above.' : ''}</span>
-      <button onclick="undoStroke()" ${S.strokes.length ? '' : 'disabled'}>Undo</button><button onclick="clearPad()" ${S.strokes.length ? '' : 'disabled'}>Clear</button></div>
-    <button class="primary wide" style="margin-top:12px" onclick="lockBid()" ${S.busy?'disabled':''}>Lock in ${S.bidDraft ? esc(S.bidDraft) : 'bid'}</button>`;
+    <button class="primary wide" style="margin-top:10px" onclick="lockBid()" ${S.busy?'disabled':''}>Lock in ${S.bidDraft ? esc(S.bidDraft) : 'bid'}</button>`;
   const skip = r.isHost && waiting > 0 && waiting < r.order.length
     ? `<button class="link" onclick="skipMissing()">Someone gone? Count missing bids as 0</button>` : '';
-  const mine = r.inventories[r.me];
-  return `<div class="potcard"><span class="plate">Round ${r.round}</span>
-    <div class="num">${r.pot} 🍌</div><div class="sub">up for auction this round</div></div>
-    ${inGame() ? `<div class="myship" role="img" aria-label="Your ship: ${mine} bananas, ${cargoWord(mine / GOAL).toLowerCase()}">${heroScene(mine / GOAL, r.me, { ...lookOfId(r.me), heroGag: heroGag(r.me) }, true)}
-    <div class="myship-foot"><span>Your ship<br><b>${cargoWord(mine / GOAL)}</b></span><span class="num">${mine} 🍌</span></div></div>
+  const mine = r.inventories[r.me], bidding = inGame() && r.myBid === null;
+  const pot = `<span class="plate">Round ${r.round}</span>`;
+  return `${bidding ? '' : `<div class="potcard">${pot}
+    <div class="num">${r.pot} 🍌</div><div class="sub">up for auction this round</div></div>`}
+    ${inGame() ? `<div class="myship${bidding ? ' withpot' : ''}">${bidding ? `<div class="potbadge">${pot}<span class="num">${r.pot} 🍌</span><span class="sub">up for auction</span></div>` : ''}
+    <div role="img" aria-label="Your ship: ${mine} bananas, ${cargoWord(mine / GOAL).toLowerCase()}">${heroScene(mine / GOAL, r.me, { ...lookOfId(r.me), heroGag: heroGag(r.me) }, true)}
+    <div class="myship-foot"><span>Your ship<br><b>${cargoWord(mine / GOAL)}</b></span><span class="num">${mine} 🍌</span></div></div></div>
 ` : ''}
-    ${S.room.shop && S.room.wallet ? `<div class="walletrow"><span class="coins">🪙 ${S.room.wallet.credits}</span>${shopButton()}</div>` : ''}
     <div style="margin:12px 0 18px">${action}</div>
     <div class="card">${playersList(true)}</div>${skip}
     ${historyView()}`;
