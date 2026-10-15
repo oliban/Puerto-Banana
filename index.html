@@ -342,6 +342,23 @@ body.og .puff{display:none} /* smoke would drift over the tagline */
 .sheet-bg{position:fixed;inset:0;background:rgba(4,30,45,.55);display:flex;align-items:flex-end;justify-content:center;z-index:10}
 .sheet{background:var(--bg);width:100%;max-width:460px;max-height:88%;overflow:auto;border-radius:22px 22px 0 0;border-top:6px solid var(--sea);
   padding:20px max(16px,env(safe-area-inset-right,0px)) calc(20px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+/* Results sheet, compact so every captain's row shows at once on a phone */
+.sheet.results{max-height:94%;padding-top:14px}
+.sheet-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
+.sheet-head h2{margin:0;font-size:1.1rem}
+.sheet-head .sheet-cargo{margin:0;padding:4px 10px;font-size:.9rem;white-space:nowrap}
+.sheet-head .sheet-cargo .num{font-size:18px}
+.results .bongo-says{margin:0 0 8px;gap:4px}
+.results .bongo-says .bubble{margin-bottom:20px;padding:8px 12px;font-size:.88rem;line-height:1.35}
+.results .bongo-says .bubble p{margin:0 0 2px}
+.results .bongo{flex:0 0 60px;width:60px}
+.results .reveal li{padding:5px 10px 5px 6px;margin-bottom:6px}
+.results .reveal li .tile,.results .reveal li .tilebox{flex-basis:54px}
+.results .reveal.fit5 li,.results .reveal.fit6 li{padding:3px 10px 3px 6px;margin-bottom:5px}
+.results .reveal.fit5 li .tile,.results .reveal.fit5 li .tilebox{flex-basis:48px}
+.results .reveal.fit6 li .tile,.results .reveal.fit6 li .tilebox{flex-basis:44px}
+.results .reveal.fit6 li .num{font-size:1.25rem}
+.results .reveal.fit6 li .who{font-size:.92rem;line-height:1.25}
 /* The results sheet's button stays pinned to the bottom, so Next round never needs a scroll */
 .sheet-foot{position:sticky;bottom:calc(-20px - env(safe-area-inset-bottom,0px));margin:0 -16px calc(-20px - env(safe-area-inset-bottom,0px));padding:10px 16px calc(20px + env(safe-area-inset-bottom,0px));background:var(--bg);box-shadow:0 -10px 12px -10px rgba(0,0,0,.4)}
 .reveal{list-style:none;padding:0;margin:0 0 14px}
@@ -1878,10 +1895,10 @@ function sheetView() {
   if (S.sheetFor == null || !r || r.round !== S.sheetFor) return '';
   const ids = S.room.order.slice().sort((a, b) => r.bids[b] - r.bids[a]);
   const top = r.bids[ids[0]], age = gagAge(`${S.room.code}|sheet|${r.round}`).toFixed(2);
-  return `<div class="sheet-bg" onclick="if(event.target===this)closeSheet()"><div class="sheet" role="dialog" aria-label="Round results">
-    <h2>Round ${r.round} results</h2><p class="sheet-cargo"><span class="num">${r.pot} 🍌</span> were up for auction this round</p>
+  return `<div class="sheet-bg" onclick="if(event.target===this)closeSheet()"><div class="sheet results" role="dialog" aria-label="Round results">
+    <div class="sheet-head"><h2>Round ${r.round} results</h2><p class="sheet-cargo"><span class="num">${r.pot} 🍌</span> up for auction</p></div>
     ${bongoSays(r.steps.flatMap(stepLines).map(l => `<p>${l}</p>`).join(''), 'wide')}
-    <ul class="reveal">${ids.map((id, i) => { const b = r.before[id], a = r.after[id], d = a - b;
+    <ul class="reveal${ids.length >= 5 ? ' fit' + ids.length : ''}">${ids.map((id, i) => { const b = r.before[id], a = r.after[id], d = a - b;
       const trig = resultTriggers(id, r);
       return `<li class="${r.bids[id]===top?'top':''}" style="animation-delay:${(i * 0.12 - age).toFixed(2)}s;--age:${age}s">${tile(a / GOAL, true, id, { ...lookOfId(id), gagWon: trig.includes('won') })}
         <span class="who"><b>${esc(nickOf(id))}${id===S.room.me?' (you)':''}</b>
