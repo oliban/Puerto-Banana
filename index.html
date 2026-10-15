@@ -342,6 +342,8 @@ body.og .puff{display:none} /* smoke would drift over the tagline */
 .sheet-bg{position:fixed;inset:0;background:rgba(4,30,45,.55);display:flex;align-items:flex-end;justify-content:center;z-index:10}
 .sheet{background:var(--bg);width:100%;max-width:460px;max-height:88%;overflow:auto;border-radius:22px 22px 0 0;border-top:6px solid var(--sea);
   padding:20px max(16px,env(safe-area-inset-right,0px)) calc(20px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+/* The results sheet's button stays pinned to the bottom, so Next round never needs a scroll */
+.sheet-foot{position:sticky;bottom:calc(-20px - env(safe-area-inset-bottom,0px));margin:0 -16px calc(-20px - env(safe-area-inset-bottom,0px));padding:10px 16px calc(20px + env(safe-area-inset-bottom,0px));background:var(--bg);box-shadow:0 -10px 12px -10px rgba(0,0,0,.4)}
 .reveal{list-style:none;padding:0;margin:0 0 14px}
 .reveal li{display:flex;align-items:center;gap:12px;padding:8px 12px 8px 8px;border-radius:14px;background:var(--surface);margin-bottom:8px;animation:flip .45s both}
 .reveal li .tile,.reveal li .tilebox{flex:0 0 60px}
@@ -1884,8 +1886,8 @@ function sheetView() {
         <span class="who"><b>${esc(nickOf(id))}${id===S.room.me?' (you)':''}</b>
         <span class="small">Bananas ${b} → <b>${a}</b> <span class="delta ${d>0?'up':d<0?'down':''}">(${d>0?'+'+d:d<0?'−'+(-d):'no change'})</span></span></span>
         <span class="bid"><span class="small muted">Bid</span><span class="num">${r.bids[id]}</span></span>${gagRow(id, a, trig)}</li>`; }).join('')}</ul>
-    <button class="primary wide" onclick="closeSheet()">${S.room.status !== 'over' ? 'Next round'
-      : S.room.winners.includes(S.room.me) ? 'Enjoy the victory' : S.room.order.includes(S.room.me) ? 'Mourn the defeat' : 'See the winner'}</button></div></div>`;
+    <div class="sheet-foot"><button class="primary wide" onclick="closeSheet()">${S.room.status !== 'over' ? 'Next round'
+      : S.room.winners.includes(S.room.me) ? 'Enjoy the victory' : S.room.order.includes(S.room.me) ? 'Mourn the defeat' : 'See the winner'}</button></div></div></div>`;
 }
 // ---------- flag picker sheet ----------
 async function loadCountries() {
